@@ -6,7 +6,7 @@ export class Users {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @ManyToOne(() => Role, (role) => role.users)
+    @ManyToOne(() => Role, (role) => role.users, {eager: true})
     @JoinColumn()
     role: Role
 

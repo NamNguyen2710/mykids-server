@@ -1,10 +1,10 @@
 import { Controller, Get, Post, Body, UseGuards, Request, Param, Header } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { UserService } from 'src/users/users.service';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 // import { LoginGuard } from 'src/guard/login.guard';
 import { VerifyDTO } from './dto/verify.dto';
-import { Throttle } from '@nestjs/throttler';
+import { AuthGuard } from 'src/guard/auth.guard';
+// import { Throttle } from '@nestjs/throttler';
 
 @Controller('login')
 export class AuthController {
@@ -24,15 +24,10 @@ export class AuthController {
     return this.authService.verify_otp(verifyDto, req);
   }
 
-  // @UseGuards(LoginGuard)
-  // @Get('profile')
-  // getProfile(@Request() req) {
-  //   return req.user;
-  // }
-
   //  Verify otp GET (localhost:3000/login/profile)
   @Get('profile')
+  @UseGuards(AuthGuard)
   async token(@Request() req){
-    return this.authService.verifyToken(req);
+    return this.authService.getUserProfile(req);
   }
 }
