@@ -8,8 +8,8 @@ import { HashTag } from "./hashtag.entity";
 
 @Entity()
 export class Post{
-    @PrimaryGeneratedColumn()
-    post_id: number;
+    @PrimaryGeneratedColumn({ name: 'post_id' })
+    id: number;
 
     @Column()
     description: string;

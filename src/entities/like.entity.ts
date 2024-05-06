@@ -4,8 +4,8 @@ import { Post } from "./post.entity";
 
 @Entity()
 export class Like{
-    @PrimaryGeneratedColumn()
-    like_id: number
+    @PrimaryGeneratedColumn({ name: 'like_id' })
+    id: number
 
     @ManyToOne(() => Users, (user) => user.like)
     user: Users

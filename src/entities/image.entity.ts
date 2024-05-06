@@ -3,10 +3,10 @@ import { Post } from "./post.entity";
 
 @Entity()
 export class Image{
-    @PrimaryGeneratedColumn()
-    image_id: number
+    @PrimaryGeneratedColumn({ name: 'image_id' })
+    id: number
 
-    @Column()
+    @Column({ name: 'image_string' })
     image: string
 
     @ManyToOne(() => Post, (post) => post.image)

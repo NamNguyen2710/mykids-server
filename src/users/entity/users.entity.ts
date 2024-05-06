@@ -6,7 +6,7 @@ import { Like } from "src/entities/like.entity";
 
 @Entity()
 export class Users {
-    @PrimaryGeneratedColumn()
+    @PrimaryGeneratedColumn({ name: 'user_id' })
     id: number;
 
     @ManyToOne(() => Role, (role) => role.users, {eager: true})

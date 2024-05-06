@@ -3,11 +3,11 @@ import { Post } from "./post.entity";
 
 @Entity()
 export class HashTag{
-    @PrimaryGeneratedColumn()
-    hashTag_id: number
+    @PrimaryGeneratedColumn({ name: 'hashtag_id' })
+    id: number
 
-    @Column()
-    hashTag_name: string
+    @Column({ name: 'hashtag_name' })
+    name: string
 
     @ManyToMany(() => Post)
     post: Post
