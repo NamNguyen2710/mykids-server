@@ -1,5 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany } from "typeorm";
 import { Role } from "./roles.entity";
+import { Post } from "src/entities/post.entity";
+import { Comment } from "src/entities/comment.entity";
+import { Like } from "src/entities/like.entity";
 
 @Entity()
 export class Users {
@@ -30,4 +33,13 @@ export class Users {
 
     @UpdateDateColumn()
     updated_at: Date;
+
+    @OneToMany(() => Post, (post) => post.user)
+    post: Post
+
+    @OneToMany(() => Like, (like) => like.user)
+    like: Like
+
+    @OneToMany(() => Comment, (comment) => comment.user)
+    comment: Comment
 }
