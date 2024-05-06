@@ -1,6 +1,6 @@
 import { Users } from "src/users/entity/users.entity";
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
-import { Post } from "./post.entity";
+import { PostInfo } from "./post_info.entity";
 
 
 @Entity()
@@ -17,6 +17,6 @@ export class Comment{
     @ManyToOne(() => Users, (user) => user.comment)
     user: Users
 
-    @ManyToOne(() => Post, (post) => post.comment)
-    post: Post
+    @ManyToOne(() => PostInfo, (post) => post.comment)
+    post: PostInfo
 }

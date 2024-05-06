@@ -1,5 +1,5 @@
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from "typeorm";
-import { Post } from "./post.entity";
+import { PostInfo } from "./post_info.entity";
 
 @Entity()
 export class HashTag{
@@ -9,6 +9,6 @@ export class HashTag{
     @Column({ name: 'hashtag_name' })
     name: string
 
-    @ManyToMany(() => Post)
-    post: Post
+    @ManyToMany(() => PostInfo)
+    post: PostInfo[]
 }
