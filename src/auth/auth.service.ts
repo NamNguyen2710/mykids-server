@@ -1,80 +1,68 @@
-import { Injectable, NotFoundException, UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { UserService } from 'src/users/users.service';
-import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { jwtConstants } from './constant';
-import { VerifyDTO } from './dto/verify.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { AppClient } from 'src/entities/client.entity';
 import { Repository } from 'typeorm';
-import { AppDTO } from './dto/app.dto';
-import { Request } from 'express';
-import { jwtDecode } from 'jwt-decode';
-import * as otp_generator from "otp-generator"
+
+import { UserService } from 'src/users/users.service';
+import { VerifyDTO } from './dto/verify.dto';
+import { AppClients } from 'src/auth/entities/client.entity';
+import { OTP_EXPIRES_IN } from 'src/utils/constants';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UserService,
-    private jwtService: JwtService,
-    @InjectRepository(AppClient)
-    private readonly appClientRep: Repository<AppClient>
-  ){}
+    private readonly jwtService: JwtService,
+    @InjectRepository(AppClients)
+    private readonly clientRepo: Repository<AppClients>,
+  ) {}
 
-  // Check for phone number before creating otp
-  async login(createUserDto: CreateUserDto){
-    const user = await this.userService.findOneByNumber(createUserDto.number);
+  // Verify the user and send OTP
+  async login(phoneNumber: string) {
+    const user = await this.userService.findOneByPhone(phoneNumber);
+    if (!user) throw new NotFoundException('User does not exist!');
 
-    if(!user){
-      throw new NotFoundException('User does not exist!');
-    }
+    const otpNum = Math.floor(Math.random() * 1000000);
+    const otp = otpNum.toString().padStart(6, '0');
 
-    const otp = otp_generator.generate(6, {lowerCaseAlphabets: false, upperCaseAlphabets: false, specialChars: false});
-    console.log(`otp: ${otp}`);
-    this.userService.update(user.id, {otp: otp});
+    console.log('OTP:', otp);
+    this.userService.update(user.id, {
+      otp,
+      otpExpiresAt: new Date(Date.now() + OTP_EXPIRES_IN * 1000),
+    });
     return { msg: 'Please Verify OTP to finish logging in' };
   }
 
-  // Verifying the otp
-  async verify_otp(verifyDto: VerifyDTO, req: Request){
-    const user = await this.userService.findOneByNumber(verifyDto.number);
-    
-    if (verifyDto.otp !== user.otp){
-      throw new UnauthorizedException();
-    }
-    this.userService.update(user.id, {otp: null});
-    const payload = { sub: user.id, role: user.role.name };
+  async verifyOtp(verifyDto: VerifyDTO, client: AppClients) {
+    const user = await this.userService.findOneByPhone(verifyDto.phoneNumber);
+    if (!user) throw new NotFoundException('User does not exist!');
+
+    if (verifyDto.otp !== user.otp)
+      throw new UnauthorizedException('Invalid OTP');
+    if (Date.now() > user.otpExpiresAt.getTime())
+      throw new UnauthorizedException('OTP expired');
+
+    this.userService.update(user.id, { otp: null });
+    const payload = { sub: user.id };
 
     return {
-      access_token: await this.jwtService.signAsync(payload),
-      // expireIn: `${await this.checkApp(data)}`
+      access_token: await this.jwtService.signAsync(payload, {
+        expiresIn: client.expiresIn,
+      }),
+      expires_in: client.expiresIn,
     };
   }
 
-  // Before getting the profile we need to verify the token
-  async getUserProfile(req: Request){
-    // console.log(req);
-    // console.log(req['user']);
+  async findClient(clientId: string, clientSecret: string) {
+    const client = await this.clientRepo.findOne({
+      where: { id: clientId, secret: clientSecret },
+    });
 
-    const userID = req['user'];
-
-    const user = this.userService.findOne(userID);
-    return user;
-  }
-  
-  // Get access token
-  // private extractTokenFromHeader(request: Request): string[] | undefined {
-  //   const array = request.headers.authorization?.split(' ') ?? [];
-  //   return array;
-  // }
-
-  // Check for app id 
-  async checkApp(appDto: AppDTO){
-    const app = await this.appClientRep.findOne({where: { id: appDto.id.toString() }});
-
-    if (!app){
-      throw new Error('Interal error');
-    }
-    return app.expireIn;
+    if (!client) throw new UnauthorizedException();
+    return client;
   }
 }

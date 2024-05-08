@@ -1,78 +1,94 @@
-import { 
-  Inject,
-  Injectable, 
-  NotFoundException, 
-  forwardRef
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { Posts } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PostInfo } from 'src/entities/post_info.entity';
 import { Repository } from 'typeorm';
-import { UserService } from 'src/users/users.service';
 
 @Injectable()
 export class PostService {
   constructor(
-    @InjectRepository(PostInfo)
-    private postRep: Repository<PostInfo>,
-    @Inject(forwardRef(() => UserService))
-    private userService: UserService
+    @InjectRepository(Posts)
+    private readonly postRepo: Repository<Posts>
   ){}
 
-  async create(user_id: number, createPostDto: CreatePostDto): Promise<PostInfo> {
-    createPostDto.user = await this.userService.findOne(user_id);
-    const newpost = this.postRep.create(createPostDto);
-    return this.postRep.save(newpost);
+  create(createPostDto: CreatePostDto) {
+    return 'This action adds a new post';
   }
 
-  async findAll(): Promise<PostInfo[]> {
-    return this.postRep.find();
-  }
+  async findSchoolPosts(school_id: number): Promise<Posts[]> {
 
-  async findOneByUser(user_id: number): Promise<PostInfo[]> {
-    return this.postRep.find({
-      where: { 
-        user: {
-          id: user_id
+    const post = this.postRepo.find({
+      where: {
+        school:{
+          id: school_id
         }
       }
     })
+    
+    if(!post) throw new NotFoundException;
+
+    return post;
+
   }
 
-  async update(id: number, user_id: number, updatePostDto: UpdatePostDto): Promise<PostInfo> {
-    const findPost = await this.postRep.findOne({
+  async findOneSchoolPost(school_id: number, post_id: number): Promise<Posts> {
+
+    const post = this.postRepo.findOne({
       where: {
-        user: {
-          id: user_id
+        school: {
+          id: school_id
         },
-        id: id
+        id: post_id
       }
     })
 
-    if (!findPost) throw new NotFoundException("The post is not found");
+    if(!post) throw new NotFoundException;
 
-    await this.postRep.update(id, updatePostDto);
+    return post;
 
-    return this.postRep.findOne({
-      where: {
-        id
-      }
-    })
   }
 
-  async remove(id: number, user_id: number): Promise<void> {
-    const findPost = await this.postRep.findOne({
+  async update(school_id: number, post_id: number, updatePostDto: UpdatePostDto): Promise<Posts> {
+
+    const post = this.postRepo.findOne({
       where: {
-        user: {
-          id: user_id
+        school: {
+          id: school_id
         },
-        id: id
+        id: post_id
       }
     })
 
-    if (!findPost) throw new NotFoundException("The post is not found");
+    if(!post) throw new NotFoundException;
 
-    await this.postRep.delete(id);
+    this.postRepo.update(post_id, updatePostDto);
+
+    return this.postRepo.findOne({
+      where: {
+        school: {
+          id: school_id
+        },
+        id: post_id
+      }
+    });
+
+  }
+
+  async remove(school_id: number, post_id: number): Promise<any> {
+
+    const post = this.postRepo.findOne({
+      where: {
+        school: {
+          id: school_id
+        },
+        id: post_id
+      }
+    });
+
+    if(!post) throw new NotFoundException;
+
+    this.postRepo.delete(post_id);
+
   }
 }

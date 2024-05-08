@@ -1,61 +1,41 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Users } from './users/entity/users.entity';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
-// import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppClient } from './entities/client.entity';
-import { Role } from './users/entity/roles.entity';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
+import typeorm from './typeorm';
+import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { ImageModule } from './image/image.module';
+import { HashtagModule } from './hashtag/hashtag.module';
+import { CommentModule } from './comment/comment.module';
+import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
-import { PostInfo } from './entities/post_info.entity';
-import { Like } from './entities/like.entity';
-import { Comment } from './entities/comment.entity';
-import { HashTag } from './entities/hashtag.entity';
-import { Image } from './entities/image.entity';
+import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
 
 @Module({
-  imports: [UsersModule,
-    AuthModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'Jackson',
-      database: 'postgres',
-      entities: [
-        Users,
-        AppClient,
-        Role,
-        PostInfo,
-        Like,
-        Comment,
-        HashTag,
-        Image
-      ],
-      synchronize: true,
-      autoLoadEntities: false,
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, load: [typeorm] }),
+    ThrottlerModule.forRoot([{ ttl: 3000, limit: 3 }]),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) =>
+        configService.get('typeorm'),
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 30000,
-      limit: 3,
-    }]),
+
+    UsersModule,
+    AuthModule,
     PostModule,
-    // ConfigModule.forRoot({
-    //   isGlobal: true,
-    //   load: [typeorm]
-    // }),
-    // TypeOrmModule.forRootAsync({
-    //   inject: [ConfigService],
-    //   useFactory: async (configService: ConfigService) => (configService.get('typeorm'))
-    // }),
+    SchoolModule,
+    CommentModule,
+    HashtagModule,
+    ImageModule,
+    CommentTaggedUserModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

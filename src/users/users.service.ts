@@ -8,19 +8,21 @@ import { CreateUserDto } from './dto/create-user.dto';
 export class UserService {
   constructor(
     @InjectRepository(Users)
-    private userRepository: Repository<Users>
+    private userRepository: Repository<Users>,
   ) {}
 
-  async findAll(): Promise<Users[]> {
-    return this.userRepository.find();
+  async findAll(isActive: boolean = true): Promise<Users[]> {
+    return this.userRepository.find({ where: { isActive } });
   }
 
-  async findOne(id: number): Promise<Users> {
-    return this.userRepository.findOne({ where: { id } });
+  async findOne(id: number, isActive: boolean = true): Promise<Users> {
+    return this.userRepository.findOne({ where: { id, isActive } });
   }
 
-  async findOneByNumber(number: string){
-    return this.userRepository.findOne({where: { number }});
+  async findOneByPhone(number: string, isActive: boolean = true) {
+    return this.userRepository.findOne({
+      where: { phoneNumber: number, isActive },
+    });
   }
 
   async create(createUserDto: CreateUserDto): Promise<Users> {
@@ -34,6 +36,6 @@ export class UserService {
   }
 
   async delete(id: number): Promise<void> {
-    await this.userRepository.delete(id);
+    await this.userRepository.update(id, { isActive: false });
   }
 }

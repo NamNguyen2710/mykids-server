@@ -6,6 +6,7 @@ services:
     restart: always
     environment:
       - POSTGRES_PASSWORD=postgres
+      - POSTGRES_HOST=${DB_HOST}
     container_name: postgres
     volumes:
       - ./pgdata:/var/lib/postgresql/data

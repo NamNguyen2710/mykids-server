@@ -1,45 +1,61 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToMany } from "typeorm";
-import { Role } from "./roles.entity";
-import { PostInfo } from "src/entities/post_info.entity";
-import { Comment } from "src/entities/comment.entity";
-import { Like } from "src/entities/like.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+  ManyToMany,
+  OneToMany,
+} from 'typeorm';
+import { Roles } from './roles.entity';
+import { Posts } from 'src/post/entities/post.entity';
+import { Comments } from 'src/comment/entities/comment.entity';
+import { Schools } from 'src/school/entities/school.entity';
 
 @Entity()
 export class Users {
-    @PrimaryGeneratedColumn({ name: 'user_id' })
-    id: number;
+  @PrimaryGeneratedColumn({ name: 'user_id' })
+  id: number;
 
-    @ManyToOne(() => Role, (role) => role.users, {eager: true})
-    @JoinColumn()
-    role: Role
+  @ManyToOne(() => Roles, (role) => role.users, { eager: true })
+  @JoinColumn({ name: 'role_id' })
+  role: Roles;
 
-    @Column()
-    firstname: string;
+  @Column()
+  firstName: string;
 
-    @Column()
-    lastname: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    number: string;
+  @Column()
+  phoneNumber: string;
 
-    @Column()
-    isactive: boolean;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @Column({nullable: true})
-    otp: string;
+  @Column({ nullable: true })
+  otp: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @Column({ nullable: true, type: 'timestamptz' })
+  otpExpiresAt: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
 
-    @OneToMany(() => PostInfo, (post) => post.user)
-    post: PostInfo[]
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
 
-    @OneToMany(() => Like, (like) => like.user)
-    like: Like[]
+  @OneToMany(() => Posts, (post) => post.createdBy)
+  createdPosts: Posts[];
 
-    @OneToMany(() => Comment, (comment) => comment.user)
-    comment: Comment[]
+  @ManyToMany(() => Posts, (post) => post.likedUsers)
+  likedPosts: Posts[];
+
+  @ManyToMany(() => Comments)
+  taggedComments: Comments[];
+
+  @ManyToMany(() => Schools)
+  schools: Schools[];
 }

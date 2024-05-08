@@ -1,4 +1,4 @@
-export class VerifyDTO{
-    number: string;
-    otp: string;
+export class VerifyDTO {
+  phoneNumber: string;
+  otp: string;
 }
