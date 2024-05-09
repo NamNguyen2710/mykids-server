@@ -32,6 +32,17 @@ export class PostService {
 
   }
 
+  async findOnePost(post_id: number): Promise<Posts>{
+
+    const post = this.postRepo.findOne({
+      where: {
+        id: post_id
+      }
+    })
+    
+    return post;
+  }
+
   async findOneSchoolPost(school_id: number, post_id: number): Promise<Posts> {
 
     const post = this.postRepo.findOne({

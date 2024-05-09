@@ -11,6 +11,7 @@ import {
 import { UserService } from './users.service';
 import { Users } from './entity/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
+import { Posts } from 'src/post/entities/post.entity';
 
 @Controller('users')
 export class UsersController {
@@ -30,6 +31,32 @@ export class UsersController {
       return user;
     }
   }
+
+  // User like post
+  @Post(':user_id/like/:post_id')
+  async likePost(
+    @Param('user_id') user_id: number,
+    @Param('post_id') post_id: number
+  ){
+    this.usersService.like(user_id, post_id);
+  }
+
+  // User unlike post
+  @Post(':user_id/unlike/:post_id')
+  async unlikePost(
+    @Param('user_id') user_id: number,
+    @Param('post_id') post_id: number
+  ){
+    this.usersService.unlike(user_id, post_id);
+  }
+
+  // @Get(':user_id/like_posts')
+  // async getlike(
+  //   @Param('user_id') user_id: number
+  // ): Promise<Posts[]>{
+  //   return this.usersService.getLikePost(user_id);
+  // }
+
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<Users> {
