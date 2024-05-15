@@ -38,6 +38,10 @@ export class Schools {
   posts: Posts[];
 
   @ManyToMany(() => Users)
-  @JoinTable()
+  @JoinTable({
+    name: 'school_parents',
+    joinColumn: { name: 'school_id' },
+    inverseJoinColumn: { name: 'parent_id' },
+  })
   parents: Users[];
 }

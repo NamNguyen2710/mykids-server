@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +10,7 @@ import { Comments } from './entities/comment.entity';
 import { Repository } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
 import { Posts } from 'src/post/entities/post.entity';
+import { Request } from 'express';
 
 @Injectable()
 export class CommentService {
@@ -15,89 +20,100 @@ export class CommentService {
     @InjectRepository(Users)
     private readonly userRepo: Repository<Users>,
     @InjectRepository(Posts)
-    private readonly postRepo: Repository<Posts>
-  ){}
+    private readonly postRepo: Repository<Posts>,
+  ) {}
 
   async create(
-    user_id: number, 
-    post_id: number, 
-    createCommentDto: CreateCommentDto
+    request: Request,
+    postId: number,
+    createCommentDto: CreateCommentDto,
   ): Promise<Comments> {
+    const data = this.extractTokenFromHeader(request).toString();
+
+    if (!data) throw new UnauthorizedException();
     const user = await this.userRepo.findOne({
       where: {
-        id: user_id
-      }
-    })
+        id: parseInt(data),
+      },
+    });
 
     const post = await this.postRepo.findOne({
       where: {
-        id: post_id
-      }
-    })
+        id: postId,
+      },
+    });
 
-    if(!user || !post) throw new NotFoundException;
+    if (!user || !post) throw new NotFoundException();
 
     createCommentDto.createdBy = user;
     createCommentDto.belongedTo = post;
 
     return this.commentRepo.save(createCommentDto);
-
   }
 
-  async findAllCommentsOfPost(post_id: number):Promise<Comments[]> {
-
+  async findAllCommentsOfPost(postId: number): Promise<Comments[]> {
     return this.commentRepo.find({
       where: {
         belongedTo: {
-          id: post_id
-        }
-      }
-    })
-
+          id: postId,
+        },
+      },
+    });
   }
 
   findOne(id: number) {
     return `This action returns a #${id} comment`;
   }
 
-  async update(post_id: number, comment_id: number, updateCommentDto: UpdateCommentDto): Promise<Comments> {
+  async update(
+    request: Request,
+    commentId: number,
+    updateCommentDto: UpdateCommentDto,
+  ): Promise<Comments> {
+    const data = this.extractTokenFromHeader(request).toString();
 
-    const comment = this.commentRepo.find({
+    const comment = await this.commentRepo.findOne({
       where: {
-        belongedTo: {
-          id: post_id
-        },
-        id: comment_id
-      }
-    })
+        id: commentId,
+      },
+      relations: {
+        createdBy: true,
+      },
+    });
 
-    if(!comment) throw new NotFoundException;
+    if (!comment) throw new NotFoundException('Comment not found!');
 
-    this.commentRepo.update(comment_id, updateCommentDto);
+    if (comment.createdBy.id != parseInt(data))
+      throw new UnauthorizedException();
+
+    this.commentRepo.update(commentId, updateCommentDto);
 
     return this.commentRepo.findOne({
       where: {
-        belongedTo: {
-          id: post_id
-        },
-        id: comment_id
-      }
-    })
-
+        id: commentId,
+      },
+    });
   }
 
-  async remove(user_id: number, comment_id: number): Promise<void> {
+  async remove(request: Request, commentId: number): Promise<void> {
+    const data = this.extractTokenFromHeader(request).toString();
+
     const comment = this.commentRepo.findOne({
       where: {
         createdBy: {
-          id: user_id
+          id: parseInt(data),
         },
-        id: comment_id
-      }
-    })
+        id: commentId,
+      },
+    });
 
-    if(!comment) throw new NotFoundException;
+    if (!comment) throw new NotFoundException();
 
-    this.commentRepo.delete(comment_id);
+    this.commentRepo.delete(commentId);
+  }
+
+  private extractTokenFromHeader(request: Request) {
+    const data = request.headers.user;
+    return data;
   }
 }

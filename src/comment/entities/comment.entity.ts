@@ -1,3 +1,4 @@
+import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
 import {
@@ -5,29 +6,28 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   JoinColumn,
-  OneToOne,
   PrimaryGeneratedColumn,
   DeleteDateColumn,
-  ManyToMany,
-  ManyToOne,
-  JoinTable,
   Entity,
+  ManyToOne,
+  OneToMany,
 } from 'typeorm';
 
 @Entity()
 export class Comments {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ name: 'comment_id' })
   id: number;
 
   @Column()
   message: string;
 
-  @ManyToOne(() => Posts, (post) => post.comment)
-  belongedTo: Posts;
-
-  @OneToOne(() => Users)
+  @ManyToOne(() => Users)
   @JoinColumn()
   createdBy: Users;
+
+  @ManyToOne(() => Posts)
+  @JoinColumn()
+  belongedTo: Posts;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -38,7 +38,6 @@ export class Comments {
   @DeleteDateColumn({ type: 'timestamptz' })
   deletedAt: Date;
 
-  @ManyToMany(() => Users)
-  @JoinTable()
-  taggedUsers: Users[];
+  @OneToMany(() => CommentTaggedUser, (taggedUser) => taggedUser.comment)
+  taggedUsers: CommentTaggedUser[];
 }

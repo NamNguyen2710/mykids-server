@@ -1,7 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Request,
+} from '@nestjs/common';
 import { PostService } from './post.service';
-import { CreatePostDto } from './dto/create-post.dto';
-import { UpdatePostDto } from './dto/update-post.dto';
 
 @Controller('post')
 export class PostController {
@@ -12,36 +18,39 @@ export class PostController {
   //   return this.postService.create(createPostDto);
   // }
 
-  @Get('all/school/:school_id')
-
-  findAll(
-    @Param('school_id') school_id: number
-  ) {
-    return this.postService.findSchoolPosts(school_id);
+  // Like and Unlike post
+  @Post(':postId/like')
+  async like(
+    @Request() request,
+    @Param('postId') postId: number,
+  ): Promise<any> {
+    return this.postService.like(request, postId);
   }
 
-  @Get(':post_id/school/:school_id')
-  findOne(
-    @Param('post_id') post_id: number, 
-    @Param('school_id') school_id: number
-  ) {
-      return this.postService.findOneSchoolPost(school_id, post_id);
-    }
+  @Post(':postId/publish-post')
+  async publish(
+    @Request() request,
+    @Param('postId') postId: number,
+  ): Promise<any> {
+    return this.postService.publishedPost(request, postId);
+  }
 
-  @Patch(':post_id/school/:school_id')
-  update(
-    @Param('post_id') post_id: number,
-    @Param('school_id') school_id: number,
-    @Body() updatePostDto: UpdatePostDto
-  ) {
-    return this.postService.update(school_id, post_id, updatePostDto);
+  // Get all school post
+  @Get('all')
+  async findAll(@Request() request): Promise<any> {
+    return this.postService.findSchoolPosts(request);
   }
 
   @Delete(':post_id/school/:school_id')
-  remove(
+  async remove(
     @Param('post_id') post_id: number,
-    @Param('school_id') school_id: number
-  ) {
+    @Param('school_id') school_id: number,
+  ): Promise<any> {
     return this.postService.remove(school_id, post_id);
+  }
+
+  @Get(':post_id/like')
+  async getlike(@Param('post_id') post_id: number): Promise<any> {
+    return this.postService.getLike(post_id);
   }
 }

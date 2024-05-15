@@ -20,7 +20,7 @@ export class $npmConfigName1714111482851 implements MigrationInterface {
             phone_number varchar(15) NOT NULL unique,
             otp varchar(6),
             otp_expires_at timestamptz,
-            is_active boolean default true,
+            is_active boolean default true not null,
             created_at timestamptz not null default CURRENT_TIMESTAMP,
             updated_at timestamptz not null default CURRENT_TIMESTAMP,
             role_id int not null,

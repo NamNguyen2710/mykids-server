@@ -13,6 +13,7 @@ import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Comments } from 'src/comment/entities/comment.entity';
 import { Schools } from 'src/school/entities/school.entity';
+import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
 
 @Entity()
 export class Users {
@@ -53,7 +54,7 @@ export class Users {
   @ManyToMany(() => Posts, (post) => post.likedUsers)
   likedPosts: Posts[];
 
-  @ManyToMany(() => Comments)
+  @OneToMany(() => CommentTaggedUser, (comment) => comment.user)
   taggedComments: Comments[];
 
   @ManyToMany(() => Schools)

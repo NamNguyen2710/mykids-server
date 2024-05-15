@@ -7,13 +7,14 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
   JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  JoinColumn,
 } from 'typeorm';
 
 @Entity()
@@ -24,17 +25,18 @@ export class Posts {
   @Column()
   message: string;
 
-  @Column({ default: false })
+  @Column({ default: true })
   isPublished: boolean;
 
   @OneToMany(() => Images, (photo) => photo.post)
   photos: Images[];
 
-  @ManyToOne(() => Users, (user) => user.createdPosts)
-  createdBy: Users;
-
   @OneToMany(() => Comments, (comment) => comment.belongedTo)
-  comment: Comments[];
+  comments: Comments[];
+
+  @ManyToOne(() => Users, (user) => user.createdPosts)
+  @JoinColumn()
+  createdBy: Users;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -45,14 +47,25 @@ export class Posts {
   @Column({ type: 'timestamptz' })
   publishedAt: Date;
 
+  @DeleteDateColumn({ type: 'timestamptz' })
+  deletedAt: Date;
+
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
 
   @ManyToMany(() => Users, (user) => user.likedPosts)
-  @JoinTable({ name: 'post_likes' })
+  @JoinTable({
+    name: 'post_likes',
+    joinColumn: { name: 'post_id' },
+    inverseJoinColumn: { name: 'user_id' },
+  })
   likedUsers: Users[];
 
   @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts)
-  @JoinTable()
+  @JoinTable({
+    name: 'posts_hashtags_relation',
+    joinColumn: { name: 'post_id' },
+    inverseJoinColumn: { name: 'hashtag_id' },
+  })
   hashtags: Hashtags[];
 }

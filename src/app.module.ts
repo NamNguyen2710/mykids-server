@@ -14,6 +14,8 @@ import { CommentModule } from './comment/comment.module';
 import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
 import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
+import { LoginGuard } from './guard/login.guard';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -33,12 +35,17 @@ import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_us
     HashtagModule,
     ImageModule,
     CommentTaggedUserModule,
+    JwtModule,
   ],
   controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: LoginGuard,
     },
   ],
 })

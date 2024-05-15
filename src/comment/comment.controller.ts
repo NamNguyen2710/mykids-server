@@ -1,49 +1,47 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Req, UseGuards, Put } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Delete,
+  Put,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 
-@Controller('comment')
+@Controller('post/:postId/comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  @Post('user/:user_id/post/:post_id')
+  @Post('create-comment')
   create(
-    @Param('user_id') user_id: number,
-    @Param('post_id') post_id: number,
-    @Body() createCommentDto: CreateCommentDto
+    @Request() request,
+    @Param('postId') postId: number,
+    @Body() createCommentDto: CreateCommentDto,
   ) {
-  
-    return this.commentService.create(user_id, post_id, createCommentDto);
-  
+    return this.commentService.create(request, postId, createCommentDto);
   }
 
-  @Get('post/:post_id')
-  findAllOfPost(
-    @Param('post_id') post_id: number
-  ) {
-    return this.commentService.findAllCommentsOfPost(post_id);
+  @Get('all')
+  findAllOfPost(@Param('postId') postId: number) {
+    return this.commentService.findAllCommentsOfPost(postId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.commentService.findOne(+id);
-  }
-
-  @Put(':comment_id/post/:post_id')
+  @Put(':commentId/update')
   update(
-    @Param('comment_id') comment_id: number,
-    @Param('post_id') post_id: number, 
-    @Body() updateCommentDto: UpdateCommentDto
+    @Param('commentId') commentId: number,
+    @Request() request,
+    @Body() updateCommentDto: UpdateCommentDto,
   ) {
-    return this.commentService.update(post_id, comment_id, updateCommentDto);
+    return this.commentService.update(request, commentId, updateCommentDto);
   }
 
-  @Delete(':comment_id/user/:user_id')
-  remove(
-    @Param('comment_id') comment_id: number,
-    @Param('user_id') user_id: number
-  ) {
-    return this.commentService.remove(user_id, comment_id);
+  @Delete(':commentId')
+  remove(@Param('commentId') commentId: number, @Request() request) {
+    return this.commentService.remove(request, commentId);
   }
 }
