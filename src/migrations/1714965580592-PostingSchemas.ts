@@ -36,7 +36,7 @@ export class PostingSchemas1714965580592 implements MigrationInterface {
         "is_published" boolean NOT NULL DEFAULT true, 
         "created_at" timestamptz DEFAULT now(), 
         "updated_at" timestamptz DEFAULT now(), 
-        "published_at" timestamptz default now(), 
+        "published_at" timestamptz default now(),
         "created_by_id" int not null,
         "school_id" int not null,
         FOREIGN KEY (created_by_id) REFERENCES users (user_id),

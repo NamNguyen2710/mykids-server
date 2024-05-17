@@ -7,6 +7,7 @@ import { UsersModule } from 'src/users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { AppClients } from 'src/auth/entities/client.entity';
+import { JwtStrategy } from './jwt/jwt.strategy';
 
 @Module({
   imports: [
@@ -20,7 +21,7 @@ import { AppClients } from 'src/auth/entities/client.entity';
     UsersModule,
     TypeOrmModule.forFeature([AppClients]),
   ],
-  providers: [AuthService],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],
 })

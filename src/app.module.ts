@@ -14,8 +14,9 @@ import { CommentModule } from './comment/comment.module';
 import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
 import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
-import { LoginGuard } from './guard/login.guard';
+// import { LoginGuard } from './guard/login.guard';
 import { JwtModule } from '@nestjs/jwt';
+import { JwtAuthGuard } from './auth/jwt/jwt-authguard';
 
 @Module({
   imports: [
@@ -45,7 +46,7 @@ import { JwtModule } from '@nestjs/jwt';
     },
     {
       provide: APP_GUARD,
-      useClass: LoginGuard,
+      useClass: JwtAuthGuard,
     },
   ],
 })

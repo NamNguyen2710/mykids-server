@@ -23,22 +23,13 @@ export class PostService {
     return 'This action adds a new post';
   }
 
-  async findSchoolPosts(request: Request): Promise<Posts[]> {
-    const data = parseInt(this.extractTokenFromHeader(request).toString());
-
-    const user = await this.userRepo.findOne({
-      where: {
-        id: data,
-      },
-    });
-
+  async findSchoolPosts(user: Users): Promise<Posts[]> {
     if (!user) throw new UnauthorizedException('Please login first');
-
     const post = this.postRepo.find({
       where: {
         school: {
           parents: {
-            id: data,
+            id: user.id,
           },
         },
       },
@@ -48,9 +39,7 @@ export class PostService {
         },
       },
     });
-
     if (!post) throw new NotFoundException();
-
     return post;
   }
 

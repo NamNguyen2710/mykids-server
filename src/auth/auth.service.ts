@@ -11,6 +11,8 @@ import { UserService } from 'src/users/users.service';
 import { VerifyDTO } from './dto/verify.dto';
 import { AppClients } from 'src/auth/entities/client.entity';
 import { OTP_EXPIRES_IN } from 'src/utils/constants';
+import { LoginDto } from './dto/login.dto';
+import { JwtPayload } from './jwt/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
@@ -22,8 +24,10 @@ export class AuthService {
   ) {}
 
   // Verify the user and send OTP
-  async login(phoneNumber: string) {
-    const user = await this.userService.findOneByPhone(phoneNumber);
+  async login(loginDto: LoginDto) {
+    console.log(loginDto);
+    const user = await this.userService.findOneByPhone(loginDto.number);
+    console.log(user);
     if (!user) throw new NotFoundException('User does not exist!');
 
     const otpNum = Math.floor(Math.random() * 1000000);
@@ -47,13 +51,15 @@ export class AuthService {
       throw new UnauthorizedException('OTP expired');
 
     this.userService.update(user.id, { otp: null });
-    const payload = { sub: user.id };
+    const payload: JwtPayload = { role: user.role.name, sub: user.id };
 
     return {
       access_token: await this.jwtService.signAsync(payload, {
-        expiresIn: client.expiresIn,
+        expiresIn: '600s',
+        // client.expiresIn,
       }),
-      expires_in: client.expiresIn,
+      expires_in: '600s',
+      // client.expiresIn,
     };
   }
 

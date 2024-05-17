@@ -38,7 +38,7 @@ export class PostController {
   // Get all school post
   @Get('all')
   async findAll(@Request() request): Promise<any> {
-    return this.postService.findSchoolPosts(request);
+    return this.postService.findSchoolPosts(request.user);
   }
 
   @Delete(':post_id/school/:school_id')

@@ -44,11 +44,11 @@ export class Posts {
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'timestamptz', nullable: true })
   publishedAt: Date;
 
-  @DeleteDateColumn({ type: 'timestamptz' })
-  deletedAt: Date;
+  // @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  // deletedAt: Date;
 
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
