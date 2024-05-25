@@ -12,12 +12,14 @@ import {
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
+import { LoginGuard } from 'src/guard/login.guard';
 
+@UseGuards(LoginGuard)
 @Controller('post/:postId/comment')
 export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
-  @Post('create-comment')
+  @Post()
   create(
     @Request() request,
     @Param('postId') postId: number,

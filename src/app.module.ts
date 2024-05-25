@@ -14,9 +14,7 @@ import { CommentModule } from './comment/comment.module';
 import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
 import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
-// import { LoginGuard } from './guard/login.guard';
 import { JwtModule } from '@nestjs/jwt';
-import { JwtAuthGuard } from './auth/jwt/jwt-authguard';
 
 @Module({
   imports: [
@@ -27,6 +25,13 @@ import { JwtAuthGuard } from './auth/jwt/jwt-authguard';
       useFactory: async (configService: ConfigService) =>
         configService.get('typeorm'),
     }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET'),
+      }),
+    }),
 
     UsersModule,
     AuthModule,
@@ -36,17 +41,12 @@ import { JwtAuthGuard } from './auth/jwt/jwt-authguard';
     HashtagModule,
     ImageModule,
     CommentTaggedUserModule,
-    JwtModule,
   ],
   controllers: [AppController],
   providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
-    },
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
     },
   ],
 })

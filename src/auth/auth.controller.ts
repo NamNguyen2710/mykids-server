@@ -3,7 +3,7 @@ import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 // import { CreateUserDto } from 'src/users/dto/create-user.dto';
 import { VerifyDTO } from './dto/verify.dto';
-// import { ClientGuard } from 'src/guard/client.guard';
+import { ClientGuard } from 'src/guard/client.guard';
 import { LoginDto } from './dto/login.dto';
 import { Public } from 'src/guard/public.decorator';
 
@@ -17,7 +17,7 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
-  // @UseGuards(ClientGuard)
+  @UseGuards(ClientGuard)
   @Public()
   @Post('verify-otp')
   async verify(@Body() verifyDto: VerifyDTO, @Request() req) {
