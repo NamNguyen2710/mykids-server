@@ -57,6 +57,6 @@ export class Users {
   @OneToMany(() => CommentTaggedUser, (comment) => comment.user)
   taggedComments: Comments[];
 
-  @ManyToMany(() => Schools)
+  @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
 }

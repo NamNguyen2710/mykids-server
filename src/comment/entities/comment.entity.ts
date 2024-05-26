@@ -25,8 +25,8 @@ export class Comments {
   @JoinColumn()
   createdBy: Users;
 
-  @ManyToOne(() => Posts)
-  @JoinColumn()
+  @ManyToOne(() => Posts, (post) => post.comments)
+  @JoinColumn({ name: 'belonged_to_id' })
   belongedTo: Posts;
 
   @CreateDateColumn({ type: 'timestamptz' })

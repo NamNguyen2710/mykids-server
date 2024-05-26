@@ -37,7 +37,7 @@ export class Schools {
   @OneToMany(() => Posts, (post) => post.school)
   posts: Posts[];
 
-  @ManyToMany(() => Users)
+  @ManyToMany(() => Users, (user) => user.schools)
   @JoinTable({
     name: 'school_parents',
     joinColumn: { name: 'school_id' },

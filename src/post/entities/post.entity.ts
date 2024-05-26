@@ -47,8 +47,11 @@ export class Posts {
   @Column({ type: 'timestamptz', nullable: true })
   publishedAt: Date;
 
-  // @DeleteDateColumn({ type: 'timestamptz', nullable: true })
-  // deletedAt: Date;
+  @DeleteDateColumn({ type: 'timestamptz', nullable: true })
+  deletedAt: Date;
+
+  @Column({ name: 'school_id' })
+  schoolId: number;
 
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
@@ -68,4 +71,7 @@ export class Posts {
     inverseJoinColumn: { name: 'hashtag_id' },
   })
   hashtags: Hashtags[];
+
+  likeCount: number;
+  commentCount: number;
 }

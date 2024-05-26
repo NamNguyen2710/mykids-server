@@ -42,7 +42,7 @@ export class $npmConfigName1714111482851 implements MigrationInterface {
       `insert into users (role_id, first_name, last_name, phone_number) values (1, 'Nam', 'Nguyen', '+84123456789'), (2, 'Huy', 'Vo', '+841234567890')`,
     );
     await queryRunner.query(
-      `insert into app_clients(client_id, secret, expires_in) values ('BETA', 'N6pMydl9NoeIkpa9lfbLW7g1SblS4gNf', 60)`,
+      `insert into app_clients(client_id, secret, expires_in) values ('BETA', 'N6pMydl9NoeIkpa9lfbLW7g1SblS4gNf', 31536000)`,
     );
   }
 

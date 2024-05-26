@@ -36,7 +36,8 @@ export class PostingSchemas1714965580592 implements MigrationInterface {
         "is_published" boolean NOT NULL DEFAULT true, 
         "created_at" timestamptz DEFAULT now(), 
         "updated_at" timestamptz DEFAULT now(), 
-        "published_at" timestamptz default now(),
+        "published_at" timestamptz,
+        "deleted_at" timestamptz,
         "created_by_id" int not null,
         "school_id" int not null,
         FOREIGN KEY (created_by_id) REFERENCES users (user_id),
@@ -52,9 +53,11 @@ export class PostingSchemas1714965580592 implements MigrationInterface {
         "message" text NOT NULL, 
         "created_at" timestamptz DEFAULT now(), 
         "updated_at" timestamptz DEFAULT now(), 
-        "deleted_at" timestamptz, 
+        "deleted_at" timestamptz,
+        "belonged_to_id" int not null,
         "created_by_id" int not null, 
-        FOREIGN KEY (created_by_id) REFERENCES users (user_id)
+        FOREIGN KEY (created_by_id) REFERENCES users (user_id),
+        FOREIGN KEY (belonged_to_id) REFERENCES posts (post_id)
       )`,
     );
     await queryRunner.query(
