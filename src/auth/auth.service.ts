@@ -25,15 +25,13 @@ export class AuthService {
 
   // Verify the user and send OTP
   async login(loginDto: LoginDto) {
-    console.log(loginDto);
     const user = await this.userService.findOneByPhone(loginDto.number);
-    console.log(user);
     if (!user) throw new NotFoundException('User does not exist!');
 
     const otpNum = Math.floor(Math.random() * 1000000);
     const otp = otpNum.toString().padStart(6, '0');
 
-    console.log('OTP:', otp);
+    console.log('OTP:', user.phoneNumber, otp);
     this.userService.update(user.id, {
       otp,
       otpExpiresAt: new Date(Date.now() + OTP_EXPIRES_IN * 1000),
@@ -55,11 +53,9 @@ export class AuthService {
 
     return {
       access_token: await this.jwtService.signAsync(payload, {
-        expiresIn: '600s',
-        // client.expiresIn,
+        expiresIn: client.expiresIn,
       }),
-      expires_in: '600s',
-      // client.expiresIn,
+      expires_in: client.expiresIn,
     };
   }
 
