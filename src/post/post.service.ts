@@ -60,8 +60,8 @@ export class PostService {
       .groupBy('post.id')
       .addGroupBy('createdBy.id')
       .addSelect([
-        'COUNT(DISTINCT comments.id) as commentCount',
-        'COUNT(DISTINCT likedUsers.id) as likeCount',
+        'COUNT(DISTINCT comments.id) as commentcount',
+        'COUNT(DISTINCT likedUsers.id) as likecount',
       ])
       .orderBy('post.createdAt', 'DESC')
       .take(limit)

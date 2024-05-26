@@ -19,7 +19,7 @@ export class PostController {
   // Get all school post
   @Get('all')
   async findAll(@Request() request, @Query() query): Promise<any> {
-    return this.postService.findSchoolPosts(request.user, {
+    return this.postService.findSchoolPosts(request.user.sub, {
       schoolId: query.schoolId ? parseInt(query.schoolId) : null,
       limit: query.limit ? parseInt(query.limit) : 20,
       page: query.page ? parseInt(query.page) : 1,
@@ -33,21 +33,21 @@ export class PostController {
 
   @Post(':postId/publish')
   async publish(@Request() request, @Param('postId') postId: number) {
-    return this.postService.publishedPost(request, postId);
+    return this.postService.publishedPost(request.user.sub, postId);
   }
 
   @Delete(':postId')
   async remove(@Request() request, @Param('postId') postId: number) {
-    return this.postService.remove(request.user, postId);
+    return this.postService.remove(request.user.sub, postId);
   }
 
   @Post(':postId/like')
   async like(@Request() request, @Param('postId') postId: number) {
-    return this.postService.like(request.user, postId);
+    return this.postService.like(request.user.sub, postId);
   }
 
   @Post(':postId/unlike')
   async unlike(@Request() request, @Param('postId') postId: number) {
-    return this.postService.like(request.user, postId);
+    return this.postService.like(request.user.sub, postId);
   }
 }

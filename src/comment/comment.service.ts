@@ -10,7 +10,6 @@ import { Comments } from './entities/comment.entity';
 import { Repository } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
 import { Posts } from 'src/post/entities/post.entity';
-import { Request } from 'express';
 
 @Injectable()
 export class CommentService {
