@@ -32,26 +32,22 @@ export class PostController {
   // }
 
   @Post(':postId/publish')
-  async publish(
-    @Request() request,
-    @Param('postId') postId: number,
-  ): Promise<any> {
+  async publish(@Request() request, @Param('postId') postId: number) {
     return this.postService.publishedPost(request, postId);
   }
 
   @Delete(':postId')
-  async remove(
-    @Request() request,
-    @Param('postId') postId: number,
-  ): Promise<any> {
+  async remove(@Request() request, @Param('postId') postId: number) {
     return this.postService.remove(request.user, postId);
   }
 
   @Post(':postId/like')
-  async like(
-    @Request() request,
-    @Param('postId') postId: number,
-  ): Promise<any> {
-    return this.postService.like(request, postId);
+  async like(@Request() request, @Param('postId') postId: number) {
+    return this.postService.like(request.user, postId);
+  }
+
+  @Post(':postId/unlike')
+  async unlike(@Request() request, @Param('postId') postId: number) {
+    return this.postService.like(request.user, postId);
   }
 }

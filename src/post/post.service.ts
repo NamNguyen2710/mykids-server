@@ -1,14 +1,14 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { CreatePostDto } from './dto/create-post.dto';
 import { Posts } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
-import { Request } from 'express';
+import { QueryPostDto } from 'src/post/dto/query-post.dto';
 
 @Injectable()
 export class PostService {
@@ -19,111 +19,93 @@ export class PostService {
     private readonly userRepo: Repository<Users>,
   ) {}
 
-  create(createPostDto: CreatePostDto) {
-    return 'This action adds a new post';
-  }
+  // create(createPostDto: CreatePostDto) {
+  //   return 'This action adds a new post';
+  // }
 
-  async findSchoolPosts(user: Users): Promise<Posts[]> {
-    if (!user) throw new UnauthorizedException('Please login first');
-    const post = this.postRepo.find({
-      where: {
-        school: {
-          parents: {
-            id: user.id,
-          },
-        },
-      },
-      relations: {
-        school: {
-          parents: true,
-        },
-      },
-    });
-    if (!post) throw new NotFoundException();
-    return post;
-  }
-
-  async remove(school_id: number, postId: number): Promise<any> {
-    const post = this.postRepo.findOne({
-      where: {
-        school: {
-          id: school_id,
-        },
-        id: postId,
-      },
-    });
-
-    if (!post) throw new NotFoundException();
-
-    this.postRepo.delete(postId);
-  }
-
-  async getLike(postId: number): Promise<any> {
-    const post = await this.postRepo.findOne({
-      where: {
-        id: postId,
-      },
-      relations: {
-        likedUsers: true,
-      },
-    });
-
-    return post.likedUsers;
-  }
-
-  async like(request: Request, postId: number): Promise<void> {
-    const post = await this.postRepo.findOne({
-      where: {
-        id: postId,
-      },
-    });
-
-    const data = this.extractTokenFromHeader(request).toString();
+  async findSchoolPosts(userId: number, query: QueryPostDto) {
+    const { schoolId, limit = 20, page = 1 } = query;
+    if (!userId) throw new UnauthorizedException();
 
     const user = await this.userRepo.findOne({
-      where: {
-        id: parseInt(data),
-      },
-      relations: {
-        likedPosts: true,
-      },
+      where: { id: userId },
+      relations: { schools: true },
     });
+    if (!user) throw new NotFoundException('User not found');
 
-    const like = await this.postRepo.findOne({
-      where: {
-        id: parseInt(data),
-        likedUsers: {
-          id: postId,
-        },
-      },
-      relations: {
-        likedUsers: true,
-      },
-    });
+    const schoolIds = user.schools.map((school) => school.id);
 
-    if (!user || !post)
-      throw new NotFoundException('Cannot found user or post');
+    if (!schoolId && schoolIds.length == 0)
+      return {
+        data: [],
+        pagination: { totalItem: 0, totalPage: 0, page, limit },
+      };
 
-    if (like) {
-      post.likedUsers = post.likedUsers.filter((likedUsers) => {
-        return likedUsers.id != parseInt(data);
-      });
+    if (schoolId && !schoolIds.includes(schoolId))
+      throw new BadRequestException('User is not part of this school');
+
+    // Query builder to get all posts
+    const qb = this.postRepo.createQueryBuilder('post');
+
+    if (schoolId) {
+      qb.where('post.school_id = :schoolId', { schoolId });
     } else {
-      post.likedUsers.push(user);
+      qb.where('post.school_id IN (:...schoolIds)', { schoolIds });
     }
 
-    await this.postRepo.save(post);
+    const rawPosts = await qb
+      .leftJoin('post.comments', 'comments')
+      .leftJoin('post.likedUsers', 'likedUsers')
+      .leftJoinAndSelect('post.createdBy', 'createdBy')
+      .groupBy('post.id')
+      .addGroupBy('createdBy.id')
+      .addSelect([
+        'COUNT(DISTINCT comments.id) as commentCount',
+        'COUNT(DISTINCT likedUsers.id) as likeCount',
+      ])
+      .orderBy('post.createdAt', 'DESC')
+      .take(limit)
+      .skip((page - 1) * limit)
+      .getRawMany();
+    if (!rawPosts) throw new NotFoundException();
+
+    const posts = rawPosts.map((post) => ({
+      id: post.post_post_id,
+      message: post.post_message,
+      isPublished: post.post_is_published,
+      createdAt: post.post_created_at,
+      updatedAt: post.post_updated_at,
+      publishedAt: post.post_published_at,
+      deletedAt: post.post_deleted_at,
+      schoolId: post.post_school_id,
+      commentCount: post.commentcount,
+      likeCount: post.likecount,
+      createdBy: {
+        id: post.post_created_by_id,
+        firstname: post.createdBy_first_name,
+        lastname: post.createdBy_last_name,
+        phoneNumber: post.createdBy_phone_number,
+      },
+    }));
+
+    // Get total count of posts
+    const total = await this.postRepo.countBy({
+      schoolId: schoolId ? schoolId : In(schoolIds),
+    });
+
+    return {
+      data: posts,
+      pagination: {
+        totalItem: total,
+        totalPage: Math.ceil(total / limit),
+        page,
+        limit,
+      },
+    };
   }
 
-  private extractTokenFromHeader(request: Request) {
-    const data = request.headers.user;
-    return data;
-  }
-
-  async publishedPost(request: Request, postId: number): Promise<Posts> {
-    const data = parseInt(this.extractTokenFromHeader(request).toString());
-
-    if (!data) throw new UnauthorizedException('Please login first!');
+  async publishedPost(userId: number, postId: number): Promise<Posts> {
+    if (!userId) throw new UnauthorizedException();
 
     const post = await this.postRepo.findOne({
       where: {
@@ -135,8 +117,60 @@ export class PostService {
     if (!post) throw new NotFoundException();
 
     post.isPublished = true;
-    let date: Date = new Date();
-    post.publishedAt = date;
+    post.publishedAt = new Date();
     return this.postRepo.save(post);
+  }
+
+  async remove(schoolId: number, postId: number): Promise<any> {
+    const post = this.postRepo.findOne({
+      where: {
+        school: { id: schoolId },
+        id: postId,
+      },
+    });
+
+    if (!post) throw new NotFoundException();
+
+    this.postRepo.softDelete(postId);
+  }
+
+  async like(userId: number, postId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const post = await this.postRepo.findOne({
+      where: { id: postId },
+      relations: { likedUsers: true },
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    if (post.likedUsers.some((likedUser) => likedUser.id == userId))
+      throw new BadRequestException('User already liked this post');
+
+    post.likedUsers.push(user);
+    await this.postRepo.save(post);
+
+    return { status: 'success' };
+  }
+
+  async unlike(userId: number, postId: number) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const post = await this.postRepo.findOne({
+      where: { id: postId },
+      relations: { likedUsers: true },
+    });
+
+    if (!post) throw new NotFoundException('Post not found');
+
+    if (!post.likedUsers.some((likedUser) => likedUser.id == userId))
+      throw new BadRequestException("User haven't liked this post");
+
+    post.likedUsers.filter((likedUser) => likedUser.id != userId);
+    await this.postRepo.save(post);
+
+    return { status: 'success' };
   }
 }
