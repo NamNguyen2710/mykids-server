@@ -24,41 +24,57 @@ export class CommentService {
   ) {}
 
   async create(
-    request: Request,
+    userId: number,
     postId: number,
-    createCommentDto: CreateCommentDto,
-  ): Promise<Comments> {
-    const data = this.extractTokenFromHeader(request).toString();
+    createCommentDto: Partial<CreateCommentDto>,
+  ) {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException('User not found!');
 
-    if (!data) throw new UnauthorizedException();
-    const user = await this.userRepo.findOne({
-      where: {
-        id: parseInt(data),
-      },
-    });
-
-    const post = await this.postRepo.findOne({
-      where: {
-        id: postId,
-      },
-    });
-
-    if (!user || !post) throw new NotFoundException();
+    const post = await this.postRepo.findOne({ where: { id: postId } });
+    if (!post) throw new NotFoundException('Post not found!');
 
     createCommentDto.createdBy = user;
     createCommentDto.belongedTo = post;
 
-    return this.commentRepo.save(createCommentDto);
+    const result = await this.commentRepo.save(createCommentDto);
+    const comment = {
+      id: result.id,
+      message: result.message,
+      createdAt: result.updatedAt,
+      updatedAt: result.createdAt,
+      createdBy: {
+        id: result.createdBy.id,
+        firstName: result.createdBy.firstName,
+        lastName: result.createdBy.lastName,
+        phoneNumber: result.createdBy.phoneNumber,
+      },
+    };
+
+    return comment;
   }
 
-  async findAllCommentsOfPost(postId: number): Promise<Comments[]> {
-    return this.commentRepo.find({
-      where: {
-        belongedTo: {
-          id: postId,
-        },
-      },
+  async findAllCommentsOfPost(postId: number) {
+    const comments = await this.commentRepo.find({
+      where: { belongedTo: { id: postId } },
+      relations: { createdBy: true },
     });
+
+    const result = comments.map((comment) => {
+      delete comment.deletedAt;
+
+      return {
+        ...comment,
+        createdBy: {
+          id: comment.createdBy.id,
+          firstName: comment.createdBy.firstName,
+          lastName: comment.createdBy.lastName,
+          phoneNumber: comment.createdBy.phoneNumber,
+        },
+      };
+    });
+
+    return result;
   }
 
   findOne(id: number) {
@@ -66,54 +82,49 @@ export class CommentService {
   }
 
   async update(
-    request: Request,
+    userId: number,
     commentId: number,
     updateCommentDto: UpdateCommentDto,
-  ): Promise<Comments> {
-    const data = this.extractTokenFromHeader(request).toString();
-
+  ) {
     const comment = await this.commentRepo.findOne({
-      where: {
-        id: commentId,
-      },
-      relations: {
-        createdBy: true,
-      },
+      where: { id: commentId },
+      relations: { createdBy: true },
     });
 
     if (!comment) throw new NotFoundException('Comment not found!');
+    if (comment.createdBy.id != userId) throw new UnauthorizedException();
 
-    if (comment.createdBy.id != parseInt(data))
-      throw new UnauthorizedException();
-
-    this.commentRepo.update(commentId, updateCommentDto);
-
-    return this.commentRepo.findOne({
-      where: {
-        id: commentId,
-      },
+    await this.commentRepo.update(commentId, updateCommentDto);
+    const result = await this.commentRepo.findOne({
+      where: { id: commentId },
+      relations: { createdBy: true },
     });
+
+    const updatedComment = {
+      id: result.id,
+      message: result.message,
+      createdAt: result.updatedAt,
+      updatedAt: result.createdAt,
+      createdBy: {
+        id: result.createdBy.id,
+        firstName: result.createdBy.firstName,
+        lastName: result.createdBy.lastName,
+        phoneNumber: result.createdBy.phoneNumber,
+      },
+    };
+
+    return updatedComment;
   }
 
-  async remove(request: Request, commentId: number): Promise<void> {
-    const data = this.extractTokenFromHeader(request).toString();
-
-    const comment = this.commentRepo.findOne({
-      where: {
-        createdBy: {
-          id: parseInt(data),
-        },
-        id: commentId,
-      },
+  async remove(userId: number, commentId: number): Promise<void> {
+    const comment = await this.commentRepo.findOne({
+      where: { id: commentId },
+      relations: { createdBy: true },
     });
 
     if (!comment) throw new NotFoundException();
+    if (comment.createdBy.id != userId) throw new UnauthorizedException();
 
-    this.commentRepo.delete(commentId);
-  }
-
-  private extractTokenFromHeader(request: Request) {
-    const data = request.headers.user;
-    return data;
+    this.commentRepo.softDelete(commentId);
   }
 }

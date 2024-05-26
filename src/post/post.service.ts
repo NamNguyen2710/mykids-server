@@ -76,14 +76,13 @@ export class PostService {
       createdAt: post.post_created_at,
       updatedAt: post.post_updated_at,
       publishedAt: post.post_published_at,
-      deletedAt: post.post_deleted_at,
       schoolId: post.post_school_id,
       commentCount: post.commentcount,
       likeCount: post.likecount,
       createdBy: {
         id: post.post_created_by_id,
-        firstname: post.createdBy_first_name,
-        lastname: post.createdBy_last_name,
+        firstName: post.createdBy_first_name,
+        lastName: post.createdBy_last_name,
         phoneNumber: post.createdBy_phone_number,
       },
     }));

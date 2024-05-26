@@ -25,7 +25,7 @@ export class CommentController {
     @Param('postId') postId: number,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    return this.commentService.create(request, postId, createCommentDto);
+    return this.commentService.create(request.user, postId, createCommentDto);
   }
 
   @Get('all')
@@ -33,17 +33,21 @@ export class CommentController {
     return this.commentService.findAllCommentsOfPost(postId);
   }
 
-  @Put(':commentId/update')
+  @Put(':commentId')
   update(
     @Param('commentId') commentId: number,
     @Request() request,
     @Body() updateCommentDto: UpdateCommentDto,
   ) {
-    return this.commentService.update(request, commentId, updateCommentDto);
+    return this.commentService.update(
+      request.user,
+      commentId,
+      updateCommentDto,
+    );
   }
 
   @Delete(':commentId')
   remove(@Param('commentId') commentId: number, @Request() request) {
-    return this.commentService.remove(request, commentId);
+    return this.commentService.remove(request.user, commentId);
   }
 }
