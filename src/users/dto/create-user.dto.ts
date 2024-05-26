@@ -1,5 +1,5 @@
-export class CreateUserDto{
-    firstname: string;
-    lastname: string;
-    number: string;
+export class CreateUserDto {
+  firstname: string;
+  lastname: string;
+  phoneNumber: string;
 }

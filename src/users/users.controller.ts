@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Put, Param, Delete, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Put,
+  Param,
+  Delete,
+  NotFoundException,
+} from '@nestjs/common';
 import { UserService } from './users.service';
 import { Users } from './entity/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -7,16 +16,14 @@ import { CreateUserDto } from './dto/create-user.dto';
 export class UsersController {
   constructor(private readonly usersService: UserService) {}
 
-  //get all users
   @Get()
   async findAll(): Promise<Users[]> {
     return this.usersService.findAll();
   }
 
-  //get user by id
-  @Get(':id')
-  async findOne(@Param('id') id: number): Promise<Users> {
-    const user = await this.usersService.findOne(id);
+  @Get(':userId')
+  async findOne(@Param('userId') userId: number): Promise<Users> {
+    const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException('User does not exist!');
     } else {
@@ -24,26 +31,25 @@ export class UsersController {
     }
   }
 
-  //create user
   @Post()
   async create(@Body() createUserDto: CreateUserDto): Promise<Users> {
     return this.usersService.create(createUserDto);
   }
 
-  //update user
-  @Put(':id')
-  async update (@Param('id') id: number, @Body() user: Users): Promise<any> {
-    return this.usersService.update(id, user);
+  @Put(':userId')
+  async update(
+    @Param('userId') userId: number,
+    @Body() user: Users,
+  ): Promise<any> {
+    return this.usersService.update(userId, user);
   }
 
-  //delete user
-  @Delete(':id')
-  async delete(@Param('id') id: number): Promise<any> {
-    //handle error if user does not exist
-    const user = await this.usersService.findOne(id);
+  @Delete(':userId')
+  async delete(@Param('userId') userId: number): Promise<any> {
+    const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException('User does not exist!');
     }
-    return this.usersService.delete(id);
+    return this.usersService.delete(userId);
   }
 }

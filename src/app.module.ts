@@ -1,45 +1,49 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Users } from './users/entity/users.entity';
-import { UsersModule } from './users/users.module';
-import { AuthModule } from './auth/auth.module';
-// import { ConfigModule, ConfigService } from '@nestjs/config';
-import { AppClient } from './entities/client.entity';
-import { Role } from './users/entity/roles.entity';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+
+import typeorm from './typeorm';
+import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { ImageModule } from './image/image.module';
+import { HashtagModule } from './hashtag/hashtag.module';
+import { CommentModule } from './comment/comment.module';
+import { SchoolModule } from './school/school.module';
+import { PostModule } from './post/post.module';
+import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
+import { JwtModule } from '@nestjs/jwt';
 
 @Module({
-  imports: [UsersModule,
-    AuthModule,
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: 'localhost',
-      port: 5432,
-      username: 'postgres',
-      password: 'Jackson',
-      database: 'postgres',
-      entities: [Users,AppClient,Role],
-      synchronize: true,
-      autoLoadEntities: false,
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, load: [typeorm] }),
+    ThrottlerModule.forRoot([{ ttl: 3000, limit: 3 }]),
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) =>
+        configService.get('typeorm'),
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 3000,
-      limit: 3,
-    }]),
-    // ConfigModule.forRoot({
-    //   isGlobal: true,
-    //   load: [typeorm]
-    // }),
-    // TypeOrmModule.forRootAsync({
-    //   inject: [ConfigService],
-    //   useFactory: async (configService: ConfigService) => (configService.get('typeorm'))
-    // }),
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get('JWT_SECRET'),
+      }),
+    }),
+
+    UsersModule,
+    AuthModule,
+    PostModule,
+    SchoolModule,
+    CommentModule,
+    HashtagModule,
+    ImageModule,
+    CommentTaggedUserModule,
   ],
   controllers: [AppController],
-  providers: [AppService,
+  providers: [
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,

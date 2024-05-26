@@ -1,33 +1,62 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, JoinColumn } from "typeorm";
-import { Role } from "./roles.entity";
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+  ManyToMany,
+  OneToMany,
+} from 'typeorm';
+import { Roles } from './roles.entity';
+import { Posts } from 'src/post/entities/post.entity';
+import { Comments } from 'src/comment/entities/comment.entity';
+import { Schools } from 'src/school/entities/school.entity';
+import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
 
 @Entity()
 export class Users {
-    @PrimaryGeneratedColumn()
-    id: number;
+  @PrimaryGeneratedColumn({ name: 'user_id' })
+  id: number;
 
-    @ManyToOne(() => Role, (role) => role.users)
-    @JoinColumn()
-    role: Role
+  @ManyToOne(() => Roles, (role) => role.users, { eager: true })
+  @JoinColumn({ name: 'role_id' })
+  role: Roles;
 
-    @Column()
-    firstname: string;
+  @Column()
+  firstName: string;
 
-    @Column()
-    lastname: string;
+  @Column()
+  lastName: string;
 
-    @Column()
-    number: string;
+  @Column()
+  phoneNumber: string;
 
-    @Column()
-    isactive: boolean;
+  @Column({ default: true })
+  isActive: boolean;
 
-    @Column({nullable: true})
-    otp: string;
+  @Column({ nullable: true })
+  otp: string;
 
-    @CreateDateColumn()
-    created_at: Date;
+  @Column({ nullable: true, type: 'timestamptz' })
+  otpExpiresAt: Date;
 
-    @UpdateDateColumn()
-    updated_at: Date;
+  @CreateDateColumn({ type: 'timestamptz' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ type: 'timestamptz' })
+  updatedAt: Date;
+
+  @OneToMany(() => Posts, (post) => post.createdBy)
+  createdPosts: Posts[];
+
+  @ManyToMany(() => Posts, (post) => post.likedUsers)
+  likedPosts: Posts[];
+
+  @OneToMany(() => CommentTaggedUser, (comment) => comment.user)
+  taggedComments: Comments[];
+
+  @ManyToMany(() => Schools, (school) => school.parents)
+  schools: Schools[];
 }
