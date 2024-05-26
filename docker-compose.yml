@@ -1,12 +1,9 @@
-version: '3.5'
-
 services:
   db:
     image: postgres
     restart: always
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
-      - POSTGRES_HOST=${DB_HOST}
       - POSTGRES_USER=${DB_USERNAME}
       - POSTGRES_DB=${DB_NAME}
     container_name: postgres

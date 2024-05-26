@@ -54,9 +54,11 @@ export class CommentService {
   }
 
   async findAllCommentsOfPost(postId: number) {
-    const comments = await this.commentRepo.find({
+    const [comments, total] = await this.commentRepo.findAndCount({
       where: { belongedTo: { id: postId } },
       relations: { createdBy: true },
+      take: 10,
+      skip: 0,
     });
 
     const result = comments.map((comment) => {
@@ -73,7 +75,15 @@ export class CommentService {
       };
     });
 
-    return result;
+    return {
+      data: result,
+      pagination: {
+        totalItem: total,
+        totalPage: Math.ceil(total / 10),
+        page: 1,
+        limit: 10,
+      },
+    };
   }
 
   findOne(id: number) {
