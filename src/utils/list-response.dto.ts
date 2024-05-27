@@ -1,8 +1,8 @@
-export interface ListResponseDto<T> {
+export interface ListResponse<T> {
   data: T[];
   pagination: {
-    totalItem: number;
-    totalPage: number;
+    totalItems: number;
+    totalPages: number;
     page: number;
     limit: number;
   };

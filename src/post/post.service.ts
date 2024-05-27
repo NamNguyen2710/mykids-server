@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
 import { QueryPostDto } from 'src/post/dto/query-post.dto';
+import { ListResponse } from 'src/utils/list-response.dto';
+import { ResponsePostDto } from 'src/post/dto/response-post.dto';
 
 @Injectable()
 export class PostService {
@@ -23,7 +25,10 @@ export class PostService {
   //   return 'This action adds a new post';
   // }
 
-  async findSchoolPosts(userId: number, query: QueryPostDto) {
+  async findSchoolPosts(
+    userId: number,
+    query: QueryPostDto,
+  ): Promise<ListResponse<ResponsePostDto>> {
     const { schoolId, limit = 20, page = 1 } = query;
     if (!userId) throw new UnauthorizedException();
 
@@ -38,7 +43,7 @@ export class PostService {
     if (!schoolId && schoolIds.length == 0)
       return {
         data: [],
-        pagination: { totalItem: 0, totalPage: 0, page, limit },
+        pagination: { totalItems: 0, totalPages: 0, page, limit },
       };
 
     if (schoolId && !schoolIds.includes(schoolId))
@@ -77,8 +82,8 @@ export class PostService {
       updatedAt: post.post_updated_at,
       publishedAt: post.post_published_at,
       schoolId: post.post_school_id,
-      commentCount: post.commentcount,
-      likeCount: post.likecount,
+      commentCount: parseInt(post.commentcount),
+      likeCount: parseInt(post.likecount),
       createdBy: {
         id: post.post_created_by_id,
         firstName: post.createdBy_first_name,
@@ -95,8 +100,8 @@ export class PostService {
     return {
       data: posts,
       pagination: {
-        totalItem: total,
-        totalPage: Math.ceil(total / limit),
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
         page,
         limit,
       },

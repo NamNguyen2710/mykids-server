@@ -10,6 +10,8 @@ import { Comments } from './entities/comment.entity';
 import { Repository } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
 import { Posts } from 'src/post/entities/post.entity';
+import { ListResponse } from 'src/utils/list-response.dto';
+import { ResponseCommentDto } from 'src/comment/dto/response-comment.dto';
 
 @Injectable()
 export class CommentService {
@@ -53,7 +55,9 @@ export class CommentService {
     return comment;
   }
 
-  async findAllCommentsOfPost(postId: number) {
+  async findAllCommentsOfPost(
+    postId: number,
+  ): Promise<ListResponse<ResponseCommentDto>> {
     const [comments, total] = await this.commentRepo.findAndCount({
       where: { belongedTo: { id: postId } },
       relations: { createdBy: true },
@@ -78,8 +82,8 @@ export class CommentService {
     return {
       data: result,
       pagination: {
-        totalItem: total,
-        totalPage: Math.ceil(total / 10),
+        totalItems: total,
+        totalPages: Math.ceil(total / 10),
         page: 1,
         limit: 10,
       },
