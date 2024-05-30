@@ -4,13 +4,28 @@ import { SendNotificationDTO } from './dto/send-notification.dto';
 import { Repository } from 'typeorm';
 import { NotificationToken } from './entities/notification-token.entity';
 import { SaveTokenDTO } from './dto/save-token.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Notifications } from './entities/notification.entity';
 
 @Injectable()
 export class NotificationsService {
   constructor(
+    @InjectRepository(NotificationToken)
     private readonly notificationTokenRepo: Repository<NotificationToken>,
+    @InjectRepository(Notifications)
+    private readonly notificationRepo: Repository<Notifications>,
     @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: admin.app.App,
   ) {}
+
+  async testNoti(token: string) {
+    this.firebaseAdmin.messaging().send({
+      token: token,
+      notification: {
+        title: 'Testing',
+        body: 'Test only',
+      },
+    });
+  }
 
   async sendingNotification(sendNotificationDTO: SendNotificationDTO) {
     const { tokens, notification, data } = sendNotificationDTO;

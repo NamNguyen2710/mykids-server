@@ -21,12 +21,4 @@ export class Notifications {
 
   @Column({ nullable: true })
   body: string;
-
-  @Column()
-  created_by: string;
-
-  @Column({
-    default: 'ACTIVE',
-  })
-  status: string;
 }
