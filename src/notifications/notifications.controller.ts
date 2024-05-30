@@ -8,10 +8,11 @@ import {
   Delete,
   Param,
 } from '@nestjs/common';
+
 import { NotificationsService } from './notifications.service';
-import { SaveTokenDTO } from './dto/save-token.dto';
-// import { SendNotificationDTO } from './dto/send-notification.dto';
 import { LoginGuard } from 'src/guard/login.guard';
+
+import { SaveTokenDTO } from './dto/save-token.dto';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
@@ -23,10 +24,10 @@ export class NotificationsController {
   //   this.notificationsService.sendingNotification(sendNotificationDto);
   // }
 
-  @Post('test')
-  async sendTestNoti(@Body() token: string) {
-    this.notificationsService.testNoti(token);
-  }
+  // @Post('test')
+  // async sendTestNoti(@Body() token: string) {
+  //   this.notificationsService.testNoti(token);
+  // }
 
   @Get('save')
   async saveNotificationToken(
