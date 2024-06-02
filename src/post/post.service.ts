@@ -67,7 +67,9 @@ export class PostService {
       .addSelect([
         'COUNT(DISTINCT comments.id) as commentcount',
         'COUNT(DISTINCT likedUsers.id) as likecount',
+        'SUM(CASE WHEN likedUsers.id = :userId THEN 1 ELSE 0 END) as userLiked',
       ])
+      .setParameter('userId', userId)
       .orderBy('post.createdAt', 'DESC')
       .take(limit)
       .skip((page - 1) * limit)
@@ -84,6 +86,7 @@ export class PostService {
       schoolId: post.post_school_id,
       commentCount: parseInt(post.commentcount),
       likeCount: parseInt(post.likecount),
+      likedByUser: post.userLiked >= 1,
       createdBy: {
         id: post.post_created_by_id,
         firstName: post.createdBy_first_name,
@@ -155,7 +158,15 @@ export class PostService {
     post.likedUsers.push(user);
     await this.postRepo.save(post);
 
-    return { status: 'success' };
+    const rawPosts = await this.postRepo
+      .createQueryBuilder('post')
+      .where('post.id = :postId', { postId })
+      .leftJoin('post.likedUsers', 'likedUsers')
+      .groupBy('post.id')
+      .select('COUNT(DISTINCT likedUsers.id) as likecount')
+      .getRawMany();
+
+    return { status: 'success', likeCount: rawPosts[0].likecount };
   }
 
   async unlike(userId: number, postId: number) {
@@ -172,9 +183,19 @@ export class PostService {
     if (!post.likedUsers.some((likedUser) => likedUser.id == userId))
       throw new BadRequestException("User haven't liked this post");
 
-    post.likedUsers.filter((likedUser) => likedUser.id != userId);
+    post.likedUsers = post.likedUsers.filter(
+      (likedUser) => likedUser.id != userId,
+    );
     await this.postRepo.save(post);
 
-    return { status: 'success' };
+    const rawPosts = await this.postRepo
+      .createQueryBuilder('post')
+      .where('post.id = :postId', { postId })
+      .leftJoin('post.likedUsers', 'likedUsers')
+      .groupBy('post.id')
+      .select('COUNT(DISTINCT likedUsers.id) as likecount')
+      .getRawMany();
+
+    return { status: 'success', likeCount: rawPosts[0].likecount };
   }
 }

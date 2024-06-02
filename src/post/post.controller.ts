@@ -48,6 +48,6 @@ export class PostController {
 
   @Post(':postId/unlike')
   async unlike(@Request() request, @Param('postId') postId: number) {
-    return this.postService.like(request.user.sub, postId);
+    return this.postService.unlike(request.user.sub, postId);
   }
 }

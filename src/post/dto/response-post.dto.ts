@@ -10,5 +10,6 @@ export interface ResponsePostDto {
   publishedAt?: Date;
   commentCount: number;
   likeCount: number;
+  likedByUser?: boolean;
   createdBy: ResponseUserDto;
 }
