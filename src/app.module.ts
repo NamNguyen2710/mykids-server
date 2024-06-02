@@ -15,6 +15,9 @@ import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
 import { CommentTaggedUserModule } from './comment_tagged_user/comment_tagged_user.module';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from './schedule/schedule.module';
+import { MenuModule } from './menu/menu.module';
+import { ClassModule } from './class/class.module';
 
 @Module({
   imports: [
@@ -41,6 +44,9 @@ import { JwtModule } from '@nestjs/jwt';
     HashtagModule,
     ImageModule,
     CommentTaggedUserModule,
+    ScheduleModule,
+    MenuModule,
+    ClassModule,
   ],
   controllers: [AppController],
   providers: [

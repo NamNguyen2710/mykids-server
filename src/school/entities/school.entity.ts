@@ -1,6 +1,3 @@
-import { Images } from 'src/image/entities/image.entity';
-import { Posts } from 'src/post/entities/post.entity';
-import { Users } from 'src/users/entity/users.entity';
 import {
   Column,
   Entity,
@@ -11,6 +8,10 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Classes } from 'src/class/entities/class.entity';
+import { Images } from 'src/image/entities/image.entity';
+import { Posts } from 'src/post/entities/post.entity';
+import { Users } from 'src/users/entity/users.entity';
 
 @Entity()
 export class Schools {
@@ -44,4 +45,7 @@ export class Schools {
     inverseJoinColumn: { name: 'parent_id' },
   })
   parents: Users[];
+
+  @OneToMany(() => Classes, (classes) => classes.school)
+  classes: Classes[];
 }

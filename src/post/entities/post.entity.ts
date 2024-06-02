@@ -28,7 +28,12 @@ export class Posts {
   @Column({ default: true })
   isPublished: boolean;
 
-  @OneToMany(() => Images, (photo) => photo.post)
+  @ManyToMany(() => Images, (photo) => photo.posts)
+  @JoinTable({
+    name: 'post_images',
+    joinColumn: { name: 'post_id' },
+    inverseJoinColumn: { name: 'image_id' },
+  })
   photos: Images[];
 
   @OneToMany(() => Comments, (comment) => comment.belongedTo)
