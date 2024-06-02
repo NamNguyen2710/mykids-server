@@ -8,7 +8,7 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Classes } from 'src/class/entities/class.entity';
+import { Classrooms } from 'src/class/entities/class.entity';
 import { Images } from 'src/image/entities/image.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
@@ -46,6 +46,6 @@ export class Schools {
   })
   parents: Users[];
 
-  @OneToMany(() => Classes, (classes) => classes.school)
-  classes: Classes[];
+  @OneToMany(() => Classrooms, (classroom) => classroom.school)
+  classes: Classrooms[];
 }

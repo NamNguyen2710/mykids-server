@@ -26,10 +26,10 @@ export class Meal {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'enum', enum: MealType })
+  @Column({ type: 'enum', enum: MealType, nullable: true })
   type: MealType;
 
   @ManyToOne(() => Menus, (menu) => menu.meals)

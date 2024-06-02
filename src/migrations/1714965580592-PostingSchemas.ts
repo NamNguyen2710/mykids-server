@@ -104,6 +104,9 @@ export class PostingSchemas1714965580592 implements MigrationInterface {
     await queryRunner.query(`DROP TABLE "post_likes"`);
     await queryRunner.query(`DROP TABLE "school_parents"`);
     await queryRunner.query(`DROP TABLE "comments"`);
+    await queryRunner.query(
+      `ALTER TABLE images DROP CONSTRAINT images_post_id_fkey`,
+    );
     await queryRunner.query(`DROP TABLE "posts"`);
     await queryRunner.query(`DROP TABLE "schools"`);
     await queryRunner.query(`DROP TABLE "images"`);

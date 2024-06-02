@@ -3,12 +3,14 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { Meal } from './meal.entity';
 import { Images } from 'src/image/entities/image.entity';
+import { Classrooms } from 'src/class/entities/class.entity';
 
 export enum MealPeriod {
   Breakfast = 'breakfast',
@@ -25,7 +27,7 @@ export class Menus {
   @Column()
   name: string;
 
-  @Column()
+  @Column({ nullable: true })
   description: string;
 
   @Column({ type: 'enum', enum: MealPeriod })
@@ -33,6 +35,10 @@ export class Menus {
 
   @OneToMany(() => Meal, (meal) => meal.menu)
   meals: Meal[];
+
+  @ManyToOne(() => Classrooms, (classroom) => classroom.menus)
+  @JoinTable({ name: 'menu_classroom' })
+  classroom: Classrooms;
 
   @ManyToMany(() => Images, (image) => image.menus)
   @JoinTable({
