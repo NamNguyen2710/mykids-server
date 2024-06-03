@@ -41,17 +41,18 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
 			)`,
     );
     await queryRunner.query(
-      `CREATE TABLE "menu" (
+      `CREATE TABLE "menus" (
         "menu_id" int generated always as identity primary key,
         "name" varchar(50) not null,
         "description" text,
+        "date" date not null,
         "meal_period" enum('breakfast', 'lunch', 'supper', 'dinner') not null
         class_id int not null,
         FOREIGN KEY (class_id) REFERENCES classrooms (class_id)
       )`,
     );
     await queryRunner.query(
-      `CREATE TABLE "meal" (
+      `CREATE TABLE "meals" (
         "meal_id" int generated always as identity primary key,
         "name" varchar(50) not null,
         "description" text,

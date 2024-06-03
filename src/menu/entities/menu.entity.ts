@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-import { Meal } from './meal.entity';
+import { Meals } from './meal.entity';
 import { Images } from 'src/image/entities/image.entity';
 import { Classrooms } from 'src/class/entities/class.entity';
 
@@ -33,8 +33,11 @@ export class Menus {
   @Column({ type: 'enum', enum: MealPeriod })
   mealPeriod: MealPeriod;
 
-  @OneToMany(() => Meal, (meal) => meal.menu)
-  meals: Meal[];
+  @Column({ type: 'date' })
+  date: Date;
+
+  @OneToMany(() => Meals, (meal) => meal.menu)
+  meals: Meals[];
 
   @ManyToOne(() => Classrooms, (classroom) => classroom.menus)
   @JoinTable({ name: 'menu_classroom' })

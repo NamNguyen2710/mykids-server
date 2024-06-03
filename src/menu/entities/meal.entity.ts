@@ -19,7 +19,7 @@ export enum MealType {
 }
 
 @Entity()
-export class Meal {
+export class Meals {
   @PrimaryGeneratedColumn({ name: 'meal_id' })
   id: number;
 
