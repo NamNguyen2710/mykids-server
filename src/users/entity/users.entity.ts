@@ -13,10 +13,10 @@ import {
 } from 'typeorm';
 import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
-import { Comments } from 'src/comment/entities/comment.entity';
 import { Schools } from 'src/school/entities/school.entity';
-import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Students } from 'src/student/entities/student.entity';
+import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
+import { Notifications } from 'src/notifications/entities/notification.entity';
 
 @Entity()
 export class Users {
@@ -64,7 +64,10 @@ export class Users {
   likedPosts: Posts[];
 
   @OneToMany(() => CommentTaggedUser, (comment) => comment.user)
-  taggedComments: Comments[];
+  taggedComments: CommentTaggedUser[];
+
+  @OneToMany(() => Notifications, (notification) => notification.users.id)
+  notification: Notifications[];
 
   @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
