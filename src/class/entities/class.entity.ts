@@ -9,6 +9,8 @@ import {
 import { Schools } from 'src/school/entities/school.entity';
 import { Schedules } from 'src/schedule/entities/schedule.entities';
 import { Menus } from 'src/menu/entities/menu.entity';
+import { SchoolYear } from 'src/school-year/entities/school-year.entity';
+import { ClassHistory } from 'src/class-history/entities/class-history.entity';
 
 @Entity()
 export class Classrooms {
@@ -31,9 +33,15 @@ export class Classrooms {
   @JoinColumn({ name: 'school_id' })
   school: Schools;
 
+  @ManyToOne(() => SchoolYear, (schoolYear) => schoolYear.classes)
+  schoolYear: SchoolYear;
+
   @OneToMany(() => Schedules, (schedule) => schedule.classroom)
   schedules: Schedules[];
 
   @OneToMany(() => Menus, (menu) => menu.classroom)
   menus: Menus[];
+
+  @OneToMany(() => ClassHistory, (history) => history.classes)
+  students: ClassHistory[];
 }

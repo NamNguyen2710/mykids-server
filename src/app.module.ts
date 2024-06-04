@@ -18,6 +18,9 @@ import { JwtModule } from '@nestjs/jwt';
 import { ScheduleModule } from './schedule/schedule.module';
 import { MenuModule } from './menu/menu.module';
 import { ClassModule } from './class/class.module';
+import { StudentModule } from './student/student.module';
+import { SchoolYearModule } from './school-year/school-year.module';
+import { ClassHistoryModule } from './class-history/class-history.module';
 
 @Module({
   imports: [
@@ -47,6 +50,9 @@ import { ClassModule } from './class/class.module';
     ScheduleModule,
     MenuModule,
     ClassModule,
+    StudentModule,
+    SchoolYearModule,
+    ClassHistoryModule,
   ],
   controllers: [AppController],
   providers: [

@@ -12,6 +12,8 @@ import { Classrooms } from 'src/class/entities/class.entity';
 import { Images } from 'src/image/entities/image.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
+import { SchoolYear } from 'src/school-year/entities/school-year.entity';
+import { Student } from 'src/student/entities/student.entity';
 
 @Entity()
 export class Schools {
@@ -46,6 +48,12 @@ export class Schools {
   })
   parents: Users[];
 
+  @OneToMany(() => SchoolYear, (schoolYear) => schoolYear.school)
+  schoolYears: SchoolYear[];
+
   @OneToMany(() => Classrooms, (classroom) => classroom.school)
   classes: Classrooms[];
+
+  @OneToMany(() => Student, (student) => student.school)
+  students: Student[];
 }
