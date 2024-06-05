@@ -4,21 +4,14 @@ import {
   PrimaryGeneratedColumn,
   JoinColumn,
   ManyToOne,
-  JoinTable,
   CreateDateColumn,
 } from 'typeorm';
-import { NotificationToken } from './notification-token.entity';
 import { Users } from 'src/users/entity/users.entity';
-import { timeStamp } from 'console';
 
 @Entity({ name: 'notifications' })
 export class Notifications {
   @PrimaryGeneratedColumn({ name: 'notification_id' })
   id: number;
-
-  // @JoinColumn({ name: 'notification_token_id', referencedColumnName: 'id' })
-  // @ManyToOne(() => NotificationToken)
-  // notificationToken: NotificationToken;
 
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   @ManyToOne(() => Users)

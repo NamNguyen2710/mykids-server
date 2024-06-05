@@ -4,7 +4,7 @@ import { NotificationsController } from './notifications.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Notifications } from './entities/notification.entity';
 import { NotificationToken } from './entities/notification-token.entity';
-import { FirebaseModule } from './firebase.module';
+import { FirebaseModule } from '../firebase/firebase.module';
 import { Users } from 'src/users/entity/users.entity';
 
 @Module({

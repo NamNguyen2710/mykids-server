@@ -3,10 +3,17 @@ import * as admin from 'firebase-admin';
 import { ConfigService } from '@nestjs/config';
 import { ConfigModule } from '@nestjs/config';
 import * as path from 'path';
+import { FireBaseService } from './firebase.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { NotificationToken } from 'src/notifications/entities/notification-token.entity';
+import { Notifications } from 'src/notifications/entities/notification.entity';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forFeature([NotificationToken, Notifications]),
+  ],
   providers: [
     {
       provide: 'FIREBASE_ADMIN',
@@ -25,7 +32,8 @@ import * as path from 'path';
       },
       inject: [ConfigService],
     },
+    FireBaseService,
   ],
-  exports: ['FIREBASE_ADMIN'],
+  exports: ['FIREBASE_ADMIN', FireBaseService],
 })
 export class FirebaseModule {}
