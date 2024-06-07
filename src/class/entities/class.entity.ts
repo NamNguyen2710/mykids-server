@@ -5,7 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   OneToMany,
-  AfterLoad,
 } from 'typeorm';
 import { Schools } from 'src/school/entities/school.entity';
 import { Schedules } from 'src/schedule/entities/schedule.entity';
@@ -49,11 +48,4 @@ export class Classrooms {
 
   @OneToMany(() => ClassHistories, (history) => history.classroom)
   students: ClassHistories[];
-
-  // Listeners
-  @AfterLoad()
-  removeIds() {
-    if (this.school) delete this.schoolId;
-    if (this.schoolYear) delete this.schoolYearId;
-  }
 }

@@ -24,8 +24,8 @@ export class NotificationsController {
   // }
 
   @Post('test')
-  async sendTestNoti() {
-    this.notificationsService.testNoti();
+  async sendTestNoti(@Body() token: string) {
+    this.notificationsService.testNoti(token);
   }
 
   @Get('save')

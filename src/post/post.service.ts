@@ -8,23 +8,25 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import * as XRegExp from 'xregexp';
 
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { UserService } from 'src/users/users.service';
+
 import { Posts } from './entities/post.entity';
 import { Hashtags } from './entities/hashtag.entity';
 import { QueryPostDto } from './dto/query-post.dto';
-import { ResponsePostDto } from './dto/response-post.dto';
 import { CreatePostDto } from './dto/create-post.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
-import { UserService } from 'src/users/users.service';
 import { UpdatePostDto } from 'src/post/dto/update-post.dto';
+import { ListResponse } from 'src/utils/list-response.dto';
+import { ResponsePostDto } from './dto/response-post.dto';
 
 @Injectable()
 export class PostService {
   constructor(
-    private readonly userService: UserService,
-    @InjectRepository(Posts)
-    private readonly postRepo: Repository<Posts>,
+    @InjectRepository(Posts) private readonly postRepo: Repository<Posts>,
     @InjectRepository(Hashtags)
     private readonly hashtagRepo: Repository<Hashtags>,
+    private readonly userService: UserService,
+    private readonly notificationService: NotificationsService,
   ) {}
 
   async findSchoolPosts(
@@ -125,6 +127,16 @@ export class PostService {
     };
   }
 
+  async getOnePost(userId: number, postId: number): Promise<Posts> {
+    if (!userId) throw new NotFoundException('Unauthorized!');
+    const post = this.postRepo.findOne({
+      where: { id: postId, school: { parents: { id: userId } } },
+    });
+    if (!post) throw new NotFoundException('Post not found');
+
+    return post;
+  }
+
   async create(userId: number, post: CreatePostDto): Promise<Posts> {
     const hashtagRegex = XRegExp('#[\\p{L}_]+', 'g');
     const hashtagList = XRegExp.match(post.message, hashtagRegex, 'all') || [];
@@ -147,6 +159,13 @@ export class PostService {
       hashtags,
     });
     await this.postRepo.save(newPost);
+
+    this.notificationService.createNotification(
+      newPost.schoolId,
+      'New Post',
+      'Created New Post',
+      { postId: newPost.id.toString() },
+    );
 
     return this.postRepo.findOne({
       where: { id: newPost.id },

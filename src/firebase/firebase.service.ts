@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
 import { Notifications } from 'src/notifications/entities/notification.entity';
-import { NotificationsService } from 'src/notifications/notifications.service';
+// import { NotificationsService } from 'src/notifications/notifications.service';
 import { Repository } from 'typeorm';
 
 import * as admin from 'firebase-admin';
@@ -57,10 +57,10 @@ export class FireBaseService {
     }
   }
 
-  async sendTestNoti() {
+  async sendTestNoti(token: string) {
     this.firebaseAdmin.messaging().send({
       token:
-        'dT6jTgdcRAmIrZDfbDNmbz:APA91bExpkzn_bsBCUmVilnz9txUFhLUsZaiB7OT4E2pOyuoUxFUcJjURPJmzky1QY_hhbpDEuRBML_20ygP8KM1GO-uI-Rdxq1o72FPk5LUaDJ6eH8aAatyauBzCnAq4-RIvVBYSQur',
+        'fDpxKQniQLqttguDXuDxIm:APA91bHrKVBbywkLvBNWiZUFSqPXcfK5InoncK50aZakqzyVdvDC92UVCOHdtxDiPIwU62g88VCNEyAWVDQjhUyIJXPajv81jcZe_uZ0EYL2UZ55bDnS8qnx1g0Kv1ckVeazy-fXLKrz',
       notification: {
         title: 'Testing',
         body: 'Test only',

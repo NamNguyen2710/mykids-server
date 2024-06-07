@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SendNotificationDTO } from './dto/send-notification.dto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { NotificationToken } from './entities/notification-token.entity';
 import { SaveTokenDTO } from './dto/save-token.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -26,20 +26,53 @@ export class NotificationsService {
     private readonly firebaseService: FireBaseService,
   ) {}
 
-  async testNoti() {
-    this.firebaseService.sendTestNoti();
+  async testNoti(token: string) {
+    this.firebaseService.sendTestNoti(token);
   }
 
-  // async createNotification(userId: number, title: string, body: string) {
-  //   if (!userId) throw new UnauthorizedException('Not Authorized');
-  //   const user = await this.userRepo.findOne({ where: { id: userId } });
+  // Create and send notification
+  async createNotification(
+    schoolId: number,
+    title: string,
+    body: string,
+    data?: { [key: string]: string },
+  ) {
+    const getTokens = await this.notificationTokenRepo.find({
+      where: { user: { schools: { id: schoolId } } },
+    });
 
-  //   if (!user) throw new NotFoundException('User not found');
+    // Get token as string array
+    const tokens = getTokens.map((token) => token.notificationToken);
+
+    // Create all notification add into array to save into db
+    const notificationsData = getTokens.map((token) => {
+      const notification = new Notifications();
+      notification.users.id = token.user.id;
+      notification.title = title;
+      notification.body = body;
+      return notification;
+    });
+
+    // Create notification payload
+    const notification = {
+      tokens: tokens,
+      notification: {
+        title: title,
+        body: body,
+      },
+      data: data,
+    };
+
+    // Send notification
+    this.firebaseService.sendNotiFirebase(notification);
+
+    // Save notification
+    this.notificationRepo.save(notificationsData);
+  }
+
+  // async sendingNotification(sendNotificationDTO: SendNotificationDTO) {
+  //   this.firebaseService.sendNotiFirebase(sendNotificationDTO);
   // }
-
-  async sendingNotification(sendNotificationDTO: SendNotificationDTO) {
-    this.firebaseService.sendNotiFirebase(sendNotificationDTO);
-  }
 
   async saveToken(userId: number, saveToken: SaveTokenDTO) {
     saveToken.userId = userId;
