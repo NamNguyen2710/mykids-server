@@ -1,3 +1,5 @@
+import { NotificationToken } from '../entities/notification-token.entity';
+
 export class SendNotificationDTO {
   tokens: string[];
   notification: {
