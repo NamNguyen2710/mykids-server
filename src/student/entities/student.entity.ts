@@ -2,6 +2,8 @@ import {
   Column,
   Entity,
   JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -9,7 +11,7 @@ import {
 
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
-import { ClassHistory } from 'src/class-history/entities/class-history.entity';
+import { ClassHistories } from 'src/class-history/entities/class-history.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -17,7 +19,7 @@ export enum Gender {
 }
 
 @Entity()
-export class Student {
+export class Students {
   @PrimaryGeneratedColumn({ name: 'student_id' })
   id: number;
 
@@ -51,14 +53,18 @@ export class Student {
   @Column()
   isActive: boolean;
 
-  @ManyToOne(() => Users, (user) => user.children)
-  @JoinColumn({ name: 'parent_id' })
-  parent: Users;
+  @ManyToMany(() => Users, (user) => user.children)
+  @JoinTable({
+    name: 'children_parents',
+    joinColumn: { name: 'student_id' },
+    inverseJoinColumn: { name: 'parent_id' },
+  })
+  parents: Users[];
 
   @ManyToOne(() => Schools, (school) => school.students)
   @JoinColumn({ name: 'school_id' })
   school: Schools;
 
-  @OneToMany(() => ClassHistory, (history) => history.student)
-  history: ClassHistory[];
+  @OneToMany(() => ClassHistories, (history) => history.student)
+  history: ClassHistories[];
 }

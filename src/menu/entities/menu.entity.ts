@@ -2,14 +2,12 @@ import {
   Column,
   Entity,
   JoinTable,
-  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { Meals } from './meal.entity';
-import { Images } from 'src/image/entities/image.entity';
 import { Classrooms } from 'src/class/entities/class.entity';
 
 export enum MealPeriod {
@@ -42,12 +40,4 @@ export class Menus {
   @ManyToOne(() => Classrooms, (classroom) => classroom.menus)
   @JoinTable({ name: 'menu_classroom' })
   classroom: Classrooms;
-
-  @ManyToMany(() => Images, (image) => image.menus)
-  @JoinTable({
-    name: 'menu_images',
-    joinColumn: { name: 'menu_id' },
-    inverseJoinColumn: { name: 'image_id' },
-  })
-  images: Images[];
 }

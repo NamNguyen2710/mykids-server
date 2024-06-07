@@ -9,8 +9,8 @@ import {
 import { Schools } from 'src/school/entities/school.entity';
 import { Schedules } from 'src/schedule/entities/schedule.entities';
 import { Menus } from 'src/menu/entities/menu.entity';
-import { SchoolYear } from 'src/school-year/entities/school-year.entity';
-import { ClassHistory } from 'src/class-history/entities/class-history.entity';
+import { SchoolYears } from 'src/school-year/entities/school-year.entity';
+import { ClassHistories } from 'src/class-history/entities/class-history.entity';
 
 @Entity()
 export class Classrooms {
@@ -19,9 +19,6 @@ export class Classrooms {
 
   @Column()
   name: string;
-
-  @Column({ nullable: true })
-  grade: string;
 
   @Column({ nullable: true })
   location: string;
@@ -33,8 +30,8 @@ export class Classrooms {
   @JoinColumn({ name: 'school_id' })
   school: Schools;
 
-  @ManyToOne(() => SchoolYear, (schoolYear) => schoolYear.classes)
-  schoolYear: SchoolYear;
+  @ManyToOne(() => SchoolYears, (schoolYear) => schoolYear.classes)
+  schoolYear: SchoolYears;
 
   @OneToMany(() => Schedules, (schedule) => schedule.classroom)
   schedules: Schedules[];
@@ -42,6 +39,6 @@ export class Classrooms {
   @OneToMany(() => Menus, (menu) => menu.classroom)
   menus: Menus[];
 
-  @OneToMany(() => ClassHistory, (history) => history.classes)
-  students: ClassHistory[];
+  @OneToMany(() => ClassHistories, (history) => history.classroom)
+  students: ClassHistories[];
 }

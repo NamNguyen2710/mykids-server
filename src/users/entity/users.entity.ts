@@ -14,7 +14,7 @@ import { Posts } from 'src/post/entities/post.entity';
 import { Comments } from 'src/comment/entities/comment.entity';
 import { Schools } from 'src/school/entities/school.entity';
 import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
-import { Student } from 'src/student/entities/student.entity';
+import { Students } from 'src/student/entities/student.entity';
 
 @Entity()
 export class Users {
@@ -61,6 +61,6 @@ export class Users {
   @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
 
-  @OneToMany(() => Student, (student) => student.parent)
-  children: Student[];
+  @ManyToMany(() => Students, (student) => student.parents)
+  children: Students[];
 }

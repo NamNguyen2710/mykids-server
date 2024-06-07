@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-import { Menus } from 'src/menu/entities/menu.entity';
 import { Posts } from 'src/post/entities/post.entity';
+import { Meals } from 'src/menu/entities/meal.entity';
 
 @Entity()
 export class Images {
@@ -14,6 +14,6 @@ export class Images {
   @ManyToMany(() => Posts, (post) => post.photos)
   posts: Posts[];
 
-  @ManyToMany(() => Menus, (menu) => menu.images)
-  menus: Menus[];
+  @ManyToMany(() => Meals, (meal) => meal.images)
+  meals: Meals[];
 }

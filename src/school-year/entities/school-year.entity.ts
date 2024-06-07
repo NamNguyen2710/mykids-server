@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 @Entity()
-export class SchoolYear {
+export class SchoolYears {
   @PrimaryGeneratedColumn({ name: 'school_year_id' })
   id: number;
 
@@ -20,10 +20,10 @@ export class SchoolYear {
   @Column()
   isActive: boolean;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'date' })
   startDate: Date;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'date' })
   endDate: Date;
 
   @ManyToOne(() => Schools, (school) => school.schoolYears)
