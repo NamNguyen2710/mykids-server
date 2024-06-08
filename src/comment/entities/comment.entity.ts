@@ -11,6 +11,7 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
+  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -21,13 +22,11 @@ export class Comments {
   @Column()
   message: string;
 
-  @ManyToOne(() => Users)
-  @JoinColumn()
-  createdBy: Users;
+  @Column()
+  createdById: number;
 
-  @ManyToOne(() => Posts, (post) => post.comments)
-  @JoinColumn({ name: 'belonged_to_id' })
-  belongedTo: Posts;
+  @Column()
+  belongedToId: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -38,6 +37,20 @@ export class Comments {
   @DeleteDateColumn({ type: 'timestamptz' })
   deletedAt: Date;
 
+  @ManyToOne(() => Users)
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: Users;
+
+  @ManyToOne(() => Posts, (post) => post.comments)
+  @JoinColumn({ name: 'belonged_to_id' })
+  belongedTo: Posts;
+
   @OneToMany(() => CommentTaggedUser, (taggedUser) => taggedUser.comment)
   taggedUsers: CommentTaggedUser[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.createdBy) delete this.createdById;
+    if (this.belongedTo) delete this.belongedToId;
+  }
 }

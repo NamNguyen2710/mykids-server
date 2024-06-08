@@ -1,6 +1,13 @@
 import { Classrooms } from 'src/class/entities/class.entity';
 import { Students } from 'src/student/entities/student.entity';
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import {
+  AfterLoad,
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryColumn,
+} from 'typeorm';
 
 @Entity()
 export class ClassHistories {
@@ -20,4 +27,10 @@ export class ClassHistories {
 
   @Column()
   description: string;
+
+  @AfterLoad()
+  removeIds() {
+    if (this.classroom) delete this.classId;
+    if (this.student) delete this.studentId;
+  }
 }

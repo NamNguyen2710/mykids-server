@@ -6,6 +6,7 @@ import {
   ManyToMany,
   JoinColumn,
   JoinTable,
+  AfterLoad,
 } from 'typeorm';
 
 import { Menus } from 'src/menu/entities/menu.entity';
@@ -45,6 +46,9 @@ export class Meals {
   @Column({ type: 'enum', enum: MealType, nullable: true })
   type: MealType;
 
+  @Column()
+  menuId: number;
+
   @ManyToOne(() => Menus, (menu) => menu.meals)
   @JoinColumn({ name: 'menu_id' })
   menu: Menus;
@@ -56,4 +60,9 @@ export class Meals {
     inverseJoinColumn: { name: 'image_id' },
   })
   images: Images[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.menu) delete this.menuId;
+  }
 }

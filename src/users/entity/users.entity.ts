@@ -8,6 +8,7 @@ import {
   JoinColumn,
   ManyToMany,
   OneToMany,
+  AfterLoad,
 } from 'typeorm';
 import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
@@ -20,6 +21,9 @@ import { Students } from 'src/student/entities/student.entity';
 export class Users {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   id: number;
+
+  @Column()
+  roleId: number;
 
   @ManyToOne(() => Roles, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })
@@ -63,4 +67,9 @@ export class Users {
 
   @ManyToMany(() => Students, (student) => student.parents)
   children: Students[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.role) delete this.roleId;
+  }
 }

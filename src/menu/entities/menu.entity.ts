@@ -1,7 +1,7 @@
 import {
   Column,
   Entity,
-  JoinTable,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -34,10 +34,13 @@ export class Menus {
   @Column({ type: 'date' })
   date: Date;
 
+  @Column()
+  classId: number;
+
   @OneToMany(() => Meals, (meal) => meal.menu)
   meals: Meals[];
 
   @ManyToOne(() => Classrooms, (classroom) => classroom.menus)
-  @JoinTable({ name: 'menu_classroom' })
+  @JoinColumn({ name: 'class_id' })
   classroom: Classrooms;
 }

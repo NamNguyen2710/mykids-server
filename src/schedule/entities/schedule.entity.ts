@@ -1,5 +1,11 @@
 import { Classrooms } from 'src/class/entities/class.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 
 @Entity()
 export class Schedules {
@@ -21,6 +27,10 @@ export class Schedules {
   @Column({ nullable: true })
   location: string;
 
+  @Column()
+  classId: number;
+
   @ManyToOne(() => Classrooms, (classes) => classes.schedules)
+  @JoinColumn({ name: 'class_id' })
   classroom: Classrooms;
 }

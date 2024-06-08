@@ -15,6 +15,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -27,21 +28,6 @@ export class Posts {
 
   @Column({ default: true })
   isPublished: boolean;
-
-  @ManyToMany(() => Images, (photo) => photo.posts)
-  @JoinTable({
-    name: 'post_images',
-    joinColumn: { name: 'post_id' },
-    inverseJoinColumn: { name: 'image_id' },
-  })
-  photos: Images[];
-
-  @OneToMany(() => Comments, (comment) => comment.belongedTo)
-  comments: Comments[];
-
-  @ManyToOne(() => Users, (user) => user.createdPosts)
-  @JoinColumn()
-  createdBy: Users;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -58,8 +44,18 @@ export class Posts {
   @Column({ name: 'school_id' })
   schoolId: number;
 
+  @Column({ name: 'created_by_id' })
+  createdById: number;
+
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
+
+  @ManyToOne(() => Users, (user) => user.createdPosts)
+  @JoinColumn()
+  createdBy: Users;
+
+  @OneToMany(() => Comments, (comment) => comment.belongedTo)
+  comments: Comments[];
 
   @ManyToMany(() => Users, (user) => user.likedPosts)
   @JoinTable({
@@ -77,6 +73,17 @@ export class Posts {
   })
   hashtags: Hashtags[];
 
-  likeCount: number;
-  commentCount: number;
+  @ManyToMany(() => Images, (photo) => photo.posts)
+  @JoinTable({
+    name: 'post_images',
+    joinColumn: { name: 'post_id' },
+    inverseJoinColumn: { name: 'image_id' },
+  })
+  photos: Images[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.school) delete this.schoolId;
+    if (this.createdBy) delete this.createdById;
+  }
 }

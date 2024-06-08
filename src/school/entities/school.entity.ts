@@ -1,4 +1,5 @@
 import {
+  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -27,8 +28,11 @@ export class Schools {
   @JoinColumn()
   schoolAdmin: Users;
 
+  @Column()
+  logoId: number;
+
   @OneToOne(() => Images, { nullable: true })
-  @JoinColumn()
+  @JoinColumn({ name: 'logo_id' })
   logo: Images | null;
 
   @Column({ nullable: true })
@@ -56,4 +60,9 @@ export class Schools {
 
   @OneToMany(() => Students, (student) => student.school)
   students: Students[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.logo) delete this.logoId;
+  }
 }

@@ -1,4 +1,5 @@
 import {
+  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -53,6 +54,9 @@ export class Students {
   @Column()
   isActive: boolean;
 
+  @Column()
+  schoolId: number;
+
   @ManyToMany(() => Users, (user) => user.children)
   @JoinTable({
     name: 'children_parents',
@@ -67,4 +71,9 @@ export class Students {
 
   @OneToMany(() => ClassHistories, (history) => history.student)
   history: ClassHistories[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.school) delete this.schoolId;
+  }
 }
