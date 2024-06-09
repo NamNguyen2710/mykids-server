@@ -1,1 +1,6 @@
-export class CreateClassDto {}
+export class CreateClassDto {
+  name: string;
+  location?: string;
+  schoolId: number;
+  schoolYearId: number;
+}

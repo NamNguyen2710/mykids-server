@@ -24,11 +24,14 @@ export class Schools {
   @Column()
   name: string;
 
+  @Column()
+  schoolAdminId: number;
+
   @OneToOne(() => Users)
   @JoinColumn()
   schoolAdmin: Users;
 
-  @Column()
+  @Column({ nullable: true })
   logoId: number;
 
   @OneToOne(() => Images, { nullable: true })
