@@ -41,18 +41,21 @@ import { ClassHistoryModule } from './class-history/class-history.module';
 
     UsersModule,
     AuthModule,
-    PostModule,
-    SchoolModule,
-    CommentModule,
-    HashtagModule,
     ImageModule,
+
+    SchoolModule,
+    SchoolYearModule,
+    ClassModule,
+    ClassHistoryModule,
+    StudentModule,
+
+    PostModule,
+    CommentModule,
     CommentTaggedUserModule,
+    HashtagModule,
+
     ScheduleModule,
     MenuModule,
-    ClassModule,
-    StudentModule,
-    SchoolYearModule,
-    ClassHistoryModule,
   ],
   controllers: [AppController],
   providers: [

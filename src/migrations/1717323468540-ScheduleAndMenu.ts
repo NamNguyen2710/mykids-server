@@ -14,12 +14,12 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
         "image_id" integer NOT NULL, 
         PRIMARY KEY ("post_id", "image_id"),
         FOREIGN KEY (post_id) REFERENCES posts (post_id),
-        FOREIGN KEY (image_id) REFERENCES hashtags (image_id)
+        FOREIGN KEY (image_id) REFERENCES images (image_id)
       )`,
     );
     await queryRunner.query(
       `CREATE TABLE "school_years" (
-        "school_year_id" innt generated always as identity primary key,
+        "school_year_id" int generated always as identity primary key,
         "year" varchar(20) NOT NULL,
         "is_active" boolean NOT NULL DEFAULT true,
         "start_date" date NOT NULL,
@@ -41,6 +41,9 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
 			)`,
     );
     await queryRunner.query(
+      `CREATE TYPE student_gender AS ENUM('male', 'female')`,
+    );
+    await queryRunner.query(
       `CREATE TABLE "students" (
 				"student_id" int generated always as identity primary key, 
 				"first_name" varchar(50) not null,
@@ -49,9 +52,9 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
 				"permanent_address" varchar(100) not null,
 				"current_address" varchar(100) not null,
         "ethnic" varchar(20) not null,
-        "birth_place" varchar(20) not,
-        "gender" enum('male', 'female') not null,
-				"is_active" boolean NOT NULL DEFAULT true, 
+        "birth_place" varchar(20) not null,
+        "gender" student_gender not null,
+        "is_active" boolean NOT NULL DEFAULT true, 
         "information" text,
         "school_id" int not null,
 				FOREIGN KEY (school_id) REFERENCES schools (school_id)
@@ -64,7 +67,7 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
         "description" text,
         PRIMARY KEY ("student_id", "class_id"),
 				FOREIGN KEY (student_id) REFERENCES students (student_id),
-				FOREIGN KEY class_id) REFERENCES classrooms (class_id)
+				FOREIGN KEY (class_id) REFERENCES classrooms (class_id)
 			)`,
     );
     await queryRunner.query(
@@ -89,15 +92,21 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
 			)`,
     );
     await queryRunner.query(
+      `CREATE TYPE meal_period AS ENUM('breakfast', 'lunch', 'supper', 'dinner')`,
+    );
+    await queryRunner.query(
       `CREATE TABLE "menus" (
         "menu_id" int generated always as identity primary key,
         "name" varchar(50) not null,
         "description" text,
         "date" date not null,
-        "meal_period" enum('breakfast', 'lunch', 'supper', 'dinner') not null
-        class_id int not null,
+        "meal_period" meal_period not null,
+        "class_id" int not null,
         FOREIGN KEY (class_id) REFERENCES classrooms (class_id)
       )`,
+    );
+    await queryRunner.query(
+      `CREATE TYPE meal_type AS ENUM('appetizer', 'vegetable', 'main', 'side', 'soup', 'beverage', 'dessert', 'other')`,
     );
     await queryRunner.query(
       `CREATE TABLE "meals" (
@@ -107,7 +116,7 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
         "nutrition" text,
         "is_vegetarian" boolean,
         "is_gluten_free" boolean,
-        "type" enum('appetizer', 'vegetable', 'main', 'side', 'soup', 'beverage', 'dessert', 'other') not null,
+        "type" meal_type not null,
         "menu_id" int not null,
         FOREIGN KEY (menu_id) REFERENCES menus (menu_id)
       )`,
@@ -117,7 +126,7 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
         "meal_id" int not null,
         "image_id" int not null,
         PRIMARY KEY ("meal_id", "image_id"),
-        FOREIGN KEY (meal_id) REFERENCES meal (meal_id),
+        FOREIGN KEY (meal_id) REFERENCES meals (meal_id),
         FOREIGN KEY (image_id) REFERENCES images (image_id)
       )`,
     );
