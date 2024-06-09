@@ -9,6 +9,7 @@ import {
   ManyToMany,
   OneToMany,
   AfterLoad,
+  OneToOne,
 } from 'typeorm';
 import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
@@ -52,6 +53,9 @@ export class Users {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @OneToOne(() => Schools, (school) => school.schoolAdmin)
+  assignedSchool: Schools;
 
   @OneToMany(() => Posts, (post) => post.createdBy)
   createdPosts: Posts[];
