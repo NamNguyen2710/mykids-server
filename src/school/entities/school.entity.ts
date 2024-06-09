@@ -27,8 +27,8 @@ export class Schools {
   @Column()
   schoolAdminId: number;
 
-  @OneToOne(() => Users)
-  @JoinColumn()
+  @OneToOne(() => Users, (admin) => admin.assignedSchool)
+  @JoinColumn({ name: 'school_admin_id' })
   schoolAdmin: Users;
 
   @Column({ nullable: true })

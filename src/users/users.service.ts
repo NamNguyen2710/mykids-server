@@ -12,14 +12,21 @@ export class UserService {
   ) {}
 
   async findAll(
-    isActive: boolean = true,
     relations: string[] = ['schools'],
+    isActive: boolean = true,
   ): Promise<Users[]> {
     return this.userRepository.find({ where: { isActive }, relations });
   }
 
-  async findOne(userId: number, isActive: boolean = true): Promise<Users> {
-    return this.userRepository.findOne({ where: { id: userId, isActive } });
+  async findOne(
+    userId: number,
+    relations: string[] = ['schools'],
+    isActive: boolean = true,
+  ): Promise<Users> {
+    return this.userRepository.findOne({
+      where: { id: userId, isActive },
+      relations,
+    });
   }
 
   async findOneByPhone(number: string, isActive: boolean = true) {

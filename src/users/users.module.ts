@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { UsersController } from './users.controller';
 import { UserService } from './users.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -8,6 +8,7 @@ import { Posts } from 'src/post/entities/post.entity';
 // import { JwtModule } from '@nestjs/jwt';
 // import { ConfigModule, ConfigService } from '@nestjs/config';
 
+@Global()
 @Module({
   imports: [UsersModule, TypeOrmModule.forFeature([Users, Posts])],
   controllers: [UsersController],
