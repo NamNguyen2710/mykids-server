@@ -1,4 +1,9 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateSchoolYearDto } from './create-school-year.dto';
+import { z } from 'zod';
 
-export class UpdateSchoolYearDto extends PartialType(CreateSchoolYearDto) {}
+export const UpdateSchoolYearSchema = z.object({
+  year: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+});
+
+export type UpdateSchoolYearDto = z.infer<typeof UpdateSchoolYearSchema>;

@@ -58,25 +58,19 @@ export class UserService {
 
   async validateParentClassPermission(userId: number, classId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, children: { history: { classId } } },
       relations: ['children', 'children.history'],
     });
 
-    if (!user) return false;
-
-    return user.children.some((child) =>
-      child.history.some((history) => history.classId === classId),
-    );
+    return !user;
   }
 
   async validateParentSchoolPermission(userId: number, schoolId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId },
+      where: { id: userId, schools: { id: schoolId } },
       relations: ['schools'],
     });
 
-    if (!user) return false;
-
-    return user.schools.some((school) => school.id === schoolId);
+    return !user;
   }
 }
