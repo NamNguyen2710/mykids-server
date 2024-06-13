@@ -31,7 +31,7 @@ export class Students {
   lastName: string;
 
   @Column({ type: 'date' })
-  dateOfBirth: number;
+  dateOfBirth: Date;
 
   @Column()
   permanentAddress: string;
