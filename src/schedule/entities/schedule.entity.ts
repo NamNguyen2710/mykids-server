@@ -5,6 +5,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -33,4 +34,9 @@ export class Schedules {
   @ManyToOne(() => Classrooms, (classes) => classes.schedules)
   @JoinColumn({ name: 'class_id' })
   classroom: Classrooms;
+
+  @AfterLoad()
+  removeIds() {
+    if (this.classroom) delete this.classId;
+  }
 }

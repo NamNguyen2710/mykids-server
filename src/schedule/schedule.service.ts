@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 
-import { Schedules } from 'src/schedule/entities/schedule.entities';
+import { Schedules } from 'src/schedule/entities/schedule.entity';
+import { ScheduleDetailDto } from 'src/schedule/dto/schedule-detail.dto';
 
 @Injectable()
 export class ScheduleService {
@@ -11,9 +12,7 @@ export class ScheduleService {
     private readonly scheduleRepository: Repository<Schedules>,
   ) {}
 
-  async findSchedule(userId: number, classId: number, date: Date = new Date()) {
-    // TODO: Verify userId through student
-
+  async findSchedule(classId: number, date: Date = new Date()) {
     const startTime = new Date(date);
     startTime.setHours(0, 0, 0, 0);
     const endTime = new Date(date);
@@ -27,5 +26,19 @@ export class ScheduleService {
       },
     });
     return schedule;
+  }
+
+  async createSchedule(schedule: ScheduleDetailDto) {
+    const newSchedule = this.scheduleRepository.create(schedule);
+    await this.scheduleRepository.save(newSchedule);
+
+    return newSchedule;
+  }
+
+  async updateSchedule(scheduleId: number, schedule: ScheduleDetailDto) {
+    const res = await this.scheduleRepository.update(scheduleId, schedule);
+    if (res.affected === 0) return null;
+
+    return this.scheduleRepository.findOne({ where: { id: scheduleId } });
   }
 }

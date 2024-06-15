@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
-import { Schedules } from 'src/schedule/entities/schedule.entities';
+import { Schedules } from 'src/schedule/entities/schedule.entity';
 import { ScheduleController } from 'src/schedule/schedule.controller';
 import { ScheduleService } from 'src/schedule/schedule.service';
 
