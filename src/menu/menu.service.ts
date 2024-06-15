@@ -1,31 +1,55 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 
 import { Menus } from 'src/menu/entities/menu.entity';
 import { Meals } from 'src/menu/entities/meal.entity';
+import { MenuDetail } from 'src/menu/dto/menu-detail.dto';
 
 @Injectable()
 export class MenuService {
   constructor(
-    @InjectRepository(Menus)
-    private readonly menuRepository: Repository<Menus>,
+    @InjectRepository(Menus) private readonly menuRepository: Repository<Menus>,
+    @InjectRepository(Meals) private readonly mealRepository: Repository<Meals>,
     private readonly dataSource: DataSource,
   ) {}
 
-  async findMenus(userId: number, classId: number, date: Date = new Date()) {
-    // TODO: Verify userId through student
+  async findMenus(classId: number, date: Date = new Date()) {
     const menus = await this.menuRepository.find({
-      where: {
-        classroom: { id: classId },
-        date,
-      },
-      relations: { meals: true, images: true },
+      where: { classroom: { id: classId }, date },
     });
     return menus;
   }
 
-  async createMenus() {}
+  async createMenu(menuDetail: MenuDetail) {
+    const meals = this.mealRepository.create(menuDetail.meals);
+
+    const menu = {
+      ...menuDetail,
+      meals,
+      classroom: { id: menuDetail.classId } as any,
+    };
+
+    const newMenu = this.menuRepository.create(menu);
+    await this.menuRepository.save(newMenu);
+
+    return this.menuRepository.findOne({ where: { id: newMenu.id } });
+  }
+
+  async updateMenu(menuId: number, menuDetail: MenuDetail) {
+    const menu = await this.menuRepository.findOne({ where: { id: menuId } });
+    if (!menu) throw new BadRequestException('Menu not found');
+
+    const meals = menuDetail.meals.map((meal) => {
+      if (meal.id && menu.meals.every((m) => m.id !== meal.id)) delete meal.id;
+      const newMeal = this.mealRepository.create(meal);
+      return newMeal;
+    });
+
+    Object.assign(menu, menuDetail, { meals });
+    await this.menuRepository.save(menu);
+    return this.menuRepository.findOne({ where: { id: menuId } });
+  }
 
   async findMeals(query: string) {
     const meals = await this.dataSource

@@ -19,10 +19,10 @@ export enum MealPeriod {
 
 @Entity()
 export class Menus {
-  @PrimaryGeneratedColumn({ name: 'meal_id' })
+  @PrimaryGeneratedColumn({ name: 'menu_id' })
   id: number;
 
-  @Column()
+  @Column({ nullable: true })
   name: string;
 
   @Column({ nullable: true })
@@ -37,7 +37,10 @@ export class Menus {
   @Column()
   classId: number;
 
-  @OneToMany(() => Meals, (meal) => meal.menu)
+  @OneToMany(() => Meals, (meal) => meal.menu, {
+    eager: true,
+    cascade: true,
+  })
   meals: Meals[];
 
   @ManyToOne(() => Classrooms, (classroom) => classroom.menus)

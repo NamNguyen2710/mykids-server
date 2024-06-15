@@ -97,7 +97,7 @@ export class ScheduleAndMenu1717323468540 implements MigrationInterface {
     await queryRunner.query(
       `CREATE TABLE "menus" (
         "menu_id" int generated always as identity primary key,
-        "name" varchar(50) not null,
+        "name" varchar(50),
         "description" text,
         "date" date not null,
         "meal_period" meal_period not null,

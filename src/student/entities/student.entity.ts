@@ -59,7 +59,7 @@ export class Students {
 
   @ManyToMany(() => Users, (user) => user.children)
   @JoinTable({
-    name: 'children_parents',
+    name: 'students_parents',
     joinColumn: { name: 'student_id' },
     inverseJoinColumn: { name: 'parent_id' },
   })

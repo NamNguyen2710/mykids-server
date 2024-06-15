@@ -49,11 +49,14 @@ export class Meals {
   @Column()
   menuId: number;
 
-  @ManyToOne(() => Menus, (menu) => menu.meals)
+  @ManyToOne(() => Menus, (menu) => menu.meals, {
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
   @JoinColumn({ name: 'menu_id' })
   menu: Menus;
 
-  @ManyToMany(() => Images, (image) => image.meals)
+  @ManyToMany(() => Images, (image) => image.meals, { eager: true })
   @JoinTable({
     name: 'meal_images',
     joinColumn: { name: 'meal_id' },
