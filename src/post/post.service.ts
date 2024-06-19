@@ -4,39 +4,37 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { Posts } from './entities/post.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { Users } from 'src/users/entity/users.entity';
-import { QueryPostDto } from 'src/post/dto/query-post.dto';
+import * as XRegExp from 'xregexp';
+
+import { Posts } from './entities/post.entity';
+import { Hashtags } from './entities/hashtag.entity';
+import { QueryPostDto } from './dto/query-post.dto';
+import { ResponsePostDto } from './dto/response-post.dto';
+import { CreatePostDto } from './dto/create-post.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
-import { ResponsePostDto } from 'src/post/dto/response-post.dto';
+import { UserService } from 'src/users/users.service';
+import { UpdatePostDto } from 'src/post/dto/update-post.dto';
 
 @Injectable()
 export class PostService {
   constructor(
+    private readonly userService: UserService,
     @InjectRepository(Posts)
     private readonly postRepo: Repository<Posts>,
-    @InjectRepository(Users)
-    private readonly userRepo: Repository<Users>,
+    @InjectRepository(Hashtags)
+    private readonly hashtagRepo: Repository<Hashtags>,
   ) {}
-
-  // create(createPostDto: CreatePostDto) {
-  //   return 'This action adds a new post';
-  // }
 
   async findSchoolPosts(
     userId: number,
     query: QueryPostDto,
   ): Promise<ListResponse<ResponsePostDto>> {
-    const { schoolId, limit = 20, page = 1 } = query;
-    if (!userId) throw new UnauthorizedException();
+    const { schoolId, limit = 20, page = 1, hashtag } = query;
 
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-      relations: { schools: true },
-    });
-    if (!user) throw new NotFoundException('User not found');
+    const user = await this.userService.findOne(userId, ['schools']);
+    if (!user) throw new UnauthorizedException('User not found');
 
     const schoolIds = user.schools.map((school) => school.id);
 
@@ -56,6 +54,22 @@ export class PostService {
       qb.where('post.school_id = :schoolId', { schoolId });
     } else {
       qb.where('post.school_id IN (:...schoolIds)', { schoolIds });
+    }
+
+    if (hashtag) {
+      const hashtagObj = await this.hashtagRepo.findOne({
+        where: { description: hashtag },
+      });
+
+      if (!hashtagObj)
+        return {
+          data: [],
+          pagination: { totalItems: 0, totalPages: 0, page, limit },
+        };
+
+      qb.innerJoin('post.hashtags', 'hashtags', 'hashtags.id = :hashtagId', {
+        hashtagId: hashtagObj.id,
+      });
     }
 
     const rawPosts = await qb
@@ -111,38 +125,76 @@ export class PostService {
     };
   }
 
-  async publishedPost(userId: number, postId: number): Promise<Posts> {
-    if (!userId) throw new UnauthorizedException();
+  async create(userId: number, post: CreatePostDto): Promise<Posts> {
+    const hashtagRegex = XRegExp('#[\\p{L}_]+', 'g');
+    const hashtagList = XRegExp.match(post.message, hashtagRegex, 'all') || [];
 
-    const post = await this.postRepo.findOne({
-      where: {
-        id: postId,
-        isPublished: false,
-      },
+    const hashtags = await Promise.all(
+      hashtagList.map(async (ht) => {
+        const hashtag = await this.hashtagRepo.findOne({
+          where: { description: ht },
+        });
+
+        if (!hashtag) return this.hashtagRepo.create({ description: ht });
+        else return hashtag;
+      }),
+    );
+
+    const newPost = this.postRepo.create({
+      ...post,
+      publishedAt: post.isPublished ? new Date() : null,
+      createdById: userId,
+      hashtags,
     });
+    await this.postRepo.save(newPost);
 
-    if (!post) throw new NotFoundException();
-
-    post.isPublished = true;
-    post.publishedAt = new Date();
-    return this.postRepo.save(post);
+    return this.postRepo.findOne({
+      where: { id: newPost.id },
+      relations: ['createdBy'],
+    });
   }
 
-  async remove(schoolId: number, postId: number): Promise<any> {
-    const post = this.postRepo.findOne({
-      where: {
-        school: { id: schoolId },
-        id: postId,
-      },
+  async update(postId: number, post: UpdatePostDto) {
+    const oldPost = await this.postRepo.findOne({
+      where: { id: postId },
+      relations: ['createdBy'],
     });
 
+    if (!oldPost) throw new NotFoundException();
+
+    const hashtagRegex = XRegExp('#[\\p{L}_]+', 'g');
+    const hashtagList = XRegExp.match(post.message, hashtagRegex, 'all') || [];
+
+    const hashtags = await Promise.all(
+      hashtagList.map(async (ht) => {
+        const hashtag = await this.hashtagRepo.findOne({
+          where: { description: ht },
+        });
+        if (!hashtag) return this.hashtagRepo.create({ description: ht });
+        else return hashtag;
+      }),
+    );
+
+    Object.assign(oldPost, post, {
+      hashtags,
+      publishedAt: oldPost.publishedAt
+        ? oldPost.publishedAt
+        : post.isPublished
+          ? new Date()
+          : null,
+    });
+    return this.postRepo.save(oldPost);
+  }
+
+  async remove(postId: number): Promise<any> {
+    const post = this.postRepo.findOne({ where: { id: postId } });
     if (!post) throw new NotFoundException();
 
     this.postRepo.softDelete(postId);
   }
 
   async like(userId: number, postId: number) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userService.findOne(userId);
     if (!user) throw new UnauthorizedException('User not found');
 
     const post = await this.postRepo.findOne({
@@ -170,7 +222,7 @@ export class PostService {
   }
 
   async unlike(userId: number, postId: number) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
+    const user = await this.userService.findOne(userId);
     if (!user) throw new UnauthorizedException('User not found');
 
     const post = await this.postRepo.findOne({
@@ -197,5 +249,13 @@ export class PostService {
       .getRawMany();
 
     return { status: 'success', likeCount: rawPosts[0].likecount };
+  }
+
+  async validatePostPermission(userId: number, postId: number) {
+    const post = await this.postRepo.findOne({
+      where: { id: postId, createdById: userId },
+    });
+
+    return !post;
   }
 }

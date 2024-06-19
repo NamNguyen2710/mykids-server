@@ -1,5 +1,5 @@
 import { Comments } from 'src/comment/entities/comment.entity';
-import { Hashtags } from 'src/hashtag/entities/hashtag.entity';
+import { Hashtags } from 'src/post/entities/hashtag.entity';
 import { Images } from 'src/image/entities/image.entity';
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
@@ -50,7 +50,7 @@ export class Posts {
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
 
-  @ManyToOne(() => Users, (user) => user.createdPosts)
+  @ManyToOne(() => Users, (user) => user.createdPosts, { eager: true })
   @JoinColumn()
   createdBy: Users;
 
@@ -65,7 +65,10 @@ export class Posts {
   })
   likedUsers: Users[];
 
-  @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts)
+  @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts, {
+    eager: true,
+    cascade: true,
+  })
   @JoinTable({
     name: 'posts_hashtags_relation',
     joinColumn: { name: 'post_id' },
@@ -73,7 +76,7 @@ export class Posts {
   })
   hashtags: Hashtags[];
 
-  @ManyToMany(() => Images, (photo) => photo.posts)
+  @ManyToMany(() => Images, (photo) => photo.posts, { eager: true })
   @JoinTable({
     name: 'post_images',
     joinColumn: { name: 'post_id' },

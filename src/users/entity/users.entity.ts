@@ -15,7 +15,7 @@ import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Comments } from 'src/comment/entities/comment.entity';
 import { Schools } from 'src/school/entities/school.entity';
-import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
+import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Students } from 'src/student/entities/student.entity';
 
 @Entity()
