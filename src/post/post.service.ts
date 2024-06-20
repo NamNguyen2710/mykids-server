@@ -127,7 +127,7 @@ export class PostService {
     };
   }
 
-  async getOnePost(userId: number, postId: number): Promise<Posts> {
+  async findOne(userId: number, postId: number): Promise<Posts> {
     if (!userId) throw new NotFoundException('Unauthorized!');
     const post = this.postRepo.findOne({
       where: { id: postId, school: { parents: { id: userId } } },
@@ -275,6 +275,6 @@ export class PostService {
       where: { id: postId, createdById: userId },
     });
 
-    return !post;
+    return !!post;
   }
 }

@@ -1,3 +1,3 @@
 export class LoginDto {
-  phoneNumber: string;
+    number: string;
 }

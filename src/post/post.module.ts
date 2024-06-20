@@ -12,6 +12,5 @@ import { Hashtags } from './entities/hashtag.entity';
   imports: [TypeOrmModule.forFeature([Posts, Hashtags]), NotificationsModule],
   controllers: [PostController],
   providers: [PostService],
-  exports: [PostService],
 })
 export class PostModule {}
