@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { LoaService } from './loa.service';
 import { LoaController } from './loa.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { LoaEntity } from './entities/loa.entity';
-import { Schools } from 'src/school/entities/school.entity';
+import { Loa } from './entities/loa.entity';
 import { Users } from 'src/users/entity/users.entity';
+import { ClassHistories } from 'src/class-history/entities/class-history.entity';
+import { Students } from 'src/student/entities/student.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LoaEntity, Users])],
+  imports: [TypeOrmModule.forFeature([Loa, Users, ClassHistories, Students])],
   controllers: [LoaController],
   providers: [LoaService],
   exports: [LoaService],

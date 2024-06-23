@@ -20,6 +20,7 @@ import { StudentModule } from './student/student.module';
 import { SchoolYearModule } from './school-year/school-year.module';
 import { ClassHistoryModule } from './class-history/class-history.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { LoaModule } from './loa/loa.module';
 
 @Module({
   imports: [
@@ -41,13 +42,12 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     UsersModule,
     AuthModule,
     ImageModule,
-
     SchoolModule,
     SchoolYearModule,
     ClassModule,
     ClassHistoryModule,
     StudentModule,
-
+    LoaModule,
     PostModule,
     CommentModule,
 

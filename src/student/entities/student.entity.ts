@@ -12,6 +12,7 @@ import {
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { ClassHistories } from 'src/class-history/entities/class-history.entity';
+import { Loa } from 'src/loa/entities/loa.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -70,4 +71,7 @@ export class Students {
 
   @OneToMany(() => ClassHistories, (history) => history.student)
   history: ClassHistories[];
+
+  @OneToMany(() => Loa, (loa) => loa.studentId)
+  loa: Loa[];
 }

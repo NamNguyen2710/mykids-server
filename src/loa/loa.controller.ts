@@ -11,9 +11,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { LoaService } from './loa.service';
-import { CreateLoaDto } from './dto/create-loa.dto';
+// import { CreateLoaDto } from './dto/create-loa.dto';
 import { LoginGuard } from 'src/guard/login.guard';
-import { query } from 'express';
 
 @UseGuards(LoginGuard)
 @Controller('loa')
@@ -27,6 +26,7 @@ export class LoaController {
 
   @Get('class')
   findClassLOA(@Request() request, @Query() query): Promise<any> {
+    console.log(query);
     return this.loaService.findClassLOA(request.user.sub, {
       classId: query.classId ? parseInt(query.classId) : null,
       take: query.limit ? parseInt(query.limit) : 10,
