@@ -2,17 +2,15 @@ import {
   Column,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
 import { Schools } from 'src/school/entities/school.entity';
-import { Users } from 'src/users/entity/users.entity';
 import { ClassHistories } from 'src/class-history/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
+import { StudentsParents } from 'src/student/entities/students_parents.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -57,13 +55,8 @@ export class Students {
   @Column()
   schoolId: number;
 
-  @ManyToMany(() => Users, (user) => user.children)
-  @JoinTable({
-    name: 'students_parents',
-    joinColumn: { name: 'student_id' },
-    inverseJoinColumn: { name: 'parent_id' },
-  })
-  parents: Users[];
+  @OneToMany(() => StudentsParents, (parent) => parent.student)
+  parents: StudentsParents[];
 
   @ManyToOne(() => Schools, (school) => school.students)
   @JoinColumn({ name: 'school_id' })

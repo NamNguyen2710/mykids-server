@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class Loa1717323468540 implements MigrationInterface {
-  name = 'Loa1717323468540';
+  name = 'Loa1719154927271';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -33,24 +33,34 @@ export class Loa1717323468540 implements MigrationInterface {
       `ALTER TABLE "roles" ALTER COLUMN "role_id" DROP IDENTITY IF EXISTS`,
     );
 
+    await queryRunner.query(`
+      ALTER TABLE "schedules" 
+        ADD COLUMN "resources" text NOT NULL, 
+        ADD COLUMN "learning_objective" text NOT NULL, 
+        ADD COLUMN "learning outcome" text NOT NULL
+      `);
     await queryRunner.query(
-      `ALTER TABLE "schedules" 
-      ADD COLUMN "resources" text NOT NULL, 
-      ADD COLUMN "learning_objective" text NOT NULL, 
-      ADD COLUMN "learning outcome" text NOT NULL`,
+      `ALTER TABLE "students_parents" ADD COLUMN "relationship" varchar(16) NOT NULL`,
+    );
+    await queryRunner.query(
+      `ALTER TABLE "users" ADD COLUMN "profession" varchar(50)`,
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`DROP TABLE IF EXISTS "loa", "loa_image"`);
-    await queryRunner.query(
-      `ALTER TABLE "schedules" 
-      DROP COLUMN "resources", 
-      DROP COLUMN "learning_objective", 
-      DROP COLUMN "learning outcome"`,
-    );
+    await queryRunner.query(`
+      ALTER TABLE "schedules" 
+        DROP COLUMN "resources", 
+        DROP COLUMN "learning_objective", 
+        DROP COLUMN "learning outcome"
+      `);
     await queryRunner.query(
       `ALTER TABLE "roles" ALTER "role_id" ADD GENERATED ALWAYS AS IDENTITY`,
     );
+    await queryRunner.query(
+      `ALTER TABLE "students_parents" DROP COLUMN "relationship"`,
+    );
+    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "profession"`);
   }
 }

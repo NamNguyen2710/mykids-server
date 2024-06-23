@@ -15,6 +15,7 @@ try {
     process.env.AWS_SSL_FILENAME,
   );
   sslCert = fs.readFileSync(sslCertPath).toString();
+  console.log('env', process.env.ENV);
 } catch (e) {
   console.error('SSL Certificate not found', e);
 }
@@ -26,7 +27,7 @@ const config = {
   username: `${process.env.DB_USERNAME}`,
   password: `${process.env.DB_PASSWORD}`,
   database: `${process.env.DB_NAME}`,
-  ssl: sslCert ? { ca: sslCert } : false,
+  ssl: sslCert && process.env.ENV != 'development' ? { ca: sslCert } : false,
   entities: ['dist/**/*.entity{.ts,.js}'],
   migrations: ['dist/migrations/*{.ts,.js}'],
   namingStrategy: new SnakeNamingStrategy(),
