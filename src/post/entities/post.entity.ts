@@ -1,5 +1,5 @@
 import { Comments } from 'src/comment/entities/comment.entity';
-import { Hashtags } from 'src/hashtag/entities/hashtag.entity';
+import { Hashtags } from 'src/post/entities/hashtag.entity';
 import { Images } from 'src/image/entities/image.entity';
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
@@ -15,6 +15,7 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
+  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -27,16 +28,6 @@ export class Posts {
 
   @Column({ default: true })
   isPublished: boolean;
-
-  @OneToMany(() => Images, (photo) => photo.post)
-  photos: Images[];
-
-  @OneToMany(() => Comments, (comment) => comment.belongedTo)
-  comments: Comments[];
-
-  @ManyToOne(() => Users, (user) => user.createdPosts)
-  @JoinColumn()
-  createdBy: Users;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -53,8 +44,18 @@ export class Posts {
   @Column({ name: 'school_id' })
   schoolId: number;
 
+  @Column({ name: 'created_by_id' })
+  createdById: number;
+
   @ManyToOne(() => Schools, (school) => school.posts)
   school: Schools;
+
+  @ManyToOne(() => Users, (user) => user.createdPosts, { eager: true })
+  @JoinColumn()
+  createdBy: Users;
+
+  @OneToMany(() => Comments, (comment) => comment.belongedTo)
+  comments: Comments[];
 
   @ManyToMany(() => Users, (user) => user.likedPosts)
   @JoinTable({
@@ -64,7 +65,9 @@ export class Posts {
   })
   likedUsers: Users[];
 
-  @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts)
+  @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'posts_hashtags_relation',
     joinColumn: { name: 'post_id' },
@@ -72,6 +75,17 @@ export class Posts {
   })
   hashtags: Hashtags[];
 
-  likeCount: number;
-  commentCount: number;
+  @ManyToMany(() => Images, (photo) => photo.posts, { eager: true })
+  @JoinTable({
+    name: 'post_images',
+    joinColumn: { name: 'post_id' },
+    inverseJoinColumn: { name: 'image_id' },
+  })
+  photos: Images[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.school) delete this.schoolId;
+    if (this.createdBy) delete this.createdById;
+  }
 }

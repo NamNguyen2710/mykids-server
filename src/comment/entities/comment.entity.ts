@@ -1,4 +1,4 @@
-import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
+import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
 import {
@@ -11,6 +11,7 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
+  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -21,13 +22,11 @@ export class Comments {
   @Column()
   message: string;
 
-  @ManyToOne(() => Users)
-  @JoinColumn()
-  createdBy: Users;
+  @Column()
+  createdById: number;
 
-  @ManyToOne(() => Posts, (post) => post.comments)
-  @JoinColumn({ name: 'belonged_to_id' })
-  belongedTo: Posts;
+  @Column()
+  belongedToId: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -38,6 +37,23 @@ export class Comments {
   @DeleteDateColumn({ type: 'timestamptz' })
   deletedAt: Date;
 
-  @OneToMany(() => CommentTaggedUser, (taggedUser) => taggedUser.comment)
+  @ManyToOne(() => Users, { eager: true })
+  @JoinColumn({ name: 'created_by_id' })
+  createdBy: Users;
+
+  @ManyToOne(() => Posts, (post) => post.comments)
+  @JoinColumn({ name: 'belonged_to_id' })
+  belongedTo: Posts;
+
+  @OneToMany(() => CommentTaggedUser, (taggedUser) => taggedUser.comment, {
+    eager: true,
+    cascade: true,
+  })
   taggedUsers: CommentTaggedUser[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.createdBy) delete this.createdById;
+    if (this.belongedTo) delete this.belongedToId;
+  }
 }

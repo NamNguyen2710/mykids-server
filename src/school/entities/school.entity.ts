@@ -1,7 +1,5 @@
-import { Images } from 'src/image/entities/image.entity';
-import { Posts } from 'src/post/entities/post.entity';
-import { Users } from 'src/users/entity/users.entity';
 import {
+  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -11,6 +9,12 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Classrooms } from 'src/class/entities/class.entity';
+import { Images } from 'src/image/entities/image.entity';
+import { Posts } from 'src/post/entities/post.entity';
+import { Users } from 'src/users/entity/users.entity';
+import { SchoolYears } from 'src/school-year/entities/school-year.entity';
+import { Students } from 'src/student/entities/student.entity';
 
 @Entity()
 export class Schools {
@@ -20,12 +24,18 @@ export class Schools {
   @Column()
   name: string;
 
-  @OneToOne(() => Users)
-  @JoinColumn()
+  @Column()
+  schoolAdminId: number;
+
+  @OneToOne(() => Users, (admin) => admin.assignedSchool)
+  @JoinColumn({ name: 'school_admin_id' })
   schoolAdmin: Users;
 
+  @Column({ nullable: true })
+  logoId: number;
+
   @OneToOne(() => Images, { nullable: true })
-  @JoinColumn()
+  @JoinColumn({ name: 'logo_id' })
   logo: Images | null;
 
   @Column({ nullable: true })
@@ -44,4 +54,18 @@ export class Schools {
     inverseJoinColumn: { name: 'parent_id' },
   })
   parents: Users[];
+
+  @OneToMany(() => SchoolYears, (schoolYear) => schoolYear.school)
+  schoolYears: SchoolYears[];
+
+  @OneToMany(() => Classrooms, (classroom) => classroom.school)
+  classes: Classrooms[];
+
+  @OneToMany(() => Students, (student) => student.school)
+  students: Students[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.logo) delete this.logoId;
+  }
 }

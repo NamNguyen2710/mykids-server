@@ -8,17 +8,23 @@ import {
   JoinColumn,
   ManyToMany,
   OneToMany,
+  AfterLoad,
+  OneToOne,
 } from 'typeorm';
 import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Comments } from 'src/comment/entities/comment.entity';
 import { Schools } from 'src/school/entities/school.entity';
-import { CommentTaggedUser } from 'src/comment_tagged_user/entities/comment_tagged_user.entity';
+import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
+import { Students } from 'src/student/entities/student.entity';
 
 @Entity()
 export class Users {
   @PrimaryGeneratedColumn({ name: 'user_id' })
   id: number;
+
+  @Column()
+  roleId: number;
 
   @ManyToOne(() => Roles, (role) => role.users, { eager: true })
   @JoinColumn({ name: 'role_id' })
@@ -48,6 +54,9 @@ export class Users {
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
+  @OneToOne(() => Schools, (school) => school.schoolAdmin)
+  assignedSchool: Schools;
+
   @OneToMany(() => Posts, (post) => post.createdBy)
   createdPosts: Posts[];
 
@@ -59,4 +68,12 @@ export class Users {
 
   @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
+
+  @ManyToMany(() => Students, (student) => student.parents)
+  children: Students[];
+
+  @AfterLoad()
+  removeIds() {
+    if (this.role) delete this.roleId;
+  }
 }

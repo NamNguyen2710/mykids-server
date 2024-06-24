@@ -12,7 +12,7 @@ try {
     __dirname,
     '..',
     'config',
-    process.env.SSL_FILENAME,
+    process.env.AWS_SSL_FILENAME,
   );
   sslCert = fs.readFileSync(sslCertPath).toString();
 } catch (e) {
