@@ -43,15 +43,11 @@ export class CommentController {
     @Request() request,
     @Body() updateCommentDto: UpdateCommentDto,
   ) {
-    return this.commentService.update(
-      request.user.sub,
-      commentId,
-      updateCommentDto,
-    );
+    return this.commentService.update(commentId, updateCommentDto);
   }
 
   @Delete(':commentId')
   remove(@Param('commentId') commentId: number, @Request() request) {
-    return this.commentService.remove(request.user.sub, commentId);
+    return this.commentService.remove(commentId);
   }
 }

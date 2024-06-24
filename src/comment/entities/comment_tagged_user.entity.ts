@@ -27,7 +27,10 @@ export class CommentTaggedUser {
   @JoinColumn({ name: 'user_id' })
   user: Users;
 
-  @ManyToOne(() => Comments, (comment) => comment.taggedUsers)
+  @ManyToOne(() => Comments, (comment) => comment.taggedUsers, {
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
   @JoinColumn({ name: 'comment_id' })
   comment: Comments;
 

@@ -12,10 +12,10 @@ export class ScheduleService {
     private readonly scheduleRepository: Repository<Schedules>,
   ) {}
 
-  async findSchedule(classId: number, date: Date = new Date()) {
-    const startTime = new Date(date);
+  async findSchedule(classId: number, startDate: Date, endDate: Date) {
+    const startTime = new Date(startDate);
     startTime.setHours(0, 0, 0, 0);
-    const endTime = new Date(date);
+    const endTime = new Date(endDate);
     endTime.setHours(23, 59, 59, 999);
 
     const schedule = await this.scheduleRepository.find({

@@ -3,84 +3,74 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as XRegExp from 'xregexp';
+
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Comments } from './entities/comment.entity';
-import { Repository } from 'typeorm';
-import { Users } from 'src/users/entity/users.entity';
-import { Posts } from 'src/post/entities/post.entity';
+import { CommentTaggedUser } from './entities/comment_tagged_user.entity';
+import { UserService } from 'src/users/users.service';
 import { ListResponse } from 'src/utils/list-response.dto';
-import { ResponseCommentDto } from 'src/comment/dto/response-comment.dto';
 
 @Injectable()
 export class CommentService {
   constructor(
     @InjectRepository(Comments)
     private readonly commentRepo: Repository<Comments>,
-    @InjectRepository(Users)
-    private readonly userRepo: Repository<Users>,
-    @InjectRepository(Posts)
-    private readonly postRepo: Repository<Posts>,
+    @InjectRepository(CommentTaggedUser)
+    private readonly taggedUserRepo: Repository<CommentTaggedUser>,
+    private readonly userService: UserService,
   ) {}
 
   async create(
     userId: number,
     postId: number,
-    createCommentDto: Partial<CreateCommentDto>,
+    createCommentDto: CreateCommentDto,
   ) {
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (!user) throw new UnauthorizedException('User not found!');
+    const tagggedUserRegex = XRegExp(
+      '\\[(\\p{L}+\\s*\\p{L}*)\\|(\\d+)\\]',
+      'g',
+    );
+    const matchList = XRegExp.match(
+      createCommentDto.message,
+      tagggedUserRegex,
+      'all',
+    );
+    const taggedUsers = await Promise.all(
+      matchList.map(async (match) => {
+        const [, name, id] = XRegExp.exec(match, tagggedUserRegex);
+        const user = await this.userService.findOne(+id);
+        if (!user) throw new NotFoundException();
 
-    const post = await this.postRepo.findOne({ where: { id: postId } });
-    if (!post) throw new NotFoundException('Post not found!');
+        return user;
+      }),
+    );
 
-    createCommentDto.createdBy = user;
-    createCommentDto.belongedTo = post;
+    const comment = this.commentRepo.create(createCommentDto);
+    comment.createdById = userId;
+    comment.belongedToId = postId;
+    // comment.taggedUsers = taggedUsers;
 
-    const result = await this.commentRepo.save(createCommentDto);
-    const comment = {
-      id: result.id,
-      message: result.message,
-      createdAt: result.updatedAt,
-      updatedAt: result.createdAt,
-      createdBy: {
-        id: result.createdBy.id,
-        firstName: result.createdBy.firstName,
-        lastName: result.createdBy.lastName,
-        phoneNumber: result.createdBy.phoneNumber,
-      },
-    };
+    await this.commentRepo.save(createCommentDto);
 
-    return comment;
+    return this.commentRepo.findOne({
+      where: { id: comment.id },
+      relations: ['createdBy', 'taggedUsers'],
+    });
   }
 
-  async findAllCommentsOfPost(
-    postId: number,
-  ): Promise<ListResponse<ResponseCommentDto>> {
+  async findAllCommentsOfPost(postId: number): Promise<ListResponse<Comments>> {
     const [comments, total] = await this.commentRepo.findAndCount({
       where: { belongedTo: { id: postId } },
-      relations: { createdBy: true },
+      relations: ['createdBy', 'taggedUsers'],
       take: 10,
       skip: 0,
     });
 
-    const result = comments.map((comment) => {
-      delete comment.deletedAt;
-
-      return {
-        ...comment,
-        createdBy: {
-          id: comment.createdBy.id,
-          firstName: comment.createdBy.firstName,
-          lastName: comment.createdBy.lastName,
-          phoneNumber: comment.createdBy.phoneNumber,
-        },
-      };
-    });
-
     return {
-      data: result,
+      data: comments,
       pagination: {
         totalItems: total,
         totalPages: Math.ceil(total / 10),
@@ -94,19 +84,7 @@ export class CommentService {
     return `This action returns a #${id} comment`;
   }
 
-  async update(
-    userId: number,
-    commentId: number,
-    updateCommentDto: UpdateCommentDto,
-  ) {
-    const comment = await this.commentRepo.findOne({
-      where: { id: commentId },
-      relations: { createdBy: true },
-    });
-
-    if (!comment) throw new NotFoundException('Comment not found!');
-    if (comment.createdBy.id != userId) throw new UnauthorizedException();
-
+  async update(commentId: number, updateCommentDto: UpdateCommentDto) {
     await this.commentRepo.update(commentId, updateCommentDto);
     const result = await this.commentRepo.findOne({
       where: { id: commentId },
@@ -129,15 +107,18 @@ export class CommentService {
     return updatedComment;
   }
 
-  async remove(userId: number, commentId: number): Promise<void> {
+  async remove(commentId: number): Promise<boolean> {
+    await this.commentRepo.softDelete(commentId);
+    return true;
+  }
+
+  async validateCommentOwnership(userId: number, commentId: number) {
     const comment = await this.commentRepo.findOne({
       where: { id: commentId },
-      relations: { createdBy: true },
+      relations: ['createdBy'],
     });
 
     if (!comment) throw new NotFoundException();
     if (comment.createdBy.id != userId) throw new UnauthorizedException();
-
-    this.commentRepo.softDelete(commentId);
   }
 }

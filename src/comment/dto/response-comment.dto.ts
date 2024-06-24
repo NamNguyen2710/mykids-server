@@ -1,9 +1,18 @@
-import { ResponseUserDto } from 'src/users/dto/response-user.dto';
+import { z } from 'zod';
+import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
 
-export interface ResponseCommentDto {
-  id: number;
-  message: string;
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: ResponseUserDto;
-}
+export const ResponseCommentSchema = z.object({
+  id: z.number(),
+  message: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  createdBy: ResponseUserSchema,
+  taggedUsers: z.array(
+    z.object({
+      placeholder: z.string(),
+      text: z.string(),
+      user: ResponseUserSchema,
+    }),
+  ),
+});
+export type ResponseCommentDto = z.infer<typeof ResponseCommentSchema>;

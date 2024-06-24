@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 
 import { LoginGuard } from 'src/guard/login.guard';
+import { QueryScheduleSchema } from 'src/schedule/dto/query-schedule.dto';
 import { ScheduleDetailDto } from 'src/schedule/dto/schedule-detail.dto';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { UserService } from 'src/users/users.service';
@@ -26,18 +27,17 @@ export class ScheduleController {
 
   @Get()
   async getSchedule(@Request() request, @Query() query) {
-    const classId = parseInt(query.classId, 10);
-    if (!classId) throw new BadRequestException('Invalid class id');
-
+    const scheduleQuery = QueryScheduleSchema.parse(query);
     const validate = await this.userService.validateParentClassPermission(
       request.user.sub,
-      classId,
+      scheduleQuery.classId,
     );
     if (!validate) throw new UnauthorizedException('Unauthorized');
 
     return this.scheduleService.findSchedule(
-      classId,
-      query.date ? new Date(query.date) : new Date(),
+      scheduleQuery.classId,
+      scheduleQuery.date ? scheduleQuery.date : new Date(),
+      scheduleQuery.date ? scheduleQuery.date : new Date(),
     );
   }
 

@@ -66,7 +66,6 @@ export class Posts {
   likedUsers: Users[];
 
   @ManyToMany(() => Hashtags, (hashtag) => hashtag.posts, {
-    eager: true,
     cascade: true,
   })
   @JoinTable({
