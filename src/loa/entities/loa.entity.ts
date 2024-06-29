@@ -13,10 +13,11 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-export enum loa_status {
-  APPROVE = 'approve',
+export enum LOA_STATUS {
   PENDING = 'pending',
+  APPROVE = 'approve',
   REJECT = 'reject',
+  CANCEL = 'cancel',
 }
 @Entity()
 export class Loa {
@@ -53,7 +54,7 @@ export class Loa {
   createdById: number;
 
   @Column({ name: 'description' })
-  description: String;
+  description: string;
 
   @Column({ type: 'timestamptz' })
   startDate: Date;
@@ -64,6 +65,6 @@ export class Loa {
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @Column({ type: 'enum', enum: loa_status })
-  approveStatus: String;
+  @Column({ type: 'enum', enum: LOA_STATUS, default: LOA_STATUS.PENDING })
+  approveStatus: string;
 }
