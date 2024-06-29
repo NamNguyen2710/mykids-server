@@ -11,6 +11,7 @@ import { Schedules } from 'src/schedule/entities/schedule.entity';
 import { Menus } from 'src/menu/entities/menu.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { ClassHistories } from 'src/class-history/entities/class-history.entity';
+import { Loa } from 'src/loa/entities/loa.entity';
 
 @Entity()
 export class Classrooms {
@@ -48,4 +49,7 @@ export class Classrooms {
 
   @OneToMany(() => ClassHistories, (history) => history.classroom)
   students: ClassHistories[];
+
+  @OneToMany(() => Loa, (loa) => loa.classroom)
+  loas: Loa[];
 }

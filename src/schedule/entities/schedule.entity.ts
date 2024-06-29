@@ -31,6 +31,15 @@ export class Schedules {
   @Column()
   classId: number;
 
+  @Column()
+  learningOutcome: string;
+
+  @Column()
+  resources: string;
+
+  @Column()
+  learningObjective: string;
+
   @ManyToOne(() => Classrooms, (classes) => classes.schedules)
   @JoinColumn({ name: 'class_id' })
   classroom: Classrooms;

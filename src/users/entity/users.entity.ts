@@ -13,9 +13,10 @@ import {
 import { Roles } from './roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Schools } from 'src/school/entities/school.entity';
-import { Students } from 'src/student/entities/student.entity';
 import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Notifications } from 'src/notifications/entities/notification.entity';
+import { Loa } from 'src/loa/entities/loa.entity';
+import { StudentsParents } from 'src/student/entities/students_parents.entity';
 
 @Entity()
 export class Users {
@@ -40,6 +41,9 @@ export class Users {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ nullable: true })
+  profession: string;
 
   @Column({ nullable: true })
   otp: string;
@@ -71,6 +75,9 @@ export class Users {
   @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
 
-  @ManyToMany(() => Students, (student) => student.parents)
-  children: Students[];
+  @OneToMany(() => StudentsParents, (student) => student.parent)
+  children: StudentsParents[];
+
+  @OneToMany(() => Loa, (loa) => loa.createdBy)
+  loa: Loa[];
 }

@@ -1,9 +1,9 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
-// import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { VerifyDTO } from './dto/verify.dto';
 import { ClientGuard } from 'src/guard/client.guard';
+
+import { VerifyDTO } from './dto/verify.dto';
 import { LoginDto } from './dto/login.dto';
 
 @Controller('login')

@@ -20,11 +20,12 @@ import { StudentModule } from './student/student.module';
 import { SchoolYearModule } from './school-year/school-year.module';
 import { ClassHistoryModule } from './class-history/class-history.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { LoaModule } from './loa/loa.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [typeorm] }),
-    ThrottlerModule.forRoot([{ ttl: 30000, limit: 3 }]),
+    ThrottlerModule.forRoot([{ ttl: 3000, limit: 3 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) =>
@@ -46,7 +47,9 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     SchoolYearModule,
     ClassModule,
     ClassHistoryModule,
+
     StudentModule,
+    LoaModule,
 
     PostModule,
     CommentModule,

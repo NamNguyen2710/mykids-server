@@ -58,7 +58,7 @@ export class UserService {
 
   async validateParentClassPermission(userId: number, classId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId, children: { history: { classId } } },
+      where: { id: userId, children: { student: { history: { classId } } } },
       relations: ['children', 'children.history'],
     });
 
