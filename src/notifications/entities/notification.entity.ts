@@ -13,9 +13,12 @@ export class Notifications {
   @PrimaryGeneratedColumn({ name: 'notification_id' })
   id: number;
 
+  @Column({ name: 'user_id' })
+  userId: number;
+
+  @ManyToOne(() => Users, { eager: true })
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
-  @ManyToOne(() => Users)
-  users: Users;
+  user: Users;
 
   @Column({ name: 'notification_title' })
   title: string;

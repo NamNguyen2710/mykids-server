@@ -1,18 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
-import { Notifications } from 'src/notifications/entities/notification.entity';
-// import { NotificationsService } from 'src/notifications/notifications.service';
 import { Repository } from 'typeorm';
-
 import * as admin from 'firebase-admin';
+
 import { NotificationToken } from 'src/notifications/entities/notification-token.entity';
+import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
 
 @Injectable()
 export class FireBaseService {
   constructor(
-    @InjectRepository(Notifications)
-    private readonly notificationRepo: Repository<Notifications>,
     @InjectRepository(NotificationToken)
     private readonly notificationTokenRepo: Repository<NotificationToken>,
     @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: admin.app.App,
@@ -57,18 +53,6 @@ export class FireBaseService {
     }
   }
 
-  async sendTestNoti(token: string) {
-    this.firebaseAdmin.messaging().send({
-      token:
-        'fDpxKQniQLqttguDXuDxIm:APA91bHrKVBbywkLvBNWiZUFSqPXcfK5InoncK50aZakqzyVdvDC92UVCOHdtxDiPIwU62g88VCNEyAWVDQjhUyIJXPajv81jcZe_uZ0EYL2UZ55bDnS8qnx1g0Kv1ckVeazy-fXLKrz',
-      notification: {
-        title: 'Testing',
-        body: 'Test only',
-      },
-      data: { sub: '10' },
-    });
-  }
-
   private async removeInvalidToken(token: string) {
     const findToken = await this.notificationTokenRepo.findOne({
       where: {
@@ -77,4 +61,16 @@ export class FireBaseService {
     });
     this.notificationTokenRepo.delete(findToken);
   }
+
+  // async sendTestNoti(token: string) {
+  //   this.firebaseAdmin.messaging().send({
+  //     token:
+  //       'fDpxKQniQLqttguDXuDxIm:APA91bHrKVBbywkLvBNWiZUFSqPXcfK5InoncK50aZakqzyVdvDC92UVCOHdtxDiPIwU62g88VCNEyAWVDQjhUyIJXPajv81jcZe_uZ0EYL2UZ55bDnS8qnx1g0Kv1ckVeazy-fXLKrz',
+  //     notification: {
+  //       title: 'Testing',
+  //       body: 'Test only',
+  //     },
+  //     data: { sub: '10' },
+  //   });
+  // }
 }

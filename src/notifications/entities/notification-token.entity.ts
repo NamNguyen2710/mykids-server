@@ -12,6 +12,9 @@ export class NotificationToken {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ name: 'user_id' })
+  userId: number;
+
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   @ManyToOne(() => Users)
   user: Users;
@@ -22,8 +25,6 @@ export class NotificationToken {
   @Column({ name: 'notification_token' })
   notificationToken: string;
 
-  @Column({
-    default: 'ACTIVE',
-  })
+  @Column({ default: 'ACTIVE' })
   status: string;
 }

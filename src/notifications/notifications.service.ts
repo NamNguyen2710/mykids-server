@@ -1,18 +1,13 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { SendNotificationDTO } from './dto/send-notification.dto';
-import { In, Repository } from 'typeorm';
-import { NotificationToken } from './entities/notification-token.entity';
-import { SaveTokenDTO } from './dto/save-token.dto';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Notifications } from './entities/notification.entity';
-import { QueryNotiDTO } from './dto/query-noti.dto';
-import { Users } from 'src/users/entity/users.entity';
+import { Repository } from 'typeorm';
+
 import { FireBaseService } from 'src/firebase/firebase.service';
+
+import { NotificationToken } from './entities/notification-token.entity';
+import { Notifications } from './entities/notification.entity';
+import { SaveTokenDTO } from './dto/save-token.dto';
+import { QueryNotiDTO } from './dto/query-noti.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -21,17 +16,42 @@ export class NotificationsService {
     private readonly notificationTokenRepo: Repository<NotificationToken>,
     @InjectRepository(Notifications)
     private readonly notificationRepo: Repository<Notifications>,
-    @InjectRepository(Users)
-    private readonly userRepo: Repository<Users>,
     private readonly firebaseService: FireBaseService,
   ) {}
 
-  async testNoti(token: string) {
-    this.firebaseService.sendTestNoti(token);
+  // async testNoti(token: string) {
+  //   this.firebaseService.sendTestNoti(token);
+  // }
+
+  async createNotification(
+    userId: number,
+    title: string,
+    body: string,
+    data?: { [key: string]: string },
+  ) {
+    const notiTokens = await this.notificationTokenRepo.find({
+      where: { userId: userId },
+    });
+    const notification = this.notificationRepo.create({
+      userId: userId,
+      title: title,
+      body: body,
+    });
+
+    this.firebaseService.sendNotiFirebase({
+      tokens: notiTokens.map((token) => token.notificationToken),
+      notification: {
+        title: title,
+        body: body,
+      },
+      data: data,
+    });
+
+    await this.notificationRepo.save(notification);
   }
 
   // Create and send notification
-  async createNotification(
+  async createSchoolNotification(
     schoolId: number,
     title: string,
     body: string,
@@ -46,10 +66,11 @@ export class NotificationsService {
 
     // Create all notification add into array to save into db
     const notificationsData = getTokens.map((token) => {
-      const notification = new Notifications();
-      notification.users.id = token.user.id;
-      notification.title = title;
-      notification.body = body;
+      const notification = this.notificationRepo.create({
+        userId: token.user.id,
+        title: title,
+        body: body,
+      });
       return notification;
     });
 
@@ -70,51 +91,43 @@ export class NotificationsService {
     this.notificationRepo.save(notificationsData);
   }
 
-  // async sendingNotification(sendNotificationDTO: SendNotificationDTO) {
-  //   this.firebaseService.sendNotiFirebase(sendNotificationDTO);
-  // }
-
   async saveToken(userId: number, saveToken: SaveTokenDTO) {
     saveToken.userId = userId;
-    this.notificationTokenRepo.save(saveToken);
+    await this.notificationTokenRepo.save(saveToken);
   }
 
   async readNotification(userId: number, notificationId: number) {
-    if (!userId) throw new UnauthorizedException('Not Authorized');
-    if (!this.findOneNoti(userId, notificationId))
-      throw new NotFoundException('Notificaion not found');
-    this.notificationRepo.update(notificationId, { readStatus: true });
+    const notification = await this.findOne(userId, notificationId);
+    if (!notification) throw new NotFoundException('Notificaion not found');
+
+    await this.notificationRepo.update(notificationId, { readStatus: true });
   }
 
   async deleteNotification(userId: number, notificationId: number) {
-    if (!userId) throw new UnauthorizedException('Not Authorized');
-    if (!this.findOneNoti(userId, notificationId))
-      throw new NotFoundException('Notificaion not found');
-    this.notificationRepo.delete(notificationId);
+    const notification = await this.findOne(userId, notificationId);
+    if (!notification) throw new NotFoundException('Notificaion not found');
+
+    await this.notificationRepo.delete(notificationId);
   }
 
-  async getAllNotification(userId: number, query: QueryNotiDTO) {
+  async findAll(userId: number, query: QueryNotiDTO) {
     const { limit = 20, page = 1 } = query;
-    if (!userId) throw new UnauthorizedException('Not Authorized');
-
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-    });
-    if (!user) throw new NotFoundException('User not found');
 
     const [noti, total] = await this.notificationRepo.findAndCount({
-      where: { users: user },
+      where: { userId: userId },
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
-      relations: { users: true },
     });
 
-    // Query builder to count all posts
-    const qb = this.notificationRepo.countBy({ readStatus: false });
+    const unreadCount = this.notificationRepo.countBy({
+      userId: userId,
+      readStatus: false,
+    });
 
     return {
       data: noti,
+      unreadCount,
       pagination: {
         total: total,
         totalPage: Math.ceil(total / limit),
@@ -124,11 +137,11 @@ export class NotificationsService {
     };
   }
 
-  private findOneNoti(userId: number, notificationId: number) {
-    const noti = this.notificationRepo.findOne({
-      where: { id: notificationId, users: { id: userId } },
-      relations: { users: true },
+  private async findOne(userId: number, notificationId: number) {
+    const noti = await this.notificationRepo.findOne({
+      where: { id: notificationId, user: { id: userId } },
     });
-    if (!noti) return false;
+
+    return noti;
   }
 }

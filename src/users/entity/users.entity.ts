@@ -8,7 +8,6 @@ import {
   JoinColumn,
   ManyToMany,
   OneToMany,
-  AfterLoad,
   OneToOne,
 } from 'typeorm';
 import { Roles } from './roles.entity';
@@ -66,17 +65,12 @@ export class Users {
   @OneToMany(() => CommentTaggedUser, (comment) => comment.user)
   taggedComments: CommentTaggedUser[];
 
-  @OneToMany(() => Notifications, (notification) => notification.users.id)
-  notification: Notifications[];
+  @OneToMany(() => Notifications, (notification) => notification.user)
+  notifications: Notifications[];
 
   @ManyToMany(() => Schools, (school) => school.parents)
   schools: Schools[];
 
   @ManyToMany(() => Students, (student) => student.parents)
   children: Students[];
-
-  @AfterLoad()
-  removeIds() {
-    if (this.role) delete this.roleId;
-  }
 }
