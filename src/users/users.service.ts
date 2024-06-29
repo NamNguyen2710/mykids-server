@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+
 import { Users } from './entity/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
@@ -26,6 +27,29 @@ export class UserService {
     return this.userRepository.findOne({
       where: { id: userId, isActive },
       relations,
+    });
+  }
+
+  async findParentProfile(userId: number) {
+    return this.userRepository.findOne({
+      where: {
+        id: userId,
+        isActive: true,
+        children: {
+          student: {
+            isActive: true,
+            history: { classroom: { isActive: true } },
+          },
+        },
+      },
+      relations: {
+        children: {
+          student: {
+            school: true,
+            history: { classroom: true },
+          },
+        },
+      },
     });
   }
 
@@ -56,13 +80,20 @@ export class UserService {
     return true;
   }
 
+  async validateUserRole(userId: number, role: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, role: { name: role } },
+    });
+    return !!user;
+  }
+
   async validateParentClassPermission(userId: number, classId: number) {
     const user = await this.userRepository.findOne({
       where: { id: userId, children: { student: { history: { classId } } } },
       relations: ['children', 'children.history'],
     });
 
-    return !user;
+    return !!user;
   }
 
   async validateParentSchoolPermission(userId: number, schoolId: number) {
@@ -71,6 +102,6 @@ export class UserService {
       relations: ['schools'],
     });
 
-    return !user;
+    return !!user;
   }
 }

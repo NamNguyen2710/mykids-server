@@ -7,12 +7,17 @@ import {
   Param,
   Delete,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
+
 import { UserService } from './users.service';
+import { LoginGuard } from 'src/guard/login.guard';
+
 import { Users } from './entity/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
+@UseGuards(LoginGuard)
 export class UsersController {
   constructor(private readonly usersService: UserService) {}
 
