@@ -51,7 +51,7 @@ export class LoaService {
         whereClause.student = { id: query.studentId };
       }
       if (query.classId) {
-        whereClause.class = { id: query.classId };
+        whereClause.classroom = { id: query.classId };
       }
 
       const [data, total] = await this.loaRepo.findAndCount({
@@ -102,7 +102,7 @@ export class LoaService {
 
     if (user.role.name == Role.SchoolAdmin.name) {
       const loa = this.loaRepo.findOne({
-        where: { id: loaId, class: { school: { schoolAdminId: userId } } },
+        where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
       });
 
       if (!loa) throw new NotFoundException('Cannot find LOA notice!');
@@ -129,7 +129,7 @@ export class LoaService {
 
   async validateLoaAdminPermission(loaId: number, userId: number) {
     const loa = await this.loaRepo.findOne({
-      where: { id: loaId, class: { school: { schoolAdminId: userId } } },
+      where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
     });
 
     return !!loa;

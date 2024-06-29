@@ -24,7 +24,7 @@ export class Loa {
   @PrimaryGeneratedColumn({ name: 'loa_id' })
   id: number;
 
-  @ManyToOne(() => Students, (student) => student.loa)
+  @ManyToOne(() => Students, (student) => student.loas)
   @JoinColumn({ name: 'student_id' })
   student: Students;
 
