@@ -42,12 +42,15 @@ import { LoaModule } from './loa/loa.module';
     UsersModule,
     AuthModule,
     ImageModule,
+
     SchoolModule,
     SchoolYearModule,
     ClassModule,
     ClassHistoryModule,
+
     StudentModule,
     LoaModule,
+
     PostModule,
     CommentModule,
 

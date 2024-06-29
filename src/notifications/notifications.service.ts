@@ -92,8 +92,11 @@ export class NotificationsService {
   }
 
   async saveToken(userId: number, saveToken: SaveTokenDTO) {
-    saveToken.userId = userId;
-    await this.notificationTokenRepo.save(saveToken);
+    const token = this.notificationTokenRepo.create({
+      ...saveToken,
+      userId: userId,
+    });
+    await this.notificationTokenRepo.save(token);
   }
 
   async readNotification(userId: number, notificationId: number) {

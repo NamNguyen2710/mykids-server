@@ -66,5 +66,5 @@ export class Students {
   history: ClassHistories[];
 
   @OneToMany(() => Loa, (loa) => loa.studentId)
-  loa: Loa[];
+  loas: Loa[];
 }
