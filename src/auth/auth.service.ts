@@ -25,7 +25,7 @@ export class AuthService {
 
   // Verify the user and send OTP
   async login(loginDto: LoginDto) {
-    const user = await this.userService.findOneByPhone(loginDto.number);
+    const user = await this.userService.findOneByPhone(loginDto.phoneNumber);
     if (!user) throw new NotFoundException('User does not exist!');
 
     const otpNum = Math.floor(Math.random() * 1000000);

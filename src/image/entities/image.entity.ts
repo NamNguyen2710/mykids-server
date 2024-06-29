@@ -18,6 +18,6 @@ export class Images {
   @ManyToMany(() => Meals, (meal) => meal.images)
   meals: Meals[];
 
-  @ManyToMany(() => Loa, (loa) => loa.image)
-  loa: Loa[];
+  @ManyToMany(() => Loa, (loa) => loa.images)
+  loas: Loa[];
 }

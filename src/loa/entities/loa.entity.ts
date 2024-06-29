@@ -36,13 +36,13 @@ export class Loa {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: Users;
 
-  @ManyToMany(() => Images, (image) => image.loa)
+  @ManyToMany(() => Images, (image) => image.loas)
   @JoinTable({
     name: 'loa_image',
     joinColumn: { name: 'loa_id' },
     inverseJoinColumn: { name: 'image_id' },
   })
-  image: Images[];
+  images: Images[];
 
   @Column()
   classId: number;
