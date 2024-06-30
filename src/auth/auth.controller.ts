@@ -2,10 +2,10 @@ import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import { ClientGuard } from 'src/guard/client.guard';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import { VerifyDTO, VerifySchema } from './dto/verify.dto';
 import { LoginDto, LoginSchema } from './dto/login.dto';
-import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 @Controller('login')
 export class AuthController {
