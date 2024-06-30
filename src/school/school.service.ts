@@ -1,11 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, ILike } from 'typeorm';
+import { Repository, ILike, EntityManager } from 'typeorm';
 
 import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
 import { QuerySchoolDto } from 'src/school/dto/query-school.dto';
 import { Schools } from 'src/school/entities/school.entity';
+import { Users } from 'src/users/entity/users.entity';
 
 @Injectable()
 export class SchoolService {
@@ -90,5 +91,41 @@ export class SchoolService {
       status: 'success',
       message: `School with id ${id} has been activated`,
     };
+  }
+
+  async addParents(
+    schoolId: number,
+    parentIds: number[],
+    transactionalManager?: EntityManager,
+  ) {
+    const school = await this.schoolRepository.findOne({
+      where: { id: schoolId },
+      relations: ['parents'],
+    });
+    if (!school) throw new NotFoundException('School not found');
+
+    parentIds.forEach((parentId) =>
+      school.parents.push({ id: parentId } as Users),
+    );
+    const manager = transactionalManager || this.schoolRepository.manager;
+    await manager.save(school);
+  }
+
+  async removeParents(
+    schoolId: number,
+    parentIds: number[],
+    transactionalManager?: EntityManager,
+  ) {
+    const school = await this.schoolRepository.findOne({
+      where: { id: schoolId },
+      relations: ['parents'],
+    });
+    if (!school) throw new NotFoundException('School not found');
+
+    school.parents = school.parents.filter((parent) =>
+      parentIds.every((parentId) => parentId !== parent.id),
+    );
+    const manager = transactionalManager || this.schoolRepository.manager;
+    await manager.save(school);
   }
 }

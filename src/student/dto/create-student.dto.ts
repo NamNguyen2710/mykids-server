@@ -13,6 +13,8 @@ export const CreateStudentSchema = z.object({
   birthPlace: z.string(),
   gender: z.enum(genderList),
   information: z.string().optional(),
+  schoolId: z.number(),
+  parentIds: z.array(z.number()),
 });
 
 export type CreateStudentDto = z.infer<typeof CreateStudentSchema>;
