@@ -1,4 +1,4 @@
-export class AppDTO{
-    id: number;
-    secret: string;
+export class AppDTO {
+  id: number;
+  secret: string;
 }
