@@ -157,7 +157,7 @@ export class UserService {
 
   async validateParentChildrenPermission(userId: number, studentId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId, children: { studentId } },
+      where: { id: userId, roleId: Role.Parent.id, children: { studentId } },
       relations: ['children'],
     });
 
@@ -166,7 +166,11 @@ export class UserService {
 
   async validateParentClassPermission(userId: number, classId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId, children: { student: { history: { classId } } } },
+      where: {
+        id: userId,
+        roleId: Role.Parent.id,
+        children: { student: { history: { classId } } },
+      },
       relations: ['children', 'children.history'],
     });
 
@@ -175,8 +179,21 @@ export class UserService {
 
   async validateParentSchoolPermission(userId: number, schoolId: number) {
     const user = await this.userRepository.findOne({
-      where: { id: userId, schools: { id: schoolId } },
+      where: { id: userId, roleId: Role.Parent.id, schools: { id: schoolId } },
       relations: ['schools'],
+    });
+
+    return !!user;
+  }
+
+  async validateSchoolAdminPermission(userId: number, schoolId: number) {
+    const user = await this.userRepository.findOne({
+      where: {
+        id: userId,
+        roleId: Role.SchoolAdmin.id,
+        assignedSchool: { id: schoolId },
+      },
+      relations: ['assignedSchool'],
     });
 
     return !!user;
