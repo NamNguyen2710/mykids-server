@@ -30,7 +30,8 @@ export class SchoolYearService {
   }
 
   async findOne(id: number) {
-    return `This action returns a #${id} schoolYear`;
+    const schoolYear = await this.schoolYearRepo.findOne({ where: { id } });
+    return schoolYear;
   }
 
   async update(id: number, updateSchoolYearDto: UpdateSchoolYearDto) {
