@@ -8,6 +8,7 @@ import {
   Delete,
   Param,
   Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 
 import { NotificationsService } from './notifications.service';
@@ -52,7 +53,7 @@ export class NotificationsController {
   @Post(':notificationId/read')
   async readNotification(
     @Request() request,
-    @Param('notificationid') notificationId: number,
+    @Param('notificationid', ParseIntPipe) notificationId: number,
   ) {
     await this.notificationsService.readNotification(
       request.user.sub,
@@ -64,7 +65,7 @@ export class NotificationsController {
   @Delete(':notificationId')
   async deleteNotification(
     @Request() request,
-    @Param('notificationId') notificationId: number,
+    @Param('notificationId', ParseIntPipe) notificationId: number,
   ) {
     await this.notificationsService.deleteNotification(
       request.user.sub,
