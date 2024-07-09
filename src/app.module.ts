@@ -21,6 +21,7 @@ import { SchoolYearModule } from './school-year/school-year.module';
 import { ClassHistoryModule } from './class-history/class-history.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { LoaModule } from './loa/loa.module';
+import { ProfileModule } from 'src/profile/profile.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { LoaModule } from './loa/loa.module';
 
     UsersModule,
     AuthModule,
+    ProfileModule,
     ImageModule,
 
     SchoolModule,
