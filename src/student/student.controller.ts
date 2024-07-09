@@ -10,11 +10,13 @@ import {
   ParseIntPipe,
   Request,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { StudentService } from './student.service';
 import { UserService } from 'src/users/users.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { LoginGuard } from 'src/guard/login.guard';
 
 import {
   CreateStudentDto,
@@ -30,6 +32,7 @@ import {
 } from 'src/student/dto/query-student.dto';
 
 @Controller('student')
+@UseGuards(LoginGuard)
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,

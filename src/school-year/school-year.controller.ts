@@ -9,11 +9,13 @@ import {
   Request,
   ForbiddenException,
   ParseIntPipe,
+  UseGuards,
 } from '@nestjs/common';
 
 import { SchoolYearService } from './school-year.service';
 import { UserService } from 'src/users/users.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { LoginGuard } from 'src/guard/login.guard';
 
 import {
   CreateSchoolYearDto,
@@ -27,6 +29,7 @@ import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import * as Role from 'src/users/entity/roles.data';
 
 @Controller('school-year')
+@UseGuards(LoginGuard)
 export class SchoolYearController {
   constructor(
     private readonly schoolYearService: SchoolYearService,

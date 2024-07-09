@@ -11,11 +11,13 @@ import {
   ForbiddenException,
   ParseIntPipe,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 
 import { ClassService } from './class.service';
 import { ClassHistoryService } from './class-history.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { LoginGuard } from 'src/guard/login.guard';
 
 import { CreateClassDto, CreateClassSchema } from './dto/create-class.dto';
 import { UpdateClassDto, UpdateClassSchema } from './dto/update-class.dto';
@@ -28,6 +30,7 @@ import { UserService } from 'src/users/users.service';
 import { UpdateClassHistoryDto } from 'src/class/dto/update-class-history.dto';
 
 @Controller('class')
+@UseGuards(LoginGuard)
 export class ClassController {
   constructor(
     private readonly classService: ClassService,
