@@ -14,11 +14,12 @@ import {
 
 import { LoaService } from './loa.service';
 import { LoginGuard } from 'src/guard/login.guard';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import { LOA_STATUS } from './entities/loa.entity';
-import { CreateLoaDto } from './dto/create-loa.dto';
-import { QueryLoaSchema } from './dto/query-loa.dto';
-import { UpdateLoaDto } from './dto/update-loa.dto';
+import { CreateLoaDto, CreateLoaSchema } from './dto/create-loa.dto';
+import { QueryLoaDto, QueryLoaSchema } from './dto/query-loa.dto';
+import { UpdateLoaDto, UpdateLoaSchema } from './dto/update-loa.dto';
 
 @UseGuards(LoginGuard)
 @Controller('loa')
@@ -26,24 +27,47 @@ export class LoaController {
   constructor(private readonly loaService: LoaService) {}
 
   @Post()
-  create(@Request() req, @Body() createLoaDto: CreateLoaDto) {
+  async create(
+    @Request() req,
+    @Body(new ZodValidationPipe(CreateLoaSchema)) createLoaDto: CreateLoaDto,
+  ) {
     return this.loaService.create(req.user.sub, createLoaDto);
   }
 
   @Get()
-  findAll(@Request() request, @Query() query): Promise<any> {
-    const loaQuery = QueryLoaSchema.parse(query);
-    return this.loaService.findAll(request.user.sub, loaQuery);
+  async findAll(
+    @Request() request,
+    @Query(new ZodValidationPipe(QueryLoaSchema))
+    query: QueryLoaDto,
+  ): Promise<any> {
+    return this.loaService.findAll(request.user.sub, query);
   }
 
   @Get(':loaID')
-  findOne(@Request() request, @Param('loaID', ParseIntPipe) loaID: number) {
+  async findOne(
+    @Request() request,
+    @Param('loaID', ParseIntPipe) loaID: number,
+  ) {
+    const validation =
+      (await this.loaService.validateLoaAdminPermission(
+        loaID,
+        request.user.sub,
+      )) ||
+      (await this.loaService.validateLoaParentPermission(
+        loaID,
+        request.user.sub,
+      ));
+    if (!validation) throw new NotFoundException('Cannot find LOA notice!');
+
     return this.loaService.findOne(request.user.sub, loaID);
   }
 
   @Put(':loaID/approve')
-  approve(@Request() request, @Param('loaID', ParseIntPipe) loaID: number) {
-    const validation = this.loaService.validateLoaAdminPermission(
+  async approve(
+    @Request() request,
+    @Param('loaID', ParseIntPipe) loaID: number,
+  ) {
+    const validation = await this.loaService.validateLoaAdminPermission(
       loaID,
       request.user.sub,
     );
@@ -53,8 +77,11 @@ export class LoaController {
   }
 
   @Put(':loaID/reject')
-  reject(@Request() request, @Param('loaID', ParseIntPipe) loaID: number) {
-    const validation = this.loaService.validateLoaAdminPermission(
+  async reject(
+    @Request() request,
+    @Param('loaID', ParseIntPipe) loaID: number,
+  ) {
+    const validation = await this.loaService.validateLoaAdminPermission(
       loaID,
       request.user.sub,
     );
@@ -64,8 +91,11 @@ export class LoaController {
   }
 
   @Put(':loaID/cancel')
-  cancel(@Request() request, @Param('loaID', ParseIntPipe) loaID: number) {
-    const validation = this.loaService.validateLoaParentPermission(
+  async cancel(
+    @Request() request,
+    @Param('loaID', ParseIntPipe) loaID: number,
+  ) {
+    const validation = await this.loaService.validateLoaParentPermission(
       loaID,
       request.user.sub,
     );
@@ -75,12 +105,12 @@ export class LoaController {
   }
 
   @Put(':loaID')
-  update(
+  async update(
     @Request() request,
     @Param('loaID', ParseIntPipe) loaID: number,
-    @Body() updateLoaDto: UpdateLoaDto,
+    @Body(new ZodValidationPipe(UpdateLoaSchema)) updateLoaDto: UpdateLoaDto,
   ) {
-    const validation = this.loaService.validateLoaParentPermission(
+    const validation = await this.loaService.validateLoaParentPermission(
       loaID,
       request.user.sub,
     );
