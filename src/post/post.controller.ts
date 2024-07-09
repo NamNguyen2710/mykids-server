@@ -10,35 +10,55 @@ import {
   Query,
   Body,
   UnauthorizedException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { LoginGuard } from 'src/guard/login.guard';
-import { QueryPostSchema } from 'src/post/dto/query-post.dto';
-import { CreatePostDto } from 'src/post/dto/create-post.dto';
-import { UpdatePostDto } from 'src/post/dto/update-post.dto';
+import { QueryPostDto, QueryPostSchema } from 'src/post/dto/query-post.dto';
+import { CreatePostDto, CreatePostSchema } from 'src/post/dto/create-post.dto';
+import { UpdatePostDto, UpdatePostSchema } from 'src/post/dto/update-post.dto';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { UserService } from 'src/users/users.service';
 
 @Controller('post')
 @UseGuards(LoginGuard)
 export class PostController {
-  constructor(private readonly postService: PostService) {}
+  constructor(
+    private readonly postService: PostService,
+    private readonly userService: UserService,
+  ) {}
 
   // Get all school post
   @Get('all')
-  async findAll(@Request() request, @Query() query) {
-    const postQuery = QueryPostSchema.parse(query);
-    return this.postService.findSchoolPosts(request.user.sub, postQuery);
+  async findAll(
+    @Request() request,
+    @Query(new ZodValidationPipe(QueryPostSchema)) query: QueryPostDto,
+  ) {
+    return this.postService.findSchoolPosts(request.user.sub, query);
   }
 
   @Post()
-  async create(@Request() req, @Body() createPostDto: CreatePostDto) {
+  async create(
+    @Request() req,
+    @Body(new ZodValidationPipe(CreatePostSchema)) createPostDto: CreatePostDto,
+  ) {
+    const permission = this.userService.validateSchoolAdminPermission(
+      req.user.sub,
+      createPostDto.schoolId,
+    );
+    if (!permission)
+      throw new UnauthorizedException(
+        'You are not allowed to create post for this school',
+      );
+
     return this.postService.create(req.user.sub, createPostDto);
   }
 
   @Put(':postId')
   async publish(
     @Request() req,
-    @Param('postId') postId: number,
-    @Body() updatePostDto: UpdatePostDto,
+    @Param('postId', ParseIntPipe) postId: number,
+    @Body(new ZodValidationPipe(UpdatePostSchema)) updatePostDto: UpdatePostDto,
   ) {
     const validate = await this.postService.validatePostPermission(
       req.user.sub,
@@ -53,7 +73,7 @@ export class PostController {
   }
 
   @Delete(':postId')
-  async remove(@Request() req, @Param('postId') postId: number) {
+  async remove(@Request() req, @Param('postId', ParseIntPipe) postId: number) {
     const validate = await this.postService.validatePostPermission(
       req.user.sub,
       postId,
@@ -67,12 +87,18 @@ export class PostController {
   }
 
   @Post(':postId/like')
-  async like(@Request() request, @Param('postId') postId: number) {
+  async like(
+    @Request() request,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
     return this.postService.like(request.user.sub, postId);
   }
 
   @Post(':postId/unlike')
-  async unlike(@Request() request, @Param('postId') postId: number) {
+  async unlike(
+    @Request() request,
+    @Param('postId', ParseIntPipe) postId: number,
+  ) {
     return this.postService.unlike(request.user.sub, postId);
   }
 }
