@@ -29,7 +29,7 @@ const config = {
   database: `${process.env.DB_NAME}`,
   ssl: sslCert && process.env.ENV != 'development' ? { ca: sslCert } : false,
   entities: ['dist/**/*.entity{.ts,.js}'],
-  migrations: ['dist/migrations/*{.ts,.js}'],
+  migrations: ['src/migrations/*{.ts,.js}'],
   namingStrategy: new SnakeNamingStrategy(),
   autoLoadEntities: true,
   synchronize: false,

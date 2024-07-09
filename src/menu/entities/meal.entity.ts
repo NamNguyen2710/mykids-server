@@ -10,7 +10,7 @@ import {
 } from 'typeorm';
 
 import { Menus } from 'src/menu/entities/menu.entity';
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 
 export enum MealType {
   APPETIZER = 'appetizer',
@@ -56,13 +56,13 @@ export class Meals {
   @JoinColumn({ name: 'menu_id' })
   menu: Menus;
 
-  @ManyToMany(() => Images, (image) => image.meals, { eager: true })
+  @ManyToMany(() => Assets, (asset) => asset.meals, { eager: true })
   @JoinTable({
-    name: 'meal_images',
+    name: 'meal_assets',
     joinColumn: { name: 'meal_id' },
     inverseJoinColumn: { name: 'image_id' },
   })
-  images: Images[];
+  assets: Assets[];
 
   @AfterLoad()
   removeIds() {

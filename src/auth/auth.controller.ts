@@ -11,9 +11,13 @@ import { LoginDto, LoginSchema } from './dto/login.dto';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @UseGuards(ClientGuard)
   @Post()
-  async login(@Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto) {
-    return this.authService.login(loginDto);
+  async login(
+    @Request() req,
+    @Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto,
+  ) {
+    return this.authService.login(loginDto, req.client);
   }
 
   @UseGuards(ClientGuard)

@@ -5,14 +5,14 @@ import { Repository } from 'typeorm';
 import { S3 } from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
 
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 
 @Injectable()
-export class ImageService {
+export class AssetService {
   private s3: S3;
   constructor(
-    @InjectRepository(Images)
-    private readonly imageRepository: Repository<Images>,
+    @InjectRepository(Assets)
+    private readonly imageRepository: Repository<Assets>,
     private readonly configService: ConfigService,
   ) {
     this.s3 = new S3({

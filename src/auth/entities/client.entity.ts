@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryColumn } from 'typeorm';
+import { Roles } from 'src/users/entity/roles.entity';
+import { Entity, Column, PrimaryColumn, ManyToMany, OneToMany } from 'typeorm';
+import { AppClientsRole } from './client_role.entity';
 
 @Entity({ name: 'app_clients' })
 export class AppClients {
@@ -10,4 +12,7 @@ export class AppClients {
 
   @Column()
   expiresIn: string;
+
+  @OneToMany(() => Roles, (role) => role.clients)
+  roles: AppClientsRole[];
 }

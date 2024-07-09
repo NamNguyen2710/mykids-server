@@ -105,9 +105,13 @@ export class UserService {
     });
   }
 
-  async findOneByPhone(number: string, isActive: boolean = true) {
+  async findOneByPhone(number: string, clientId: string) {
     return this.userRepository.findOne({
-      where: { phoneNumber: number, isActive },
+      where: {
+        phoneNumber: number,
+        isActive: true,
+        role: { clients: { clientId: clientId } },
+      },
     });
   }
 

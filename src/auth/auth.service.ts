@@ -24,8 +24,11 @@ export class AuthService {
   ) {}
 
   // Verify the user and send OTP
-  async login(loginDto: LoginDto) {
-    const user = await this.userService.findOneByPhone(loginDto.phoneNumber);
+  async login(loginDto: LoginDto, client: AppClients) {
+    const user = await this.userService.findOneByPhone(
+      loginDto.phoneNumber,
+      client.id,
+    );
     if (!user) throw new NotFoundException('User does not exist!');
 
     const otpNum = Math.floor(Math.random() * 1000000);
@@ -40,7 +43,10 @@ export class AuthService {
   }
 
   async verifyOtp(verifyDto: VerifyDTO, client: AppClients) {
-    const user = await this.userService.findOneByPhone(verifyDto.phoneNumber);
+    const user = await this.userService.findOneByPhone(
+      verifyDto.phoneNumber,
+      client.id,
+    );
     if (!user) throw new NotFoundException('User does not exist!');
 
     if (verifyDto.otp !== user.otp)
