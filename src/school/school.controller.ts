@@ -7,61 +7,142 @@ import {
   Param,
   Query,
   UseGuards,
-  BadRequestException,
+  ParseIntPipe,
+  Request,
+  ForbiddenException,
 } from '@nestjs/common';
+
 import { SchoolService } from './school.service';
-import { CreateSchoolDto } from './dto/create-school.dto';
-import { UpdateSchoolDto } from './dto/update-school.dto';
-import { QuerySchoolDto } from 'src/school/dto/query-school.dto';
+import { UserService } from 'src/users/users.service';
 import { LoginGuard } from 'src/guard/login.guard';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+
+import * as Role from 'src/users/entity/roles.data';
+import { CreateSchoolDto, CreateSchoolSchema } from './dto/create-school.dto';
+import { UpdateSchoolDto, UpdateSchoolSchema } from './dto/update-school.dto';
+import {
+  QuerySchoolDto,
+  QuerySchoolSchema,
+} from 'src/school/dto/query-school.dto';
 
 @Controller('school')
 @UseGuards(LoginGuard)
 export class SchoolController {
-  constructor(private readonly schoolService: SchoolService) {}
+  constructor(
+    private readonly schoolService: SchoolService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post()
-  create(@Body() createSchoolDto: CreateSchoolDto) {
+  async create(
+    @Request() request,
+    @Body(new ZodValidationPipe(CreateSchoolSchema))
+    createSchoolDto: CreateSchoolDto,
+  ) {
+    const permission = await this.userService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+
     return this.schoolService.create(createSchoolDto);
   }
 
   @Get()
-  async findAll(@Query() query: QuerySchoolDto) {
+  async findAll(
+    @Request() request,
+    @Query(new ZodValidationPipe(QuerySchoolSchema))
+    query: QuerySchoolDto,
+  ) {
+    const permission = await this.userService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+
     return this.schoolService.findAll(query);
   }
 
   @Get(':id')
-  async findOne(@Param('id') id: string) {
-    const schoolId = parseInt(id);
-    if (isNaN(schoolId)) throw new BadRequestException('Invalid school id');
+  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+    const permission =
+      (await this.userService.validateUserRole(
+        request.user.sub,
+        Role.SuperAdmin.id,
+      )) ||
+      (await this.userService.validateSchoolAdminPermission(
+        request.user.sub,
+        id,
+      ));
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
 
-    return this.schoolService.findOne(schoolId);
+    return this.schoolService.findOne(id);
   }
 
   @Put(':id/deactivate')
-  async deactivateSchool(@Param('id') id: string) {
-    const schoolId = parseInt(id);
-    if (isNaN(schoolId)) throw new BadRequestException('Invalid school id');
+  async deactivateSchool(
+    @Request() request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const permission = await this.userService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
 
-    return this.schoolService.deactivateSchool(schoolId);
+    return this.schoolService.deactivateSchool(id);
   }
 
   @Put(':id/activate')
-  async activateSchool(@Param('id') id: string) {
-    const schoolId = parseInt(id);
-    if (isNaN(schoolId)) throw new BadRequestException('Invalid school id');
+  async activateSchool(
+    @Request() request,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    const permission = await this.userService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
 
-    return this.schoolService.activateSchool(schoolId);
+    return this.schoolService.activateSchool(id);
   }
 
   @Put(':id')
   async update(
-    @Param('id') id: string,
-    @Body() updateSchoolDto: UpdateSchoolDto,
+    @Request() request,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateSchoolSchema))
+    updateSchoolDto: UpdateSchoolDto,
   ) {
-    const schoolId = parseInt(id);
-    if (isNaN(schoolId)) throw new BadRequestException('Invalid school id');
+    const permission =
+      (await this.userService.validateUserRole(
+        request.user.sub,
+        Role.SuperAdmin.id,
+      )) ||
+      (await this.userService.validateSchoolAdminPermission(
+        request.user.sub,
+        id,
+      ));
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
 
-    return this.schoolService.update(schoolId, updateSchoolDto);
+    return this.schoolService.update(id, updateSchoolDto);
   }
 }

@@ -8,6 +8,8 @@ import {
   Put,
   Request,
   UseGuards,
+  ParseIntPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -20,9 +22,9 @@ export class CommentController {
   constructor(private readonly commentService: CommentService) {}
 
   @Post()
-  create(
+  async create(
     @Request() request,
-    @Param('postId') postId: number,
+    @Param('postId', ParseIntPipe) postId: number,
     @Body() createCommentDto: CreateCommentDto,
   ) {
     return this.commentService.create(
@@ -33,21 +35,40 @@ export class CommentController {
   }
 
   @Get('all')
-  findAllOfPost(@Param('postId') postId: number) {
+  async findAllOfPost(@Param('postId') postId: number) {
     return this.commentService.findAllCommentsOfPost(postId);
   }
 
   @Put(':commentId')
-  update(
-    @Param('commentId') commentId: number,
+  async update(
     @Request() request,
+    @Param('commentId', ParseIntPipe) commentId: number,
     @Body() updateCommentDto: UpdateCommentDto,
   ) {
+    const permission = this.commentService.validateCommentOwnership(
+      request.user.sub,
+      commentId,
+    );
+    if (!permission)
+      throw new ForbiddenException('You are not allowed to edit this comment');
+
     return this.commentService.update(commentId, updateCommentDto);
   }
 
   @Delete(':commentId')
-  remove(@Param('commentId') commentId: number, @Request() request) {
+  async remove(
+    @Request() request,
+    @Param('commentId', ParseIntPipe) commentId: number,
+  ) {
+    const permission = this.commentService.validateCommentOwnership(
+      request.user.sub,
+      commentId,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to delete this comment',
+      );
+
     return this.commentService.remove(commentId);
   }
 }
