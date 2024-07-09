@@ -1,5 +1,4 @@
 import {
-  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -67,9 +66,4 @@ export class Schools {
 
   @OneToMany(() => Albums, (album) => album.school)
   albums: Albums[];
-
-  @AfterLoad()
-  removeIds() {
-    if (this.logo) delete this.logoId;
-  }
 }
