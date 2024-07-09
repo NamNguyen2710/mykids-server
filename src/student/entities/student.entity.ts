@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 
 import { Schools } from 'src/school/entities/school.entity';
-import { ClassHistories } from 'src/class-history/entities/class-history.entity';
+import { ClassHistories } from 'src/class/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { StudentsParents } from 'src/student/entities/students_parents.entity';
 
