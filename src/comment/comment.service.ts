@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as XRegExp from 'xregexp';
@@ -114,11 +110,8 @@ export class CommentService {
 
   async validateCommentOwnership(userId: number, commentId: number) {
     const comment = await this.commentRepo.findOne({
-      where: { id: commentId },
-      relations: ['createdBy'],
+      where: { id: commentId, createdById: userId },
     });
-
-    if (!comment) throw new NotFoundException();
-    if (comment.createdBy.id != userId) throw new UnauthorizedException();
+    return !!comment;
   }
 }
