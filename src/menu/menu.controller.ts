@@ -1,14 +1,13 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
   Request,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 
@@ -16,7 +15,9 @@ import { LoginGuard } from 'src/guard/login.guard';
 import { MenuService } from 'src/menu/menu.service';
 import { UserService } from 'src/users/users.service';
 
-import { MenuDetail } from 'src/menu/dto/menu-detail.dto';
+import { MenuDetail, MenuDetailSchema } from 'src/menu/dto/menu-detail.dto';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { QueryMenuDto, QueryMenuSchema } from 'src/menu/dto/query-menu.dto';
 
 @Controller('menu')
 @UseGuards(LoginGuard)
@@ -27,21 +28,12 @@ export class MenuController {
   ) {}
 
   @Get()
-  async getMenus(@Request() request, @Query() query) {
-    const classId = parseInt(query.classId);
-    if (!classId) throw new BadRequestException('Invalid class id');
-
-    const validatePermission =
-      await this.userService.validateParentClassPermission(
-        request.user.sub,
-        classId,
-      );
-
-    if (!validatePermission)
-      throw new UnauthorizedException('Invalid class id');
-
+  async getMenus(
+    @Request() request,
+    @Query(new ZodValidationPipe(QueryMenuSchema)) query: QueryMenuDto,
+  ) {
     return this.menuService.findMenus(
-      classId,
+      query.classId,
       query.date ? new Date(query.date) : new Date(),
     );
   }
@@ -52,37 +44,19 @@ export class MenuController {
   }
 
   @Post()
-  async createMenu(@Request() req, @Body() menu: MenuDetail) {
-    const validatePermission =
-      await this.userService.validateParentClassPermission(
-        req.user.sub,
-        menu.classId,
-      );
-
-    if (!validatePermission)
-      throw new UnauthorizedException('Invalid class id');
-
+  async createMenu(
+    @Request() req,
+    @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
+  ) {
     return this.menuService.createMenu(menu);
   }
 
   @Put(':id')
   async updateMenu(
     @Request() req,
-    @Param('id') id: string,
-    @Body() menu: MenuDetail,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
   ) {
-    const menuId = parseInt(id);
-    if (!menuId) throw new BadRequestException('Invalid menu id');
-
-    const validatePermission =
-      await this.userService.validateParentClassPermission(
-        req.user.sub,
-        menu.classId,
-      );
-
-    if (!validatePermission)
-      throw new UnauthorizedException('Invalid class id');
-
-    return this.menuService.updateMenu(menuId, menu);
+    return this.menuService.updateMenu(id, menu);
   }
 }

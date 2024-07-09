@@ -3,6 +3,7 @@ import {
   Body,
   Controller,
   Get,
+  ParseIntPipe,
   Post,
   Put,
   Query,
@@ -12,10 +13,18 @@ import {
 } from '@nestjs/common';
 
 import { LoginGuard } from 'src/guard/login.guard';
-import { QueryScheduleSchema } from 'src/schedule/dto/query-schedule.dto';
-import { ScheduleDetailDto } from 'src/schedule/dto/schedule-detail.dto';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { UserService } from 'src/users/users.service';
+
+import {
+  QueryScheduleDto,
+  QueryScheduleSchema,
+} from 'src/schedule/dto/query-schedule.dto';
+import {
+  ScheduleDetailDto,
+  ScheduleDetailSchema,
+} from 'src/schedule/dto/schedule-detail.dto';
 
 @Controller('schedule')
 @UseGuards(LoginGuard)
@@ -26,31 +35,36 @@ export class ScheduleController {
   ) {}
 
   @Get()
-  async getSchedule(@Request() request, @Query() query) {
-    const scheduleQuery = QueryScheduleSchema.parse(query);
+  async getSchedule(
+    @Request() request,
+    @Query(new ZodValidationPipe(QueryScheduleSchema)) query: QueryScheduleDto,
+  ) {
     const validate = await this.userService.validateParentClassPermission(
       request.user.sub,
-      scheduleQuery.classId,
+      query.classId,
     );
     if (!validate) throw new UnauthorizedException('Unauthorized');
 
     return this.scheduleService.findSchedule(
-      scheduleQuery.classId,
-      scheduleQuery.date ? scheduleQuery.date : new Date(),
-      scheduleQuery.date ? scheduleQuery.date : new Date(),
+      query.classId,
+      query.date ? query.date : new Date(),
+      query.date ? query.date : new Date(),
     );
   }
 
   @Post()
-  async createSchedule(@Request() request, @Body() body: ScheduleDetailDto) {
+  async createSchedule(
+    @Request() request,
+    @Body(new ZodValidationPipe(ScheduleDetailSchema)) body: ScheduleDetailDto,
+  ) {
     return this.scheduleService.createSchedule(body);
   }
 
   @Put(':id')
   async updateSchedule(
     @Request() request,
-    @Body() body: ScheduleDetailDto,
-    @Query('id') id: number,
+    @Body(new ZodValidationPipe(ScheduleDetailSchema)) body: ScheduleDetailDto,
+    @Query('id', ParseIntPipe) id: number,
   ) {
     const schedule = await this.scheduleService.updateSchedule(id, body);
     if (!schedule) throw new BadRequestException('Invalid schedule id');
