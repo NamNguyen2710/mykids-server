@@ -14,6 +14,7 @@ import { Assets } from 'src/asset/entities/asset.entity';
 @Injectable()
 export class AssetService {
   private s3: S3;
+
   constructor(
     @InjectRepository(Assets)
     private readonly assetRepository: Repository<Assets>,

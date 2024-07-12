@@ -7,7 +7,7 @@ import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Assets {
-  @PrimaryGeneratedColumn({ name: 'asset_id' })
+  @PrimaryGeneratedColumn({ name: 'image_id' })
   id: number;
 
   @Column()
