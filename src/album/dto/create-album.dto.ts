@@ -1,1 +1,3 @@
-export class CreateAlbumDto {}
+export class CreateAlbumDto {
+  name: string;
+}

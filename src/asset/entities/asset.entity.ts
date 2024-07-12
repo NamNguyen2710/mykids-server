@@ -9,11 +9,11 @@ import {
 import { Posts } from 'src/post/entities/post.entity';
 import { Meals } from 'src/menu/entities/meal.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
-import { Album } from 'src/album/entities/album.entity';
+import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Assets {
-  @PrimaryGeneratedColumn({ name: 'asset_id' })
+  @PrimaryGeneratedColumn({ name: 'image_id' })
   id: number;
 
   @Column()
@@ -31,6 +31,6 @@ export class Assets {
   @ManyToMany(() => Loa, (loa) => loa.assets)
   loas: Loa[];
 
-  @ManyToOne(() => Album, (album) => album.assets)
-  album: Album;
+  @ManyToMany(() => Albums, (album) => album.assets)
+  album: Albums[];
 }

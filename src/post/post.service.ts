@@ -129,7 +129,7 @@ export class PostService {
 
   async findOne(userId: number, postId: number): Promise<Posts> {
     if (!userId) throw new NotFoundException('Unauthorized!');
-    const post = this.postRepo.findOne({
+    const post = await this.postRepo.findOne({
       where: { id: postId, school: { parents: { id: userId } } },
     });
     if (!post) throw new NotFoundException('Post not found');

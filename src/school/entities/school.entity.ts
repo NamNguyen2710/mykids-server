@@ -15,7 +15,7 @@ import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { Students } from 'src/student/entities/student.entity';
-import { Album } from 'src/album/entities/album.entity';
+import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Schools {
@@ -65,8 +65,8 @@ export class Schools {
   @OneToMany(() => Students, (student) => student.school)
   students: Students[];
 
-  @OneToMany(() => Album, (album) => album.school)
-  album: Album[];
+  @OneToMany(() => Albums, (album) => album.school)
+  album: Albums[];
 
   @AfterLoad()
   removeIds() {
