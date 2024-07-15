@@ -19,8 +19,8 @@ export class AlbumService {
   constructor(
     @InjectRepository(Albums)
     private readonly albumRepo: Repository<Albums>,
-    private readonly classService: ClassService,
     private readonly assetService: AssetService,
+    private readonly classService: ClassService,
   ) {}
 
   // Create new album
