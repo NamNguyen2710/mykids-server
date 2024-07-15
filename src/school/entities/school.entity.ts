@@ -66,7 +66,7 @@ export class Schools {
   students: Students[];
 
   @OneToMany(() => Albums, (album) => album.school)
-  album: Albums[];
+  albums: Albums[];
 
   @AfterLoad()
   removeIds() {

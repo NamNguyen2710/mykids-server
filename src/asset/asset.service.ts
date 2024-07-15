@@ -1,7 +1,11 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { S3 } from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
 
@@ -12,7 +16,7 @@ export class AssetService {
   private s3: S3;
   constructor(
     @InjectRepository(Assets)
-    private readonly imageRepository: Repository<Assets>,
+    private readonly assetRepository: Repository<Assets>,
     private readonly configService: ConfigService,
   ) {
     this.s3 = new S3({
@@ -46,9 +50,26 @@ export class AssetService {
 
   async create(file) {
     const res = await this.uploadFile(file);
-    const newFile = this.imageRepository.create({ url: res.Location });
-    await this.imageRepository.save(newFile);
+    const newFile = this.assetRepository.create({ url: res.Location });
+    await this.assetRepository.save(newFile);
     return newFile;
+  }
+
+  async findByIds(assetIds: number[]): Promise<Assets[]> {
+    const assets = await this.assetRepository.find({
+      where: { id: In(assetIds) },
+    });
+
+    return assets;
+  }
+
+  async countAssetsInAlbums(albumId: number): Promise<number> {
+    const countAlbum = await this.assetRepository.countBy({
+      albums: { id: albumId },
+    });
+    if (!countAlbum) throw new NotFoundException('Cannot find album!');
+
+    return countAlbum;
   }
 
   async remove(id: number) {

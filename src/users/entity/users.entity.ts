@@ -80,7 +80,7 @@ export class Users {
   children: StudentsParents[];
 
   @OneToMany(() => Albums, (album) => album.createdBy)
-  createdAlbum: Albums[];
+  albums: Albums[];
 
   @OneToMany(() => Loa, (loa) => loa.createdBy)
   loa: Loa[];

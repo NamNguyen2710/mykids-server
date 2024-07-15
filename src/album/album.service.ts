@@ -7,12 +7,13 @@ import {
 import * as Role from 'src/users/entity/roles.data';
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { QueryAlbumDto } from './dto/query-album.dto';
-import { AddAssetDTO } from './dto/add-asset.dto';
 import { UserService } from 'src/users/users.service';
 import { AssetService } from 'src/asset/asset.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Albums } from './entities/album.entity';
+import { SchoolService } from 'src/school/school.service';
+import { ClassService } from 'src/class/class.service';
 
 @Injectable()
 export class AlbumService {
@@ -21,114 +22,125 @@ export class AlbumService {
     private readonly albumRepo: Repository<Albums>,
     private readonly userService: UserService,
     private readonly assetService: AssetService,
+    private readonly schoolService: SchoolService,
+    private readonly classService: ClassService,
   ) {}
 
   // Create new album
-  async create(
+  async createAlbum(
     userId: number,
     createAlbumDto: CreateAlbumDto,
   ): Promise<Albums> {
-    // Add album name and created by id to the data
+    const { schoolId, classId, createdById, publishedDate } = createAlbumDto;
+    if (userId !== createdById) throw new BadRequestException('Request fail!');
+
+    const school = await this.schoolService.findSchoolWithID(
+      createdById,
+      schoolId,
+    );
+
+    let classEntity;
+    if (classId) {
+      classEntity = await this.classService.findOne(classId);
+      if (!classEntity) {
+        throw new NotFoundException(
+          `Class with id cannot be found in user school!`,
+        );
+      }
+    }
+
+    const user = await this.userService.findOne(createdById);
+
     const album = this.albumRepo.create({
-      ...createAlbumDto,
-      createdById: userId,
+      school: school,
+      class: classEntity,
+      createdBy: user,
+      publishedDate: publishedDate ? new Date(publishedDate) : null,
     });
-    await this.albumRepo.save(album);
-    return album;
+
+    return this.albumRepo.save(album);
   }
 
   // Add Array of assets to an album
-  async addAssetToAlbum(albumId: number, assetDto: AddAssetDTO): Promise<any> {
-    const album = await this.albumRepo.findOne({ where: { id: albumId } });
-    if (!album) throw new NotFoundException('Cannot find album!');
-
-    assetDto.assets?.map((asset) => album.assets.push(asset));
-
-    const updatedAlbum = await this.albumRepo.save(album);
-    return updatedAlbum;
-  }
-
-  async removeAssetFromAlbum(
-    albumId: number,
-    assetIds: number[],
-  ): Promise<any> {
+  async addAssetsToAlbum(albumId: number, assetIds: number[]): Promise<Albums> {
     const album = await this.albumRepo.findOne({
       where: { id: albumId },
-      relations: { assets: true },
-    });
-    if (!album) throw new NotFoundException('Cannot find album!');
-
-    assetIds.map(async (assetToRemove) => {
-      album.assets = album.assets.filter((asset) => {
-        return asset.id !== assetToRemove;
-      });
-      await this.albumRepo.save(album);
+      relations: ['assets'],
     });
 
-    return album;
+    if (!album) {
+      throw new NotFoundException(`Cannot found album!`);
+    }
+
+    const assets = await this.assetService.findByIds(assetIds);
+
+    if (assets.length !== assetIds.length) {
+      throw new NotFoundException(`One or more assets were not found!`);
+    }
+
+    album.assets = [...album.assets, ...assets];
+    album.assetCount = await this.assetService.countAssetsInAlbums(albumId);
+    return this.albumRepo.save(album);
   }
 
-  async getSchoolAlbum(userId: number, query: QueryAlbumDto): Promise<any> {
-    const { schoolId, limit, page } = query;
-
-    const user = await this.userService.findOne(userId, ['schools']);
-    if (!user) throw new UnauthorizedException('User not found!');
-
-    const album = await this.albumRepo.find({
-      where: { schoolId: user.assignedSchool.id },
+  async removeAssetsFromAlbum(
+    albumId: number,
+    assetIds: number[],
+  ): Promise<Albums> {
+    const album = await this.albumRepo.findOne({
+      where: { id: albumId },
+      relations: ['assets'],
     });
 
-    const albumIds = album.map((album) => album.id);
+    if (!album) {
+      throw new NotFoundException(`Album with ID ${albumId} not found`);
+    }
 
-    if (!user.assignedSchool.id && albumIds.length == 0)
-      return {
-        data: [],
-      };
+    album.assets = album.assets.filter((asset) => !assetIds.includes(asset.id));
+    album.assetCount = await this.assetService.countAssetsInAlbums(albumId);
+    return this.albumRepo.save(album);
+  }
 
-    if (user.assignedSchool.id != schoolId)
-      throw new BadRequestException('User is not part of this school');
+  async getAlbumsBySchool(userId: number, query: QueryAlbumDto): Promise<any> {
+    const { schoolId, limit, page } = query;
+    const skip = (page - 1) * limit;
 
-    const qb = this.albumRepo.createQueryBuilder('post');
+    await this.schoolService.findSchoolWithID(userId, schoolId);
 
-    const rawAlbums = await qb
-      .leftJoin('album.assets', 'assets')
+    const queryBuilder = this.albumRepo
+      .createQueryBuilder('album')
+      .leftJoinAndSelect('album.school', 'school')
+      .leftJoinAndSelect('album.class', 'class')
       .leftJoinAndSelect('album.createdBy', 'createdBy')
+      .leftJoinAndSelect('album.assets', 'assets')
+      .where('album.schoolId = :schoolId', { schoolId })
+      .loadRelationCountAndMap('album.assetCount', 'album.assets')
       .groupBy('album.id')
-      .addSelect(['COUNT(DISTINCT assets.id) as assetcount'])
-      .setParameter('userId', userId)
-      .orderBy('post.createdAt', 'DESC')
-      .take(limit)
-      .skip((page - 1) * limit)
-      .getRawMany();
-    if (!rawAlbums) throw new NotFoundException();
+      .orderBy('album.id', 'DESC')
+      .skip(skip)
+      .take(limit);
 
-    const albums = rawAlbums.map((album) => ({
-      id: album.album_album_id,
-      createdBy: {
-        id: album.album_created_by_id,
-        firstName: album.createdBy_first_name,
-      },
+    const albums = await queryBuilder.getMany();
+
+    return albums.map((album) => ({
+      ...album,
+      assetCount: album.assetCount,
     }));
-
-    const total = await this.assetService.countAssetsInAlbums(albumIds);
-
-    return {
-      data: albums,
-      pagination: {
-        totalItems: total,
-      },
-    };
   }
 
   async openOneAlbum(userId: number, albumId: number) {
     const user = await this.userService.findOne(userId);
 
+    const album = await this.albumRepo.findOne({ where: { id: albumId } });
+    console.log(album);
+
     if (user.role.name == Role.SchoolAdmin.name) {
-      const albumAssets = this.assetService.getAssetsOfSchoolAlbum(
+      const albumAssets = await this.assetService.getAssetsOfSchoolAlbum(
         userId,
         albumId,
       );
 
+      console.log(albumAssets);
       if (!albumAssets)
         throw new NotFoundException('Cannot find this specific album!');
       return albumAssets;
@@ -140,16 +152,27 @@ export class AlbumService {
         albumId,
       );
 
-      if (!albumAssets) throw new NotFoundException('Cannot find LOA notice!');
+      if (!albumAssets)
+        throw new NotFoundException('Cannot find this specifc album!');
       return albumAssets;
     }
   }
 
   async removeAlbum(albumId: number): Promise<any> {
-    const album = this.albumRepo.findOne({ where: { id: albumId } });
-    if (!album) throw new NotFoundException('Cannot find album!');
+    const album = await this.albumRepo.findOne({
+      where: { id: albumId },
+      relations: ['assets'],
+    });
 
-    this.albumRepo.delete(albumId);
+    if (!album) {
+      throw new NotFoundException(`Album with ID ${albumId} not found`);
+    }
+
+    // Detach the assets from the album to prevent cascade delete
+    album.assets = [];
+
+    // Remove the album from the repository
+    await this.albumRepo.remove(album);
   }
 
   async validateAlbumAdminPermission(albumId: number, userId: number) {
