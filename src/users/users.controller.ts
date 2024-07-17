@@ -22,6 +22,12 @@ import { Users } from './entity/users.entity';
 import * as Role from './entity/roles.data';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { QueryUserDto, QueryUserSchema } from './dto/query-user.dto';
+import {
+  ResponseUserDto,
+  ResponseUserSchema,
+} from 'src/users/dto/response-user.dto';
+import { ListResponse } from 'src/utils/list-response.dto';
+import { UpdateUserDto, UpdateUserSchema } from 'src/users/dto/update-user.dto';
 
 @Controller('users')
 @UseGuards(LoginGuard)
@@ -32,17 +38,28 @@ export class UsersController {
   async findAll(
     @Request() request,
     @Query(new ZodValidationPipe(QueryUserSchema)) query: QueryUserDto,
-  ): Promise<Users[]> {
+  ): Promise<ListResponse<ResponseUserDto>> {
     const user = await this.usersService.findOne(request.user.sub, [
       'assignedSchool',
     ]);
 
     if (user.roleId === Role.SuperAdmin.id) {
-      return this.usersService.findAll([], query);
+      const { data, pagination } = await this.usersService.findAll(
+        ['assignedSchool'],
+        query,
+      );
+      return {
+        data: data.map((user) => ResponseUserSchema.parse(user)),
+        pagination,
+      };
     }
     if (user.roleId === Role.SchoolAdmin.id) {
       query.schoolId = user.assignedSchool.id;
-      return this.usersService.findAll([], query);
+      const users = await this.usersService.findAll([], query);
+      return {
+        data: users.data.map((user) => ResponseUserSchema.parse(user)),
+        pagination: users.pagination,
+      };
     }
 
     throw new ForbiddenException('You are not allowed to access this resource');
@@ -50,12 +67,13 @@ export class UsersController {
 
   @Get(':userId')
   async findOne(@Param('userId', ParseIntPipe) userId: number): Promise<Users> {
+    // TODO: Add validation
     const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException('User does not exist!');
-    } else {
-      return user;
     }
+
+    return user;
   }
 
   @Post()
@@ -63,7 +81,7 @@ export class UsersController {
     @Request() request,
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
-  ): Promise<Users> {
+  ): Promise<ResponseUserDto> {
     const permission = this.usersService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
@@ -74,16 +92,18 @@ export class UsersController {
       );
     }
 
-    return this.usersService.create(createUserDto);
+    const user = await this.usersService.create(createUserDto);
+    return ResponseUserSchema.parse(user);
   }
 
   @Put(':userId')
   async update(
     @Param('userId', ParseIntPipe) userId: number,
-    @Body() user: Users,
-  ): Promise<any> {
-    // TODO: Update user
-    return this.usersService.update(userId, user);
+    @Body(new ZodValidationPipe(UpdateUserSchema)) userDto: UpdateUserDto,
+  ): Promise<ResponseUserDto> {
+    // TODO: Add validation
+    const user = await this.usersService.update(userId, userDto);
+    return ResponseUserSchema.parse(user);
   }
 
   @Delete(':userId')
