@@ -14,6 +14,7 @@ import { ClassHistories } from 'src/class/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { StudentsParents } from 'src/student/entities/students-parents.entity';
 import { Assets } from 'src/asset/entities/asset.entity';
+import { Medicals } from 'src/medical/entities/medical.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -78,4 +79,7 @@ export class Students {
     inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
   studentCvs: Assets[];
+
+  @OneToMany(() => Medicals, (medical) => medical.student)
+  medicals: Medicals[];
 }
