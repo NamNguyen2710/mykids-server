@@ -21,7 +21,7 @@ import { Notifications } from 'src/notifications/entities/notification.entity';
         // Resolve the path to the service account JSON file
         const serviceAccountPath = path.resolve(
           __dirname,
-          '../../config/firbaseServiceAccountKey.json',
+          '../../config/firebaseServiceAccountKey.json',
         );
         // Load the service account JSON file
         const serviceAccount = require(serviceAccountPath);
