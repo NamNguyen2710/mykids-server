@@ -60,7 +60,7 @@ export class NotificationsController {
   @Post(':notificationId/read')
   async readNotification(
     @Request() request,
-    @Param('notificationid', ParseIntPipe) notificationId: number,
+    @Param('notificationId', ParseIntPipe) notificationId: number,
   ) {
     await this.notificationsService.readNotification(
       request.user.sub,

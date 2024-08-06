@@ -1,9 +1,9 @@
 import { z } from 'zod';
 
 export const QueryPostSchema = z.object({
-  schoolId: z.number().optional(),
-  limit: z.number().optional(),
-  page: z.number().optional(),
+  schoolId: z.coerce.number().optional(),
+  limit: z.coerce.number().optional(),
+  page: z.coerce.number().optional(),
   hashtag: z.string().optional(),
 });
 
