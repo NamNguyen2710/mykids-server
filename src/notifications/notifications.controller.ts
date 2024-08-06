@@ -15,7 +15,11 @@ import { NotificationsService } from './notifications.service';
 import { LoginGuard } from 'src/guard/login.guard';
 
 import { SaveTokenDTO } from './dto/save-token.dto';
-import { QueryNotiSchema } from 'src/notifications/dto/query-noti.dto';
+import {
+  QueryNotiDTO,
+  QueryNotiSchema,
+} from 'src/notifications/dto/query-noti.dto';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
@@ -42,8 +46,11 @@ export class NotificationsController {
   }
 
   @Get()
-  async getNotification(@Request() request, @Query() query) {
-    const notificationQuery = QueryNotiSchema.parse(query);
+  async getNotification(
+    @Request() request,
+    @Query(new ZodValidationPipe(QueryNotiSchema))
+    notificationQuery: QueryNotiDTO,
+  ) {
     return this.notificationsService.findAll(
       request.user.sub,
       notificationQuery,

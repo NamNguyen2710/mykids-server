@@ -4,7 +4,7 @@ import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
 export const ResponseCommentSchema = z.object({
   id: z.number(),
   message: z.string(),
-  createdAt: z.string(),
+  createdAt: z.date(),
   updatedAt: z.string(),
   createdBy: ResponseUserSchema,
   taggedUsers: z.array(

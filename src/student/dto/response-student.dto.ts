@@ -12,6 +12,5 @@ export const ResponseStudentSchema = z.object({
   gender: z.string(),
   infoformation: z.string().nullable(),
   isActive: z.boolean(),
-  grade: z.string(),
 });
 export type ResponseStudentDto = z.infer<typeof ResponseStudentSchema>;

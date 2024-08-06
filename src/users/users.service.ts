@@ -7,6 +7,7 @@ import { Schools } from 'src/school/entities/school.entity';
 import * as Role from './entity/roles.data';
 import { CreateUserDto } from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
+import { ListResponse } from 'src/utils/list-response.dto';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,7 @@ export class UserService {
   async findAll(
     relations: string[] = ['schools'],
     query: QueryUserDto,
-  ): Promise<Users[]> {
+  ): Promise<ListResponse<Users>> {
     const {
       limit = 20,
       page = 1,
@@ -52,13 +53,22 @@ export class UserService {
       }
     }
 
-    return this.userRepository.find({
+    const [users, total] = await this.userRepository.findAndCount({
       where: whereClause,
       relations,
       take: limit,
       skip: (page - 1) * limit,
       order: { [sortType]: sortDirection },
     });
+    return {
+      data: users,
+      pagination: {
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        limit,
+        page,
+      },
+    };
   }
 
   async findOne(

@@ -28,6 +28,7 @@ import {
   UpdateStudentDto,
   UpdateStudentSchema,
 } from 'src/student/dto/update-student.dto';
+import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
 
 @Controller('profile')
 @UseGuards(LoginGuard)
@@ -69,7 +70,7 @@ export class ProfileController {
     @Param('studentId', ParseIntPipe)
     studentId: number,
     @Body(new ZodValidationPipe(UpdateStudentSchema))
-    student: UpdateStudentDto,
+    studentDto: UpdateStudentDto,
   ): Promise<any> {
     const permission = await this.usersService.validateParentChildrenPermission(
       request.user.sub,
@@ -80,7 +81,8 @@ export class ProfileController {
         'You do not have permission to update this student',
       );
 
-    return this.studentService.update(studentId, student);
+    const student = await this.studentService.update(studentId, studentDto);
+    return ResponseStudentSchema.parse(student);
   }
 
   @Delete()

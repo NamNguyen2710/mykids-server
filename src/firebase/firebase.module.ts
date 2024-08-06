@@ -17,11 +17,11 @@ import { Notifications } from 'src/notifications/entities/notification.entity';
   providers: [
     {
       provide: 'FIREBASE_ADMIN',
-      useFactory: (configService: ConfigService) => {
+      useFactory: () => {
         // Resolve the path to the service account JSON file
         const serviceAccountPath = path.resolve(
           __dirname,
-          '../../config/serviceAccountKey.json',
+          '../../config/firbaseServiceAccountKey.json',
         );
         // Load the service account JSON file
         const serviceAccount = require(serviceAccountPath);

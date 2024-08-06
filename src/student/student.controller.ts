@@ -30,6 +30,7 @@ import {
   QueryStudentDto,
   QueryStudentSchema,
 } from 'src/student/dto/query-student.dto';
+import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
 
 @Controller('student')
 @UseGuards(LoginGuard)
@@ -78,7 +79,8 @@ export class StudentController {
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     // TODO: Add permission check
-    return this.studentService.findOne(id);
+    const student = await this.studentService.findOne(id);
+    return ResponseStudentSchema.parse(student);
   }
 
   @Patch(':id')
@@ -99,7 +101,11 @@ export class StudentController {
         'You do not have permission to view students in this school',
       );
 
-    return this.studentService.update(studentId, updateStudentDto);
+    const updatedStudent = await this.studentService.update(
+      studentId,
+      updateStudentDto,
+    );
+    return ResponseStudentSchema.parse(updatedStudent);
   }
 
   @Delete(':id')
@@ -118,6 +124,7 @@ export class StudentController {
         'You do not have permission to view students in this school',
       );
 
-    return this.studentService.deactivate(studentId);
+    await this.studentService.deactivate(studentId);
+    return { status: true, message: 'Student deactivated successfully' };
   }
 }
