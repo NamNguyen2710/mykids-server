@@ -30,6 +30,7 @@ export class ClassService {
       .createQueryBuilder('class')
       .leftJoinAndSelect('class.school', 'school')
       .leftJoinAndSelect('class.schoolYear', 'schoolYear')
+      .leftJoinAndSelect('class.students', 'students')
       .andWhere('class.name ILIKE :q OR class.location ILIKE :q', {
         q: `%${q}%`,
       })

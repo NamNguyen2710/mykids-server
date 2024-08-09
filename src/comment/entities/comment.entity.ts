@@ -11,7 +11,6 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  AfterLoad,
 } from 'typeorm';
 
 @Entity()
@@ -50,10 +49,4 @@ export class Comments {
     cascade: true,
   })
   taggedUsers: CommentTaggedUser[];
-
-  @AfterLoad()
-  removeIds() {
-    if (this.createdBy) delete this.createdById;
-    if (this.belongedTo) delete this.belongedToId;
-  }
 }
