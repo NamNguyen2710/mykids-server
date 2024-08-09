@@ -25,7 +25,10 @@ import {
   QueryClassesDto,
   QueryClassesSchema,
 } from 'src/class/dto/query-classes.dto';
-import { DefaultClassSchema } from 'src/class/dto/response-class.dto';
+import {
+  ResponseClassSchema,
+  DefaultClassSchema,
+} from 'src/class/dto/response-class.dto';
 import { UserService } from 'src/users/users.service';
 import { UpdateClassHistoryDto } from 'src/class/dto/update-class-history.dto';
 
@@ -78,7 +81,8 @@ export class ClassController {
 
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.classService.findOne(id);
+    const classroom = await this.classService.findOne(id);
+    return ResponseClassSchema.parse(classroom);
   }
 
   @Put(':id')

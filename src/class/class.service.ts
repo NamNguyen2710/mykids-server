@@ -30,7 +30,6 @@ export class ClassService {
       .createQueryBuilder('class')
       .leftJoinAndSelect('class.school', 'school')
       .leftJoinAndSelect('class.schoolYear', 'schoolYear')
-      .leftJoinAndSelect('class.students', 'students')
       .andWhere('class.name ILIKE :q OR class.location ILIKE :q', {
         q: `%${q}%`,
       })
@@ -58,7 +57,7 @@ export class ClassService {
   async findOne(id: number): Promise<Classrooms> {
     const classroom = await this.classRepository.findOne({
       where: { id },
-      relations: { school: true, schoolYear: true },
+      relations: ['school', 'schoolYear', 'students.student.parents.parent'],
     });
 
     return classroom;

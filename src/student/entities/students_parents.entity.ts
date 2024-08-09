@@ -2,7 +2,7 @@ import { Students } from 'src/student/entities/student.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 
-@Entity({ name: 'comment_tagged_user' })
+@Entity({ name: 'students_parents' })
 export class StudentsParents {
   @PrimaryColumn({ name: 'parent_id', type: 'int' })
   parentId: number;
