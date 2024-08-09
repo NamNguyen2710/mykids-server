@@ -102,7 +102,7 @@ export class PostService {
       schoolId: post.post_school_id,
       commentCount: parseInt(post.commentcount),
       likeCount: parseInt(post.likecount),
-      likedByUser: post.userLiked >= 1,
+      likedByUser: Number(post.userLiked) >= 1,
       createdBy: {
         id: post.post_created_by_id,
         firstName: post.createdBy_first_name,
@@ -237,7 +237,7 @@ export class PostService {
       .select('COUNT(DISTINCT likedUsers.id) as likecount')
       .getRawMany();
 
-    return { status: 'success', likeCount: rawPosts[0].likecount };
+    return { status: 'success', likeCount: Number(rawPosts[0].likecount) };
   }
 
   async unlike(userId: number, postId: number) {
@@ -267,7 +267,7 @@ export class PostService {
       .select('COUNT(DISTINCT likedUsers.id) as likecount')
       .getRawMany();
 
-    return { status: 'success', likeCount: rawPosts[0].likecount };
+    return { status: 'success', likeCount: Number(rawPosts[0].likecount) };
   }
 
   async validatePostPermission(userId: number, postId: number) {
