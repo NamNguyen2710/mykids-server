@@ -1,5 +1,5 @@
 import { Classrooms } from 'src/class/entities/class.entity';
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 import { Students } from 'src/student/entities/student.entity';
 import { Users } from 'src/users/entity/users.entity';
 import {
@@ -36,13 +36,13 @@ export class Loa {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: Users;
 
-  @ManyToMany(() => Images, (image) => image.loas)
+  @ManyToMany(() => Assets, (asset) => asset.loas)
   @JoinTable({
     name: 'loa_image',
     joinColumn: { name: 'loa_id' },
     inverseJoinColumn: { name: 'image_id' },
   })
-  images: Images[];
+  assets: Assets[];
 
   @Column()
   classId: number;

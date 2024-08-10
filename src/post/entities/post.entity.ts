@@ -1,6 +1,6 @@
 import { Comments } from 'src/comment/entities/comment.entity';
 import { Hashtags } from 'src/post/entities/hashtag.entity';
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
 import {
@@ -75,13 +75,13 @@ export class Posts {
   })
   hashtags: Hashtags[];
 
-  @ManyToMany(() => Images, (photo) => photo.posts, { eager: true })
+  @ManyToMany(() => Assets, (asset) => asset.posts, { eager: true })
   @JoinTable({
-    name: 'post_images',
+    name: 'post_assets',
     joinColumn: { name: 'post_id' },
     inverseJoinColumn: { name: 'image_id' },
   })
-  photos: Images[];
+  assets: Assets[];
 
   @AfterLoad()
   removeIds() {

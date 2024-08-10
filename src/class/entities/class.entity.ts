@@ -12,6 +12,7 @@ import { Menus } from 'src/menu/entities/menu.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { ClassHistories } from 'src/class/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
+import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Classrooms {
@@ -52,4 +53,7 @@ export class Classrooms {
 
   @OneToMany(() => Loa, (loa) => loa.classroom)
   loas: Loa[];
+
+  @OneToMany(() => Albums, (album) => album.class)
+  albums: Albums[];
 }

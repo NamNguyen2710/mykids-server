@@ -105,9 +105,13 @@ export class UserService {
     });
   }
 
-  async findOneByPhone(number: string, isActive: boolean = true) {
+  async findOneByPhone(number: string, clientId: string) {
     return this.userRepository.findOne({
-      where: { phoneNumber: number, isActive },
+      where: {
+        phoneNumber: number,
+        isActive: true,
+        role: { clients: { clientId: clientId } },
+      },
     });
   }
 
@@ -203,6 +207,15 @@ export class UserService {
         roleId: Role.SchoolAdmin.id,
         assignedSchool: { id: schoolId },
       },
+      relations: ['assignedSchool'],
+    });
+
+    return !!user;
+  }
+
+  async validateSchoolAdminPermission(userId: number, schoolId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, assignedSchool: { id: schoolId } },
       relations: ['assignedSchool'],
     });
 

@@ -9,7 +9,7 @@ import typeorm from './typeorm';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import { ImageModule } from './image/image.module';
+import { AssetModule } from './asset/asset.module';
 import { CommentModule } from './comment/comment.module';
 import { SchoolModule } from './school/school.module';
 import { PostModule } from './post/post.module';
@@ -21,6 +21,7 @@ import { SchoolYearModule } from './school-year/school-year.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
 import { LoaModule } from './loa/loa.module';
 import { ProfileModule } from 'src/profile/profile.module';
+import { AlbumModule } from './album/album.module';
 
 @Module({
   imports: [
@@ -42,7 +43,7 @@ import { ProfileModule } from 'src/profile/profile.module';
     UsersModule,
     AuthModule,
     ProfileModule,
-    ImageModule,
+    AssetModule,
 
     SchoolModule,
     SchoolYearModule,
@@ -57,6 +58,7 @@ import { ProfileModule } from 'src/profile/profile.module';
     ScheduleModule,
     MenuModule,
     NotificationsModule,
+    AlbumModule,
   ],
   controllers: [AppController],
   providers: [

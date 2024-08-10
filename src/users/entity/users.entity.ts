@@ -17,6 +17,7 @@ import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.enti
 import { Notifications } from 'src/notifications/entities/notification.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { StudentsParents } from 'src/student/entities/students_parents.entity';
+import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Users {
@@ -77,6 +78,9 @@ export class Users {
 
   @OneToMany(() => StudentsParents, (student) => student.parent)
   children: StudentsParents[];
+
+  @OneToMany(() => Albums, (album) => album.createdBy)
+  albums: Albums[];
 
   @OneToMany(() => Loa, (loa) => loa.createdBy)
   loa: Loa[];

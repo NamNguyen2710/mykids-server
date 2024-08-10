@@ -83,4 +83,11 @@ export class ClassService {
 
     return true;
   }
+
+  async validateSchoolClass(schoolId: number, classId: number) {
+    const classroom = await this.classRepository.findOne({
+      where: { id: classId, school: { id: schoolId } },
+    });
+    return !!classroom;
+  }
 }

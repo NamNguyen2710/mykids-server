@@ -1,18 +1,22 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { S3 } from 'aws-sdk';
 import { v4 as uuid } from 'uuid';
 
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 
 @Injectable()
-export class ImageService {
+export class AssetService {
   private s3: S3;
   constructor(
-    @InjectRepository(Images)
-    private readonly imageRepository: Repository<Images>,
+    @InjectRepository(Assets)
+    private readonly assetRepository: Repository<Assets>,
     private readonly configService: ConfigService,
   ) {
     this.s3 = new S3({
@@ -46,12 +50,22 @@ export class ImageService {
 
   async create(file) {
     const res = await this.uploadFile(file);
-    const newFile = this.imageRepository.create({ url: res.Location });
-    await this.imageRepository.save(newFile);
+    const newFile = this.assetRepository.create({ url: res.Location });
+    await this.assetRepository.save(newFile);
     return newFile;
   }
 
-  async remove(id: number) {
+  async findByIds(assetIds: number[]): Promise<Assets[]> {
+    const assets = await this.assetRepository.find({
+      where: { id: In(assetIds) },
+    });
+    if (assetIds.length !== assets.length)
+      throw new BadRequestException('Cannot find assets!');
+
+    return assets;
+  }
+
+  remove(id: number) {
     return `This action removes a #${id} image`;
   }
 }

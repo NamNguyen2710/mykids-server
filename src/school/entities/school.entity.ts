@@ -10,11 +10,12 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Classrooms } from 'src/class/entities/class.entity';
-import { Images } from 'src/image/entities/image.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 import { Posts } from 'src/post/entities/post.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { Students } from 'src/student/entities/student.entity';
+import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
 export class Schools {
@@ -34,9 +35,9 @@ export class Schools {
   @Column({ nullable: true })
   logoId: number;
 
-  @OneToOne(() => Images, { nullable: true })
+  @OneToOne(() => Assets, { nullable: true })
   @JoinColumn({ name: 'logo_id' })
-  logo: Images | null;
+  logo: Assets | null;
 
   @Column({ nullable: true })
   brandColor: string;
@@ -63,6 +64,9 @@ export class Schools {
 
   @OneToMany(() => Students, (student) => student.school)
   students: Students[];
+
+  @OneToMany(() => Albums, (album) => album.school)
+  albums: Albums[];
 
   @AfterLoad()
   removeIds() {
