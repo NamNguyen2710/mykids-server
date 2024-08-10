@@ -212,4 +212,13 @@ export class UserService {
 
     return !!user;
   }
+
+  async validateSchoolAdminPermission(userId: number, schoolId: number) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, assignedSchool: { id: schoolId } },
+      relations: ['assignedSchool'],
+    });
+
+    return !!user;
+  }
 }

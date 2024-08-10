@@ -10,7 +10,6 @@ import {
 } from 'typeorm';
 import { Schools } from 'src/school/entities/school.entity';
 import { Classrooms } from 'src/class/entities/class.entity';
-import { Students } from 'src/student/entities/student.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { Assets } from 'src/asset/entities/asset.entity';
 
@@ -18,6 +17,9 @@ import { Assets } from 'src/asset/entities/asset.entity';
 export class Albums {
   @PrimaryGeneratedColumn({ name: 'album_id' })
   id: number;
+
+  @Column()
+  title: string;
 
   @Column()
   schoolId: number;
@@ -37,17 +39,13 @@ export class Albums {
   @ManyToOne(() => Users, (user) => user.albums)
   createdBy: Users;
 
-  @CreateDateColumn({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdDate: Date;
 
-  @UpdateDateColumn({
-    type: 'timestamp',
-    default: () => 'CURRENT_TIMESTAMP',
-    onUpdate: 'CURRENT_TIMESTAMP',
-  })
+  @UpdateDateColumn({ type: 'timestamptz' })
   updatedDate: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamptz', nullable: true })
   publishedDate: Date | null;
 
   @ManyToMany(() => Assets, (asset) => asset.albums)
@@ -57,7 +55,4 @@ export class Albums {
     inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
   assets: Assets[];
-
-  @Column()
-  assetCount: number;
 }

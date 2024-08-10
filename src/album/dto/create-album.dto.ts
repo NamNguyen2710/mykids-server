@@ -1,26 +1,10 @@
-import {
-  IsNotEmpty,
-  IsOptional,
-  IsNumber,
-  IsDateString,
-} from '@nestjs/class-validator';
+import { z } from 'zod';
 
-export class CreateAlbumDto {
-  @IsNotEmpty()
-  readonly schoolId: number;
+export const CreateAlbumSchema = z.object({
+  title: z.string(),
+  schoolId: z.number(),
+  classId: z.number().optional(),
+  publishedDate: z.string().optional(),
+});
 
-  @IsOptional()
-  @IsNumber()
-  readonly classId?: number;
-
-  @IsOptional()
-  @IsNumber()
-  readonly studentId?: number;
-
-  @IsNotEmpty()
-  readonly createdById: number;
-
-  @IsOptional()
-  @IsDateString()
-  readonly publishedDate?: string;
-}
+export type CreateAlbumDto = z.infer<typeof CreateAlbumSchema>;

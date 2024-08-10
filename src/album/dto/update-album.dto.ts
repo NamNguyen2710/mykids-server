@@ -1,4 +1,9 @@
-import { PartialType } from '@nestjs/mapped-types';
-import { CreateAlbumDto } from './create-album.dto';
+import { z } from 'zod';
 
-export class UpdateAlbumDto extends PartialType(CreateAlbumDto) {}
+export const UpdateAlbumSchema = z.object({
+  title: z.string(),
+  publishedDate: z.string().optional(),
+  assetIds: z.array(z.number()).optional(),
+});
+
+export type UpdateAlbumDto = z.infer<typeof UpdateAlbumSchema>;

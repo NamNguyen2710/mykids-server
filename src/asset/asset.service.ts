@@ -63,16 +63,7 @@ export class AssetService {
     return assets;
   }
 
-  async countAssetsInAlbums(albumId: number): Promise<number> {
-    const countAlbum = await this.assetRepository.countBy({
-      albums: { id: albumId },
-    });
-    if (!countAlbum) throw new NotFoundException('Cannot find album!');
-
-    return countAlbum;
-  }
-
-  async remove(id: number) {
+  remove(id: number) {
     return `This action removes a #${id} image`;
   }
 }

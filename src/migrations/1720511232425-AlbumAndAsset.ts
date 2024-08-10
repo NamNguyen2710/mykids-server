@@ -10,10 +10,9 @@ export class AlbumAndAsset1720511232425 implements MigrationInterface {
         "school_id" int NOT NULL,
         "class_id" int,
         "created_by_id" int NOT NULL,
-        "created_date" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        "updated_date" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        "published_date" TIMESTAMP,
-        "asset_count" int,
+        "created_date" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        "updated_date" TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+        "published_date" TIMESTAMPTZ,
 
         FOREIGN KEY (school_id) REFERENCES schools (school_id),
         FOREIGN KEY (created_by_id) REFERENCES users (user_id),
@@ -29,13 +28,9 @@ export class AlbumAndAsset1720511232425 implements MigrationInterface {
         "album_id" int NOT NULL,
         "asset_id" int NOT NULL,
         PRIMARY KEY ("album_id", "asset_id"),
-        FOREIGN KEY (album_id) REFERENCES albums (album_id),
-        FOREIGN KEY (asset_id) REFERENCES assets (asset_id)
+        FOREIGN KEY (album_id) REFERENCES albums (album_id) ON DELETE CASCADE,
+        FOREIGN KEY (asset_id) REFERENCES assets (asset_id) ON DELETE CASCADE
       )`,
-    );
-    await queryRunner.query(`ALTER TABLE "assets" ADD COLUMN "album_id" int`);
-    await queryRunner.query(
-      `ALTER TABLE "assets" ADD CONSTRAINT fk_album_id FOREIGN KEY (album_id) REFERENCES "albums" (album_id)`,
     );
   }
 
@@ -45,10 +40,6 @@ export class AlbumAndAsset1720511232425 implements MigrationInterface {
     await queryRunner.query(`ALTER TABLE "assets" RENAME TO "images"`);
     await queryRunner.query(
       `ALTER TABLE "images" RENAME COLUMN "asset_id" TO "image_id"`,
-    );
-    await queryRunner.query(`ALTER TABLE "images" DROP CONSTRAINT fk_album_id`);
-    await queryRunner.query(
-      `ALTER TABLE "images" DROP COLUMN IF EXISTS "album_id"`,
     );
   }
 }

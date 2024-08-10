@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, EntityManager } from 'typeorm';
 
@@ -41,20 +41,6 @@ export class SchoolService {
         limit,
       },
     };
-  }
-
-  async findSchoolWithID(userId: number, schoolId: number) {
-    const school = await this.schoolRepository.findOne({
-      where: { id: schoolId, isActive: true, schoolAdminId: userId },
-      relations: { schoolAdmin: true },
-    });
-
-    if (!school)
-      throw new NotFoundException(
-        'Cannot find this school which is affiliate with user!',
-      );
-
-    return school;
   }
 
   async findOne(id: number) {
