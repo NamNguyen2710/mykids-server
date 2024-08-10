@@ -1,7 +1,7 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
-  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -59,6 +59,8 @@ export class AssetService {
     const assets = await this.assetRepository.find({
       where: { id: In(assetIds) },
     });
+    if (assetIds.length !== assets.length)
+      throw new BadRequestException('Cannot find assets!');
 
     return assets;
   }
