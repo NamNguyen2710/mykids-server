@@ -5,7 +5,7 @@ import {
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
-import { StudentCvService } from './student-cv.service';
+import { StudentCvService } from './student_cv.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('student-cv')
@@ -16,7 +16,7 @@ export class StudentCvController {
   @UseInterceptors(FilesInterceptor('file'))
   async uploadedFile(
     @Param('studentId') studentId: number,
-    @UploadedFiles() file: Express.Multer.File[],
+    @UploadedFiles() file,
   ) {
     console.log(studentId);
     return await this.studentCvService.uploadFileToS3(studentId, file);
