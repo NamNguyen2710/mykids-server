@@ -5,7 +5,7 @@ import {
   UseInterceptors,
   UploadedFiles,
 } from '@nestjs/common';
-import { StudentCvService } from './student_cv.service';
+import { StudentCvService } from './student-cv.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('student-cv')

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { StudentCvService } from './student_cv.service';
-import { StudentCvController } from './student_cv.controller';
+import { StudentCvService } from './student-cv.service';
+import { StudentCvController } from './student-cv.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { StudentCV } from './entities/student_cv.entity';
 import { StudentModule } from 'src/student/student.module';
