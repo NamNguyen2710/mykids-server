@@ -4,6 +4,7 @@ import { Posts } from 'src/post/entities/post.entity';
 import { Meals } from 'src/menu/entities/meal.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { Albums } from 'src/album/entities/album.entity';
+import { Students } from 'src/student/entities/student.entity';
 
 @Entity()
 export class Assets {
@@ -27,4 +28,7 @@ export class Assets {
 
   @ManyToMany(() => Albums, (album) => album.assets)
   albums: Albums[];
+
+  @ManyToMany(() => Students, (student) => student.studentCvs)
+  students: Students[];
 }
