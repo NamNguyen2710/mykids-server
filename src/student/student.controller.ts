@@ -30,7 +30,10 @@ import {
   QueryStudentDto,
   QueryStudentSchema,
 } from 'src/student/dto/query-student.dto';
-import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
+import {
+  ResponseStdWithParentSchema,
+  ResponseStudentSchema,
+} from 'src/student/dto/response-student.dto';
 import * as Role from 'src/users/entity/roles.data';
 
 @Controller('student')
@@ -78,10 +81,19 @@ export class StudentController {
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
-    // TODO: Add permission check
-    const student = await this.studentService.findOne(id);
-    return ResponseStudentSchema.parse(student);
+  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+    const permission =
+      await this.studentService.validateStudentTeacherPermission(
+        request.user.sub,
+        id,
+      );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to view this student',
+      );
+
+    const student = await this.studentService.findOne(id, ['parents.parent']);
+    return ResponseStdWithParentSchema.parse(student);
   }
 
   @Patch(':id')

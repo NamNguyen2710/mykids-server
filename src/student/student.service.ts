@@ -139,4 +139,18 @@ export class StudentService {
       );
     });
   }
+
+  async validateStudentTeacherPermission(
+    userId: number,
+    studentId: number,
+  ): Promise<boolean> {
+    const student = await this.studentRepository.findOne({
+      where: {
+        id: studentId,
+        school: { schoolAdminId: userId },
+      },
+    });
+
+    return !!student;
+  }
 }
