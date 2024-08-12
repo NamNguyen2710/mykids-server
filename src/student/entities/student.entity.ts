@@ -2,16 +2,18 @@ import {
   Column,
   Entity,
   JoinColumn,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
+  JoinTable,
 } from 'typeorm';
 
 import { Schools } from 'src/school/entities/school.entity';
 import { ClassHistories } from 'src/class/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
-import { StudentsParents } from 'src/student/entities/students_parents.entity';
-import { Albums } from 'src/album/entities/album.entity';
+import { StudentsParents } from 'src/student/entities/students-parents.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 
 export enum Gender {
   MALE = 'male',
@@ -68,4 +70,12 @@ export class Students {
 
   @OneToMany(() => Loa, (loa) => loa.studentId)
   loas: Loa[];
+
+  @ManyToMany(() => Assets, (asset) => asset.students)
+  @JoinTable({
+    name: 'student_cvs',
+    joinColumn: { name: 'student_id', referencedColumnName: 'id' },
+    inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
+  })
+  studentCvs: Assets[];
 }

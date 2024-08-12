@@ -13,6 +13,8 @@ export const UpdateStudentSchema = z.object({
   birthPlace: z.string(),
   gender: z.enum(genderList),
   information: z.string().optional(),
+  studentCvIds: z.array(z.number()).optional(),
+  parentIds: z.array(z.number()).optional(),
 });
 
 export type UpdateStudentDto = z.infer<typeof UpdateStudentSchema>;

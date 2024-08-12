@@ -14,12 +14,16 @@ import {
 } from '@nestjs/common';
 
 import { LoginGuard } from 'src/guard/login.guard';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { AlbumService } from './album.service';
 import { UserService } from 'src/users/users.service';
 
-import { CreateAlbumDto } from './dto/create-album.dto';
-import { QueryAlbumDto } from './dto/query-album.dto';
-import { UpdateAlbumDto } from 'src/album/dto/update-album.dto';
+import { CreateAlbumDto, CreateAlbumSchema } from './dto/create-album.dto';
+import { QueryAlbumDto, QueryAlbumSchema } from './dto/query-album.dto';
+import {
+  UpdateAlbumDto,
+  UpdateAlbumSchema,
+} from 'src/album/dto/update-album.dto';
 
 @UseGuards(LoginGuard)
 @Controller('album')
@@ -30,7 +34,11 @@ export class AlbumController {
   ) {}
 
   @Post()
-  async create(@Body() createAlbumDto: CreateAlbumDto, @Request() req) {
+  async create(
+    @Request() req,
+    @Body(new ZodValidationPipe(CreateAlbumSchema))
+    createAlbumDto: CreateAlbumDto,
+  ) {
     const permission = await this.userService.validateSchoolAdminPermission(
       req.user.sub,
       createAlbumDto.schoolId,
@@ -44,7 +52,11 @@ export class AlbumController {
   }
 
   @Get()
-  async findAll(@Request() req, @Query() query: QueryAlbumDto) {
+  async findAll(
+    @Request() req,
+    @Query(new ZodValidationPipe(QueryAlbumSchema))
+    query: QueryAlbumDto,
+  ) {
     const permission = await this.userService.validateSchoolAdminPermission(
       req.user.sub,
       query.schoolId,
@@ -83,8 +95,9 @@ export class AlbumController {
   @Put(':albumId')
   async update(
     @Request() req,
-    @Param(':albumId') albumId: number,
-    @Body() updateAlbumDto: UpdateAlbumDto,
+    @Param(':albumId', ParseIntPipe) albumId: number,
+    @Body(new ZodValidationPipe(UpdateAlbumSchema))
+    updateAlbumDto: UpdateAlbumDto,
   ) {
     const permission = await this.albumService.validateAlbumAdminPermission(
       albumId,
