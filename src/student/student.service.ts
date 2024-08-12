@@ -4,12 +4,13 @@ import { Repository } from 'typeorm';
 
 import { UserService } from 'src/users/users.service';
 import { SchoolService } from 'src/school/school.service';
+import { AssetService } from 'src/asset/asset.service';
 
-import { Students } from 'src/student/entities/student.entity';
-import { StudentsParents } from 'src/student/entities/students_parents.entity';
+import { Students } from './entities/student.entity';
+import { StudentsParents } from './entities/students-parents.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
-import { QueryStudentDto } from 'src/student/dto/query-student.dto';
+import { QueryStudentDto } from './dto/query-student.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
 
 @Injectable()
@@ -21,7 +22,9 @@ export class StudentService {
     private readonly stdParentRepository: Repository<StudentsParents>,
     private readonly userService: UserService,
     private readonly schoolService: SchoolService,
+    private readonly assetService: AssetService,
   ) {}
+
   async create(createStudentDto: CreateStudentDto) {
     const parents = await Promise.all(
       createStudentDto.parentIds.map(async (parentId) => {
@@ -80,7 +83,30 @@ export class StudentService {
   }
 
   async update(id: number, updateStudentDto: UpdateStudentDto) {
-    const res = await this.studentRepository.update(id, updateStudentDto);
+    let parents, studentCvs;
+    if (updateStudentDto.parentIds) {
+      parents = await this.userService.findByIds(updateStudentDto.parentIds);
+      if (parents.length !== updateStudentDto.parentIds.length)
+        throw new NotFoundException('Cannot find parents!');
+
+      delete updateStudentDto.parentIds;
+    }
+
+    if (updateStudentDto.studentCvIds) {
+      studentCvs = await this.assetService.findByIds(
+        updateStudentDto.studentCvIds,
+      );
+      if (studentCvs.length !== updateStudentDto.studentCvIds.length)
+        throw new NotFoundException('Cannot find student CVs!');
+
+      delete updateStudentDto.studentCvIds;
+    }
+
+    const res = await this.studentRepository.update(id, {
+      ...updateStudentDto,
+      parents,
+      studentCvs,
+    });
     if (res.affected === 0) return null;
 
     return this.studentRepository.findOne({ where: { id } });

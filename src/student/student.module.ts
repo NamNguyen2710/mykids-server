@@ -6,7 +6,7 @@ import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
 
 import { Students } from 'src/student/entities/student.entity';
-import { StudentsParents } from 'src/student/entities/students_parents.entity';
+import { StudentsParents } from 'src/student/entities/students-parents.entity';
 
 @Module({
   imports: [

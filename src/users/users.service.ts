@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 
 import { Users } from './entity/users.entity';
 import { Schools } from 'src/school/entities/school.entity';
@@ -69,6 +69,10 @@ export class UserService {
         page,
       },
     };
+  }
+
+  async findByIds(userIds: number[]): Promise<Users[]> {
+    return this.userRepository.find({ where: { id: In(userIds) } });
   }
 
   async findOne(
@@ -207,15 +211,6 @@ export class UserService {
         roleId: Role.SchoolAdmin.id,
         assignedSchool: { id: schoolId },
       },
-      relations: ['assignedSchool'],
-    });
-
-    return !!user;
-  }
-
-  async validateSchoolAdminPermission(userId: number, schoolId: number) {
-    const user = await this.userRepository.findOne({
-      where: { id: userId, assignedSchool: { id: schoolId } },
       relations: ['assignedSchool'],
     });
 

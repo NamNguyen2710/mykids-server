@@ -6,53 +6,59 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, In } from 'typeorm';
-import { S3 } from 'aws-sdk';
-import { v4 as uuid } from 'uuid';
+import {
+  ObjectCannedACL,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 
 import { Assets } from 'src/asset/entities/asset.entity';
 
 @Injectable()
 export class AssetService {
-  private s3: S3;
+  private s3: S3Client;
+
   constructor(
     @InjectRepository(Assets)
     private readonly assetRepository: Repository<Assets>,
     private readonly configService: ConfigService,
   ) {
-    this.s3 = new S3({
-      accessKeyId: this.configService.get('AWS_S3_ACCESS_KEY_ID'),
-      secretAccessKey: this.configService.get('AWS_S3_ACCESS_KEY_SECRET'),
-      s3ForcePathStyle: true,
+    this.s3 = new S3Client({
+      region: this.configService.get('AWS_S3_REGION'),
+      credentials: {
+        accessKeyId: this.configService.get('AWS_S3_ACCESS_KEY_ID'),
+        secretAccessKey: this.configService.get('AWS_S3_ACCESS_KEY_SECRET'),
+      },
     });
   }
 
-  async uploadFile(file) {
-    const params = {
-      Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
-      Key: `${uuid()}-${file.originalname}`,
-      Body: file,
-      ACL: 'public-read',
-      ContentType: file.mimetype,
-      ContentDisposition: 'inline',
-      CreateBucketConfiguration: {
-        LocationConstraint: 'ap-southeast-1',
-      },
-    };
+  async uploadFile(files) {
+    const uploadedFile = files.map(async (file) => {
+      const uploadedParams = {
+        Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
+        Key: `${Date.now()}-${file.originalname}`,
+        Body: file.buffer,
+        ACL: ObjectCannedACL.public_read,
+      };
+
+      await this.s3.send(new PutObjectCommand(uploadedParams));
+      const fileUrl = `https://${this.configService.get('AWS_S3_BUCKET_NAME')}.s3.${this.configService.get('AWS_S3_REGION')}.amazonaws.com/${uploadedParams.Key}`;
+      return fileUrl;
+    });
 
     try {
-      const s3Response = await this.s3.upload(params).promise();
-      return s3Response;
+      return await Promise.all(uploadedFile);
     } catch (e) {
-      console.log(e);
+      console.error(e);
       throw new InternalServerErrorException('Failed to upload file');
     }
   }
 
-  async create(file) {
-    const res = await this.uploadFile(file);
-    const newFile = this.assetRepository.create({ url: res.Location });
-    await this.assetRepository.save(newFile);
-    return newFile;
+  async create(files) {
+    const res = await this.uploadFile(files);
+    const newFiles = res.map((url) => this.assetRepository.create({ url }));
+    await this.assetRepository.save(newFiles);
+    return newFiles;
   }
 
   async findByIds(assetIds: number[]): Promise<Assets[]> {

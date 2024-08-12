@@ -31,6 +31,7 @@ import {
   QueryStudentSchema,
 } from 'src/student/dto/query-student.dto';
 import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
+import * as Role from 'src/users/entity/roles.data';
 
 @Controller('student')
 @UseGuards(LoginGuard)
@@ -90,16 +91,37 @@ export class StudentController {
     @Body(new ZodValidationPipe(UpdateStudentSchema))
     updateStudentDto: UpdateStudentDto,
   ) {
+    const user = await this.userService.findOne(request.user.sub);
     const student = await this.studentService.findOne(studentId);
 
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      student.schoolId,
-    );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to view students in this school',
+    if (user.role.name === Role.SchoolAdmin.name) {
+      const permission = await this.userService.validateSchoolAdminPermission(
+        request.user.sub,
+        student.schoolId,
       );
+      if (!permission)
+        throw new ForbiddenException(
+          'You do not have permission to update students in this school',
+        );
+
+      delete updateStudentDto.studentCvIds;
+    } else if (user.role.name === Role.Parent.name) {
+      const permission =
+        await this.userService.validateParentChildrenPermission(
+          request.user.sub,
+          studentId,
+        );
+      if (!permission)
+        throw new ForbiddenException(
+          'You do not have permission to update this student',
+        );
+
+      delete updateStudentDto.parentIds;
+    } else {
+      throw new ForbiddenException(
+        'You do not have permission to update student information',
+      );
+    }
 
     const updatedStudent = await this.studentService.update(
       studentId,
