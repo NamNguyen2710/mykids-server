@@ -16,6 +16,7 @@ import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { ScheduleService } from 'src/schedule/schedule.service';
 import { UserService } from 'src/users/users.service';
+import { ClassService } from 'src/class/class.service';
 
 import {
   QueryScheduleDto,
@@ -32,6 +33,7 @@ export class ScheduleController {
   constructor(
     private readonly scheduleService: ScheduleService,
     private readonly userService: UserService,
+    private readonly classService: ClassService,
   ) {}
 
   @Get()
@@ -39,16 +41,24 @@ export class ScheduleController {
     @Request() request,
     @Query(new ZodValidationPipe(QueryScheduleSchema)) query: QueryScheduleDto,
   ) {
-    const validate = await this.userService.validateParentClassPermission(
-      request.user.sub,
-      query.classId,
-    );
-    if (!validate) throw new UnauthorizedException('Unauthorized');
+    const validate =
+      (await this.userService.validateParentClassPermission(
+        request.user.sub,
+        query.classId,
+      )) ||
+      (await this.classService.validateTeacherClass(
+        request.user.sub,
+        query.classId,
+      ));
+    if (!validate)
+      throw new UnauthorizedException(
+        'You do not have permission to get this class schedule',
+      );
 
     return this.scheduleService.findSchedule(
       query.classId,
-      query.date ? query.date : new Date(),
-      query.date ? query.date : new Date(),
+      query.startDate || query.date || new Date(),
+      query.endDate || query.date || new Date(),
     );
   }
 
