@@ -16,7 +16,7 @@ import { Schools } from 'src/school/entities/school.entity';
 import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Notifications } from 'src/notifications/entities/notification.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
-import { StudentsParents } from 'src/student/entities/students_parents.entity';
+import { StudentsParents } from 'src/student/entities/students-parents.entity';
 import { Albums } from 'src/album/entities/album.entity';
 
 @Entity()
