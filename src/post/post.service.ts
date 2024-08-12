@@ -97,29 +97,29 @@ export class PostService {
       ])
       .setParameter('userId', userId)
       .orderBy('post.createdAt', 'DESC')
-      .take(limit)
-      .skip((page - 1) * limit)
       .getRawMany();
     if (!rawPosts) throw new NotFoundException();
 
-    const posts = rawPosts.map((post) => ({
-      id: post.post_post_id,
-      message: post.post_message,
-      isPublished: post.post_is_published,
-      createdAt: post.post_created_at,
-      updatedAt: post.post_updated_at,
-      publishedAt: post.post_published_at,
-      schoolId: post.post_school_id,
-      commentCount: parseInt(post.commentcount),
-      likeCount: parseInt(post.likecount),
-      likedByUser: parseInt(post.userliked) >= 1,
-      createdBy: {
-        id: post.post_created_by_id,
-        firstName: post.createdBy_first_name,
-        lastName: post.createdBy_last_name,
-        phoneNumber: post.createdBy_phone_number,
-      },
-    }));
+    const posts = rawPosts
+      .splice(limit * (page - 1), limit * page)
+      .map((post) => ({
+        id: post.post_post_id,
+        message: post.post_message,
+        isPublished: post.post_is_published,
+        createdAt: post.post_created_at,
+        updatedAt: post.post_updated_at,
+        publishedAt: post.post_published_at,
+        schoolId: post.post_school_id,
+        commentCount: parseInt(post.commentcount),
+        likeCount: parseInt(post.likecount),
+        likedByUser: parseInt(post.userliked) >= 1,
+        createdBy: {
+          id: post.post_created_by_id,
+          firstName: post.createdBy_first_name,
+          lastName: post.createdBy_last_name,
+          phoneNumber: post.createdBy_phone_number,
+        },
+      }));
 
     // Get total count of posts
     const total = await this.postRepo.countBy({

@@ -15,7 +15,6 @@ import {
   UpdateDateColumn,
   DeleteDateColumn,
   JoinColumn,
-  AfterLoad,
 } from 'typeorm';
 
 @Entity()
