@@ -4,37 +4,43 @@ export const DefaultClassSchema = z.object({
   id: z.number(),
   name: z.string(),
   location: z.string().nullable(),
-  schoolYear: z.object({
-    id: z.number(),
-    year: z.string(),
-    startDate: z.string(),
-    endDate: z.string(),
-  }),
-  students: z.array(
-    z.object({
-      classId: z.number(),
-      studentId: z.number(),
-      description: z.string().nullable(),
-      student: z.object({
-        id: z.number(),
-        firstName: z.string(),
-        lastName: z.string(),
-        parents: z.array(
-          z.object({
-            parentId: z.number(),
-            studentId: z.number(),
-            relationship: z.string(),
-            parent: z.object({
-              id: z.number(),
-              phoneNumber: z.string(),
-              firstName: z.string(),
-              lastName: z.string(),
-            }),
-          }),
-        ),
+  schoolYear: z
+    .object({
+      id: z.number(),
+      year: z.string(),
+      startDate: z.string(),
+      endDate: z.string(),
+    })
+    .optional(),
+  students: z
+    .array(
+      z.object({
+        classId: z.number(),
+        studentId: z.number(),
+        description: z.string().nullable(),
+        student: z.object({
+          id: z.number(),
+          firstName: z.string(),
+          lastName: z.string(),
+          parents: z
+            .array(
+              z.object({
+                parentId: z.number(),
+                studentId: z.number(),
+                relationship: z.string(),
+                parent: z.object({
+                  id: z.number(),
+                  phoneNumber: z.string(),
+                  firstName: z.string(),
+                  lastName: z.string(),
+                }),
+              }),
+            )
+            .optional(),
+        }),
       }),
-    }),
-  ),
+    )
+    .optional(),
   isActive: z.boolean(),
 });
 
