@@ -55,7 +55,4 @@ export class Albums {
     inverseJoinColumn: { name: 'asset_id', referencedColumnName: 'id' },
   })
   assets: Assets[];
-
-  @Column()
-  assetCount: number;
 }
