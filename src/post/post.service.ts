@@ -11,6 +11,7 @@ import * as XRegExp from 'xregexp';
 import { NotificationsService } from 'src/notifications/notifications.service';
 import { UserService } from 'src/users/users.service';
 
+import * as Role from 'src/users/entity/roles.data';
 import { Posts } from './entities/post.entity';
 import { Hashtags } from './entities/hashtag.entity';
 import { QueryPostDto } from './dto/query-post.dto';
@@ -33,21 +34,30 @@ export class PostService {
     userId: number,
     query: QueryPostDto,
   ): Promise<ListResponse<ResponsePostDto>> {
-    const { schoolId, limit = 20, page = 1, hashtag } = query;
+    let { schoolId, limit = 20, page = 1, hashtag } = query;
 
-    const user = await this.userService.findOne(userId, ['schools']);
+    const user = await this.userService.findOne(userId, [
+      'schools',
+      'assignedSchool',
+    ]);
     if (!user) throw new UnauthorizedException('User not found');
 
-    const schoolIds = user.schools.map((school) => school.id);
+    let schoolIds = [];
 
-    if (!schoolId && schoolIds.length == 0)
-      return {
-        data: [],
-        pagination: { totalItems: 0, totalPages: 0, page, limit },
-      };
+    if (user.role.name === Role.SchoolAdmin.name) {
+      schoolId = user.assignedSchool.id;
+    } else if (user.role.name === Role.Parent.name) {
+      schoolIds = user.schools.map((school) => school.id);
 
-    if (schoolId && !schoolIds.includes(schoolId))
-      throw new BadRequestException('User is not part of this school');
+      if (!schoolId && schoolIds.length == 0)
+        return {
+          data: [],
+          pagination: { totalItems: 0, totalPages: 0, page, limit },
+        };
+
+      if (schoolId && !schoolIds.includes(schoolId))
+        throw new BadRequestException('User is not part of this school');
+    }
 
     // Query builder to get all posts
     const qb = this.postRepo.createQueryBuilder('post');
