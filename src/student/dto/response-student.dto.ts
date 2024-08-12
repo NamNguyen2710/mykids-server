@@ -10,7 +10,7 @@ export const ResponseStudentSchema = z.object({
   ethnic: z.string(),
   birthPlace: z.string(),
   gender: z.string(),
-  infoformation: z.string().nullable(),
+  infoformation: z.string().nullish(),
   isActive: z.boolean(),
   parents: z
     .array(
