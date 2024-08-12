@@ -82,10 +82,4 @@ export class Posts {
     inverseJoinColumn: { name: 'image_id' },
   })
   assets: Assets[];
-
-  @AfterLoad()
-  removeIds() {
-    if (this.school) delete this.schoolId;
-    if (this.createdBy) delete this.createdById;
-  }
 }
