@@ -1,6 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
+import {
+  Repository,
+  DataSource,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  And,
+} from 'typeorm';
 
 import { Menus } from 'src/menu/entities/menu.entity';
 import { Meals } from 'src/menu/entities/meal.entity';
@@ -14,9 +20,12 @@ export class MenuService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findMenus(classId: number, date: Date = new Date()) {
+  async findMenus(classId: number, startDate: Date, endDate: Date) {
     const menus = await this.menuRepository.find({
-      where: { classroom: { id: classId }, date },
+      where: {
+        classroom: { id: classId },
+        date: And(MoreThanOrEqual(startDate), LessThanOrEqual(endDate)),
+      },
     });
     return menus;
   }
