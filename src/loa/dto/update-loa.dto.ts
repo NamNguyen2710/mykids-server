@@ -6,8 +6,8 @@ const statusList = [...Object.values(LOA_STATUS)] as [string, ...string[]];
 export const UpdateLoaSchema = z.object({
   approveStatus: z.enum(statusList).optional(),
   description: z.string().optional(),
-  startDate: z.date().optional(),
-  endDate: z.date().optional(),
+  startDate: z.coerce.date().optional(),
+  endDate: z.coerce.date().optional(),
 });
 
 export type UpdateLoaDto = z.infer<typeof UpdateLoaSchema>;
