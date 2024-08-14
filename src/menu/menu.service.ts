@@ -80,6 +80,16 @@ export class MenuService {
       .take(10)
       .getRawMany();
 
-    return meals;
+    const mealsData = meals.map((meal) => ({
+      mealId: meal.meal_id,
+      name: meal.name,
+      ingredients: meal.ingredients,
+      nutrition: meal.nutrition,
+      isVegetarian: meal.is_vegetarian,
+      isGlutenFree: meal.is_gluten_free,
+      type: meal.type,
+    }));
+
+    return mealsData;
   }
 }
