@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const CreateSchoolYearSchema = z.object({
   year: z.string(),
-  startDate: z.date(),
-  endDate: z.date(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
   schoolId: z.number(),
 });
 

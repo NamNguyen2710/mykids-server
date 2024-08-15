@@ -6,7 +6,7 @@ const genderList = [...Object.values(Gender)] as [string, ...string[]];
 export const CreateStudentSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
-  dateOfBirth: z.date(),
+  dateOfBirth: z.coerce.date(),
   permanentAddress: z.string(),
   currentAddress: z.string(),
   ethnic: z.string(),

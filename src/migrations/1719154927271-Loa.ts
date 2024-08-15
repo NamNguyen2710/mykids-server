@@ -37,7 +37,7 @@ export class Loa1717323468540 implements MigrationInterface {
       ALTER TABLE "schedules" 
         ADD COLUMN "resources" text NOT NULL, 
         ADD COLUMN "learning_objective" text NOT NULL, 
-        ADD COLUMN "learning outcome" text NOT NULL
+        ADD COLUMN "learning_outcome" text NOT NULL
       `);
     await queryRunner.query(
       `ALTER TABLE "students_parents" ADD COLUMN "relationship" varchar(16) NOT NULL`,

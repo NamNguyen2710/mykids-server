@@ -7,7 +7,7 @@ export const MenuDetailSchema = z.object({
   description: z.string().nullish(),
   mealPerioad: z.nativeEnum(MealPeriod),
   meals: z.array(MealDetailSchema),
-  date: z.date(),
+  date: z.coerce.date(),
   classId: z.number(),
 });
 export type MenuDetail = z.infer<typeof MenuDetailSchema>;
