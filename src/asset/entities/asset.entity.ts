@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  ManyToMany,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-} from 'typeorm';
+import { Column, Entity, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Posts } from 'src/post/entities/post.entity';
 import { Meals } from 'src/menu/entities/meal.entity';
@@ -39,6 +33,6 @@ export class Assets {
   @ManyToMany(() => Students, (student) => student.studentCvs)
   students: Students[];
 
-  @ManyToOne(() => Medicals, (medical) => medical.assets)
-  medical: Medicals[];
+  @ManyToMany(() => Medicals, (medical) => medical.assets)
+  medicals: Medicals[];
 }
