@@ -8,6 +8,7 @@ export const UpdateLoaSchema = z.object({
   description: z.string().optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
+  assetIds: z.array(z.number()).optional(),
 });
 
 export type UpdateLoaDto = z.infer<typeof UpdateLoaSchema>;

@@ -189,7 +189,7 @@ export class UserService {
         roleId: Role.Parent.id,
         children: { student: { history: { classId } } },
       },
-      relations: ['children', 'children.history'],
+      relations: ['children', 'children.student.history'],
     });
 
     return !!user;

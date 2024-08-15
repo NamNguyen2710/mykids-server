@@ -13,7 +13,7 @@ export class Loa1717323468540 implements MigrationInterface {
         "description" text NOT NULL,
         "start_date" Date NOT NULL,
         "end_date" Date NOT NULL,
-        "created_at" Date NOT NULL,
+        "created_at" Date NOT NULL DEFAULT now(),
         "approve_status" varchar(10) NOT NULL,
         FOREIGN KEY (created_by_id) REFERENCES users (user_id),
         FOREIGN KEY (student_id) REFERENCES students (student_id),

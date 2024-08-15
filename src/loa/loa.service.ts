@@ -14,21 +14,27 @@ import { QueryLoaDto } from './dto/query-loa.dto';
 import { CreateLoaDto } from './dto/create-loa.dto';
 import { UpdateLoaDto } from './dto/update-loa.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
+import { AssetService } from 'src/asset/asset.service';
 
 @Injectable()
 export class LoaService {
   constructor(
     @InjectRepository(Loa) private readonly loaRepo: Repository<Loa>,
     private readonly userService: UserService,
+    private readonly assetService: AssetService,
   ) {}
 
   async create(userId: number, createLoaDto: CreateLoaDto): Promise<Loa> {
+    const assets = await this.assetService.findByIds(createLoaDto.assetIds);
+
     const loa = this.loaRepo.create({
       ...createLoaDto,
       createdById: userId,
       approveStatus: LOA_STATUS.PENDING,
+      assets,
     });
     await this.loaRepo.save(loa);
+
     return loa;
   }
 
@@ -120,10 +126,15 @@ export class LoaService {
   }
 
   async update(loaId: number, updateLoaDto: UpdateLoaDto) {
+    const assets = await this.assetService.findByIds(updateLoaDto.assetIds);
     const loa = await this.loaRepo.findOne({ where: { id: loaId } });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
 
-    const updatedLoa = await this.loaRepo.save({ ...loa, ...updateLoaDto });
+    const updatedLoa = await this.loaRepo.save({
+      ...loa,
+      ...updateLoaDto,
+      assets,
+    });
     return updatedLoa;
   }
 
