@@ -132,7 +132,7 @@ export class NotificationsService {
       data: noti,
       unreadCount,
       pagination: {
-        total: total,
+        totalItems: total,
         totalPage: Math.ceil(total / limit),
         page,
         limit,

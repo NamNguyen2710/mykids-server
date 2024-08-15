@@ -1,5 +1,4 @@
 import {
-  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -16,6 +15,7 @@ import { Users } from 'src/users/entity/users.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { Students } from 'src/student/entities/student.entity';
 import { Albums } from 'src/album/entities/album.entity';
+import { Medicals } from 'src/medical/entities/medical.entity';
 
 @Entity()
 export class Schools {
@@ -68,8 +68,6 @@ export class Schools {
   @OneToMany(() => Albums, (album) => album.school)
   albums: Albums[];
 
-  @AfterLoad()
-  removeIds() {
-    if (this.logo) delete this.logoId;
-  }
+  @OneToMany(() => Medicals, (medical) => medical.school)
+  medicals: Medicals[];
 }

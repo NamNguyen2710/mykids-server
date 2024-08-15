@@ -40,7 +40,7 @@ export class ProfileController {
 
   @Get()
   async getUserProfile(@Request() req) {
-    if (req.user.role.name === Role.Parent.name) {
+    if (req.user.role === Role.Parent.name) {
       const user = await this.usersService.findParentProfile(req.user.sub);
       const parentProfile = ParentProfileSchema.parse(user);
 

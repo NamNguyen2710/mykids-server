@@ -22,6 +22,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
 import { LoaModule } from './loa/loa.module';
 import { ProfileModule } from 'src/profile/profile.module';
 import { AlbumModule } from './album/album.module';
+import { MedicalModule } from 'src/medical/medical.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { AlbumModule } from './album/album.module';
 
     StudentModule,
     LoaModule,
+    MedicalModule,
 
     PostModule,
     CommentModule,
