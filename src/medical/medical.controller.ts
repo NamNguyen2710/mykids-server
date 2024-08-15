@@ -6,37 +6,60 @@ import {
   Patch,
   Param,
   Delete,
+  ParseIntPipe,
+  Query,
+  Request,
 } from '@nestjs/common';
 import { MedicalService } from './medical.service';
-import { CreateMedicalDto } from './dto/create-medical.dto';
-import { UpdateMedicalDto } from './dto/query-medical.dto';
+import {
+  CreateMedicalDto,
+  CreateMedicalSchema,
+} from './dto/create-medical.dto';
+import {
+  UpdateMedicalDto,
+  UpdateMedicalSchema,
+} from './dto/update-medical.dto';
+import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 @Controller('medical')
 export class MedicalController {
   constructor(private readonly medicalService: MedicalService) {}
 
   @Post()
-  create(@Body() createMedicalDto: CreateMedicalDto) {
+  async create(
+    @Body(new ZodValidationPipe(CreateMedicalSchema))
+    createMedicalDto: CreateMedicalDto,
+  ) {
     return this.medicalService.create(createMedicalDto);
   }
 
   @Get()
-  findAll() {
-    return this.medicalService.findAll();
+  async findAll(
+    @Request() req,
+    @Query(new ZodValidationPipe(QueryMedicalSchema))
+    query: QueryMedicalDTO,
+  ) {
+    return this.medicalService.findAll(query);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.medicalService.findOne(+id);
+  async findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    return this.medicalService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMedicalDto: UpdateMedicalDto) {
-    return this.medicalService.update(+id, updateMedicalDto);
+  async update(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(UpdateMedicalSchema))
+    updateMedicalDto: UpdateMedicalDto,
+  ) {
+    return this.medicalService.update(id, updateMedicalDto.assetIds);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.medicalService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return this.medicalService.remove(id);
   }
 }
