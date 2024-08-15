@@ -16,12 +16,14 @@ export const OriginalProfileSchema = z.object({
           id: z.number(),
           name: z.string(),
         }),
-        history: z.object({
-          classroom: z.object({
-            id: z.number(),
-            name: z.string(),
+        history: z.array(
+          z.object({
+            classroom: z.object({
+              id: z.number(),
+              name: z.string(),
+            }),
           }),
-        }),
+        ),
       }),
     }),
   ),
@@ -41,8 +43,8 @@ export const ParentProfileSchema = OriginalProfileSchema.transform((data) => ({
       name: child.student.school.name,
     },
     class: {
-      id: child.student.history.classroom.id,
-      name: child.student.history.classroom.name,
+      id: child.student.history[0].classroom.id,
+      name: child.student.history[0].classroom.name,
     },
   })),
 }));
