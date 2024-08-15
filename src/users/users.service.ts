@@ -114,7 +114,7 @@ export class UserService {
       where: {
         phoneNumber: number,
         isActive: true,
-        role: { clients: { clientId: clientId } },
+        role: { clients: { clientId } },
       },
     });
   }

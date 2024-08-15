@@ -29,6 +29,6 @@ export class ClientGuard implements CanActivate {
 
   private extractTokenFromHeader(request: Request): string[] | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Basic' ? atob(token).split(':') : undefined;
+    return type === 'Basic' ? atob(token).split(':') : [];
   }
 }
