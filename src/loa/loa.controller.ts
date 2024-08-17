@@ -20,6 +20,7 @@ import { LOA_STATUS } from './entities/loa.entity';
 import { CreateLoaDto, CreateLoaSchema } from './dto/create-loa.dto';
 import { QueryLoaDto, QueryLoaSchema } from './dto/query-loa.dto';
 import { UpdateLoaDto, UpdateLoaSchema } from './dto/update-loa.dto';
+import { ResponseLoaSchema } from 'src/loa/dto/response-loa.dto';
 
 @UseGuards(LoginGuard)
 @Controller('loa')
@@ -40,7 +41,11 @@ export class LoaController {
     @Query(new ZodValidationPipe(QueryLoaSchema))
     query: QueryLoaDto,
   ): Promise<any> {
-    return this.loaService.findAll(request.user.sub, query);
+    const res = await this.loaService.findAll(request.user.sub, query);
+    return {
+      data: ResponseLoaSchema.parse(res.data),
+      pagination: res.pagination,
+    };
   }
 
   @Get(':loaID')
@@ -59,7 +64,8 @@ export class LoaController {
       ));
     if (!validation) throw new NotFoundException('Cannot find LOA notice!');
 
-    return this.loaService.findOne(request.user.sub, loaID);
+    const res = await this.loaService.findOne(request.user.sub, loaID);
+    return ResponseLoaSchema.parse(res);
   }
 
   @Put(':loaID/approve')
@@ -73,7 +79,10 @@ export class LoaController {
     );
     if (!validation) throw new NotFoundException('Cannot find LOA notice!');
 
-    return this.loaService.update(loaID, { approveStatus: LOA_STATUS.APPROVE });
+    const res = await this.loaService.update(loaID, {
+      approveStatus: LOA_STATUS.APPROVE,
+    });
+    return ResponseLoaSchema.parse(res);
   }
 
   @Put(':loaID/reject')
@@ -87,7 +96,10 @@ export class LoaController {
     );
     if (!validation) throw new NotFoundException('Cannot find LOA notice!');
 
-    return this.loaService.update(loaID, { approveStatus: LOA_STATUS.REJECT });
+    const res = await this.loaService.update(loaID, {
+      approveStatus: LOA_STATUS.REJECT,
+    });
+    return ResponseLoaSchema.parse(res);
   }
 
   @Put(':loaID/cancel')
@@ -101,7 +113,10 @@ export class LoaController {
     );
     if (!validation) throw new NotFoundException('Cannot find LOA notice!');
 
-    return this.loaService.update(loaID, { approveStatus: LOA_STATUS.CANCEL });
+    const res = await this.loaService.update(loaID, {
+      approveStatus: LOA_STATUS.CANCEL,
+    });
+    return ResponseLoaSchema.parse(res);
   }
 
   @Put(':loaID')
@@ -117,6 +132,7 @@ export class LoaController {
     if (!validation) throw new NotFoundException('Cannot find LOA notice!');
 
     delete updateLoaDto.approveStatus;
-    return this.loaService.update(loaID, updateLoaDto);
+    const res = await this.loaService.update(loaID, updateLoaDto);
+    return ResponseLoaSchema.parse(res);
   }
 }

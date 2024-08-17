@@ -35,7 +35,10 @@ export class LoaService {
     });
     await this.loaRepo.save(loa);
 
-    return loa;
+    return this.loaRepo.findOne({
+      where: { id: loa.id },
+      relations: ['students', 'classroom', 'createdBy.children'],
+    });
   }
 
   async findAll(
@@ -62,13 +65,13 @@ export class LoaService {
 
       const [data, total] = await this.loaRepo.findAndCount({
         where: whereClause,
-        relations: ['students', 'classroom'],
+        relations: ['students', 'classroom', 'createdBy.children'],
         take: limit,
         skip: skip,
       });
 
       return {
-        data: data,
+        data,
         pagination: {
           totalItems: total,
           totalPages: Math.ceil(total / limit),
@@ -88,6 +91,7 @@ export class LoaService {
           studentId: query.studentId,
           classId: query.classId,
         },
+        relations: ['students', 'classroom', 'createdBy.children'],
         take: limit,
         skip: skip,
       });
@@ -110,6 +114,7 @@ export class LoaService {
     if (user.role.name == Role.SchoolAdmin.name) {
       const loa = this.loaRepo.findOne({
         where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
+        relations: ['students', 'classroom', 'createdBy.children'],
       });
 
       if (!loa) throw new NotFoundException('Cannot find LOA notice!');
@@ -119,6 +124,7 @@ export class LoaService {
     if (user.role.name == Role.Parent.name) {
       const loa = this.loaRepo.findOne({
         where: { id: loaId, student: { parents: { parentId: userId } } },
+        relations: ['students', 'classroom', 'createdBy.children'],
       });
 
       if (!loa) throw new NotFoundException('Cannot find LOA notice!');
@@ -128,7 +134,11 @@ export class LoaService {
 
   async update(loaId: number, updateLoaDto: UpdateLoaDto) {
     const assets = await this.assetService.findByIds(updateLoaDto.assetIds);
-    const loa = await this.loaRepo.findOne({ where: { id: loaId } });
+
+    const loa = await this.loaRepo.findOne({
+      where: { id: loaId },
+      relations: ['students', 'classroom', 'createdBy.children'],
+    });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
 
     const updatedLoa = await this.loaRepo.save({
