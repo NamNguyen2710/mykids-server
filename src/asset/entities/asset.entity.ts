@@ -15,9 +15,6 @@ export class Assets {
   @Column()
   url: string;
 
-  @Column()
-  albumId: number;
-
   @ManyToMany(() => Posts, (post) => post.assets)
   posts: Posts[];
 
