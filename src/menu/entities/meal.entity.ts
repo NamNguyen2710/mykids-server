@@ -56,7 +56,10 @@ export class Meals {
   @JoinColumn({ name: 'menu_id' })
   menu: Menus;
 
-  @ManyToMany(() => Assets, (asset) => asset.meals, { eager: true })
+  @ManyToMany(() => Assets, (asset) => asset.meals, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'meal_assets',
     joinColumn: { name: 'meal_id' },

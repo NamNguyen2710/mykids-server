@@ -36,7 +36,10 @@ export class Loa {
   @JoinColumn({ name: 'created_by_id' })
   createdBy: Users;
 
-  @ManyToMany(() => Assets, (asset) => asset.loas)
+  @ManyToMany(() => Assets, (asset) => asset.loas, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'loa_image',
     joinColumn: { name: 'loa_id' },

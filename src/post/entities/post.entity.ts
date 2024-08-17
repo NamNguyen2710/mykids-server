@@ -74,7 +74,10 @@ export class Posts {
   })
   hashtags: Hashtags[];
 
-  @ManyToMany(() => Assets, (asset) => asset.posts, { eager: true })
+  @ManyToMany(() => Assets, (asset) => asset.posts, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'post_assets',
     joinColumn: { name: 'post_id' },

@@ -72,7 +72,10 @@ export class Students {
   @OneToMany(() => Loa, (loa) => loa.studentId)
   loas: Loa[];
 
-  @ManyToMany(() => Assets, (asset) => asset.students)
+  @ManyToMany(() => Assets, (asset) => asset.students, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'student_cvs',
     joinColumn: { name: 'student_id', referencedColumnName: 'id' },

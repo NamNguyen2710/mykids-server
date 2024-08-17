@@ -26,7 +26,10 @@ export class Medicals {
   @ManyToOne(() => Schools, (school) => school.medicals)
   school: Schools;
 
-  @ManyToMany(() => Assets, (asset) => asset.medicals)
+  @ManyToMany(() => Assets, (asset) => asset.medicals, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'medical_assets',
     joinColumn: { name: 'medical_id', referencedColumnName: 'id' },

@@ -91,23 +91,23 @@ export class AlbumService {
     const res = await this.albumRepo.update(albumId, { ...album, assets });
     if (res.affected === 0) throw new NotFoundException();
 
-    return this.albumRepo.findOne({
-      where: { id: albumId },
-      relations: ['assets'],
-    });
+    return this.albumRepo.findOne({ where: { id: albumId } });
   }
 
   async remove(albumId: number): Promise<any> {
-    const album = await this.albumRepo.findOne({
-      where: { id: albumId },
-      relations: ['assets'],
-    });
+    const album = await this.albumRepo.findOne({ where: { id: albumId } });
 
     if (!album) {
       throw new NotFoundException(`Album with ID ${albumId} not found`);
     }
 
-    await this.albumRepo.remove(album);
+    const res = await this.albumRepo.remove(album);
+    if (!res) {
+      throw new BadRequestException(
+        `Failed to remove album with ID ${albumId}`,
+      );
+    }
+    return { success: true, message: 'Album removed successfully' };
   }
 
   async validateAlbumAdminPermission(albumId: number, userId: number) {

@@ -48,7 +48,10 @@ export class Albums {
   @Column({ type: 'timestamptz', nullable: true })
   publishedDate: Date | null;
 
-  @ManyToMany(() => Assets, (asset) => asset.albums)
+  @ManyToMany(() => Assets, (asset) => asset.albums, {
+    cascade: true,
+    eager: true,
+  })
   @JoinTable({
     name: 'album_assets',
     joinColumn: { name: 'album_id', referencedColumnName: 'id' },

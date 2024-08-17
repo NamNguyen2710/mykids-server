@@ -35,7 +35,7 @@ export class Schools {
   @Column({ nullable: true })
   logoId: number;
 
-  @OneToOne(() => Assets, { nullable: true })
+  @OneToOne(() => Assets, { nullable: true, eager: true })
   @JoinColumn({ name: 'logo_id' })
   logo: Assets | null;
 

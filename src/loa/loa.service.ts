@@ -62,6 +62,7 @@ export class LoaService {
 
       const [data, total] = await this.loaRepo.findAndCount({
         where: whereClause,
+        relations: ['students', 'classroom'],
         take: limit,
         skip: skip,
       });
