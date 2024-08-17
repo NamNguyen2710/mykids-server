@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -68,12 +68,21 @@ export class ClassService {
     updateClassDto: UpdateClassDto,
   ): Promise<Classrooms> {
     const res = await this.classRepository.update(classId, updateClassDto);
-    if (res.affected === 0) return null;
+    if (res.affected === 0) throw new BadRequestException('Class not found');
 
     const classroom = await this.classRepository.findOne({
       where: { id: classId },
       relations: { school: true, schoolYear: true },
     });
+    return classroom;
+  }
+
+  async deactivate(id: number): Promise<Classrooms> {
+    const classroom = await this.classRepository.findOne({ where: { id } });
+    if (!classroom) throw new BadRequestException('Class not found');
+
+    await this.classRepository.update(id, { isActive: false });
+
     return classroom;
   }
 

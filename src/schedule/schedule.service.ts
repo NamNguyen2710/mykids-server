@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { LessThanOrEqual, MoreThanOrEqual, Repository } from 'typeorm';
 
@@ -37,7 +37,7 @@ export class ScheduleService {
 
   async updateSchedule(scheduleId: number, schedule: ScheduleDetailDto) {
     const res = await this.scheduleRepository.update(scheduleId, schedule);
-    if (res.affected === 0) return null;
+    if (res.affected === 0) throw new BadRequestException('Schedule not found');
 
     return this.scheduleRepository.findOne({ where: { id: scheduleId } });
   }

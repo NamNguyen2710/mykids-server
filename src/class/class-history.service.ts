@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -38,7 +38,8 @@ export class ClassHistoryService {
       { classId, studentId },
       updateClassHistoryDto,
     );
-    if (res.affected === 0) return null;
+    if (res.affected === 0)
+      throw new BadRequestException('Class history not found');
 
     return this.findOne(classId, studentId);
   }
@@ -48,6 +49,7 @@ export class ClassHistoryService {
       classId,
       studentId,
     });
-    if (res.affected === 0) return null;
+    if (res.affected === 0)
+      throw new BadRequestException('Class history not found');
   }
 }

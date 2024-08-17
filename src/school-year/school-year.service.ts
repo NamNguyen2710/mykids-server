@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { CreateSchoolYearDto } from './dto/create-school-year.dto';
 import { UpdateSchoolYearDto } from './dto/update-school-year.dto';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
+import { Classrooms } from 'src/class/entities/class.entity';
 
 @Injectable()
 export class SchoolYearService {
@@ -36,7 +37,24 @@ export class SchoolYearService {
 
   async update(id: number, updateSchoolYearDto: UpdateSchoolYearDto) {
     const res = await this.schoolYearRepo.update(id, updateSchoolYearDto);
-    if (res.affected === 0) return null;
+    if (res.affected === 0)
+      throw new BadRequestException('School year not found');
+
+    return this.schoolYearRepo.findOne({ where: { id } });
+  }
+
+  async deactivate(id: number) {
+    const schoolYear = await this.schoolYearRepo.findOne({ where: { id } });
+    if (!schoolYear) throw new BadRequestException('School year not found');
+
+    await this.schoolYearRepo.manager.transaction(async (manager) => {
+      await manager.update(SchoolYears, id, { isActive: false });
+      await manager.update(
+        Classrooms,
+        { schoolYearId: id },
+        { isActive: false },
+      );
+    });
 
     return this.schoolYearRepo.findOne({ where: { id } });
   }
@@ -45,6 +63,6 @@ export class SchoolYearService {
     const res = await this.schoolYearRepo.delete(id);
     if (res.affected === 0) return false;
 
-    return true;
+    return { status: true, message: 'School year has been deleted' };
   }
 }

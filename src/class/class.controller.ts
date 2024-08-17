@@ -106,6 +106,22 @@ export class ClassController {
     return this.classService.update(id, updateClassDto);
   }
 
+  @Put(':id/deactivate')
+  async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
+    const classroom = await this.classService.findOne(id);
+
+    const permission = await this.userService.validateSchoolAdminPermission(
+      request.user.sub,
+      classroom.schoolId,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to update this class',
+      );
+
+    return this.classService.deactivate(id);
+  }
+
   @Delete(':id')
   @HttpCode(204)
   async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {

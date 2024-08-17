@@ -108,6 +108,22 @@ export class SchoolYearController {
     return this.schoolYearService.update(id, updateSchoolYearDto);
   }
 
+  @Put(':id/deactivate')
+  async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
+    const schoolYear = await this.schoolYearService.findOne(id);
+    const permission = await this.userService.validateSchoolAdminPermission(
+      request.user.sub,
+      schoolYear.schoolId,
+    );
+
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to assess this resource.',
+      );
+
+    return this.schoolYearService.deactivate(id);
+  }
+
   @Delete(':id')
   async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const schoolYear = await this.schoolYearService.findOne(id);
