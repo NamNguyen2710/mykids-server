@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   ParseIntPipe,
@@ -48,7 +48,7 @@ export class MedicalController {
     return this.medicalService.findOne(id);
   }
 
-  @Patch(':id')
+  @Put(':id')
   async update(
     @Request() req,
     @Param('id', ParseIntPipe) id: number,

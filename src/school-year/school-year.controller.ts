@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   Request,
@@ -87,7 +87,7 @@ export class SchoolYearController {
     return schoolYear;
   }
 
-  @Patch(':id')
+  @Put(':id')
   async update(
     @Request() request,
     @Param('id', ParseIntPipe) id: number,

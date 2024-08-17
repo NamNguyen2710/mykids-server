@@ -3,7 +3,7 @@ import {
   Get,
   Post,
   Body,
-  Patch,
+  Put,
   Param,
   Delete,
   Query,
@@ -96,7 +96,7 @@ export class StudentController {
     return ResponseStdWithParentSchema.parse(student);
   }
 
-  @Patch(':id')
+  @Put(':id')
   async update(
     @Request() request,
     @Param('id', ParseIntPipe) studentId: number,
