@@ -10,6 +10,7 @@ import {
   UseGuards,
   ParseIntPipe,
   ForbiddenException,
+  HttpCode,
 } from '@nestjs/common';
 import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
@@ -56,6 +57,7 @@ export class CommentController {
   }
 
   @Delete(':commentId')
+  @HttpCode(204)
   async remove(
     @Request() request,
     @Param('commentId', ParseIntPipe) commentId: number,

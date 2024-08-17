@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Query,
   Request,
+  HttpCode,
 } from '@nestjs/common';
 import { MedicalService } from './medical.service';
 import {
@@ -59,6 +60,7 @@ export class MedicalController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   async remove(@Param('id', ParseIntPipe) id: number) {
     return this.medicalService.remove(id);
   }

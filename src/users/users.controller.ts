@@ -12,6 +12,7 @@ import {
   Request,
   ForbiddenException,
   ParseIntPipe,
+  HttpCode,
 } from '@nestjs/common';
 
 import { UserService } from './users.service';
@@ -107,6 +108,7 @@ export class UsersController {
   }
 
   @Delete(':userId')
+  @HttpCode(204)
   async delete(@Param('userId', ParseIntPipe) userId: number) {
     const user = await this.usersService.findOne(userId);
     if (!user) {

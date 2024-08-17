@@ -11,6 +11,7 @@ import {
   ParseIntPipe,
   Query,
   UnauthorizedException,
+  HttpCode,
 } from '@nestjs/common';
 
 import { LoginGuard } from 'src/guard/login.guard';
@@ -112,6 +113,7 @@ export class AlbumController {
   }
 
   @Delete(':albumId')
+  @HttpCode(204)
   async remove(
     @Request() req,
     @Param('albumId', ParseIntPipe) albumId: number,

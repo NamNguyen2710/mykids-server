@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   ParseIntPipe,
+  HttpCode,
 } from '@nestjs/common';
 
 import { NotificationsService } from './notifications.service';
@@ -70,6 +71,7 @@ export class NotificationsController {
   }
 
   @Delete(':notificationId')
+  @HttpCode(204)
   async deleteNotification(
     @Request() request,
     @Param('notificationId', ParseIntPipe) notificationId: number,

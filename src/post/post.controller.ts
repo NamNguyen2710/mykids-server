@@ -11,6 +11,7 @@ import {
   Body,
   UnauthorizedException,
   ParseIntPipe,
+  HttpCode,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { LoginGuard } from 'src/guard/login.guard';
@@ -73,6 +74,7 @@ export class PostController {
   }
 
   @Delete(':postId')
+  @HttpCode(204)
   async remove(@Request() req, @Param('postId', ParseIntPipe) postId: number) {
     const validate = await this.postService.validatePostPermission(
       req.user.sub,

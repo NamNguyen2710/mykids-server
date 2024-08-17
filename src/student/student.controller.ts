@@ -11,6 +11,7 @@ import {
   Request,
   ForbiddenException,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 
 import { StudentService } from './student.service';
@@ -143,6 +144,7 @@ export class StudentController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   async remove(
     @Request() request,
     @Param('id', ParseIntPipe) studentId: number,

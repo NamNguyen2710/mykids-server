@@ -6,6 +6,7 @@ import {
   UploadedFiles,
   UseGuards,
   UseInterceptors,
+  HttpCode,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AssetService } from './asset.service';
@@ -23,6 +24,7 @@ export class AssetController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   remove(@Param('id') id: string) {
     return this.assetService.remove(+id);
   }

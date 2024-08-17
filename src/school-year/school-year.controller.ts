@@ -10,6 +10,7 @@ import {
   ForbiddenException,
   ParseIntPipe,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 
 import { SchoolYearService } from './school-year.service';
@@ -125,6 +126,7 @@ export class SchoolYearController {
   }
 
   @Delete(':id')
+  @HttpCode(204)
   async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission = await this.userService.validateSchoolAdminPermission(
