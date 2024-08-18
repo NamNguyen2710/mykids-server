@@ -140,6 +140,8 @@ export class LoaService {
       relations: ['students', 'classroom', 'createdBy.children'],
     });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
+    if (loa.approveStatus != LOA_STATUS.PENDING)
+      throw new BadRequestException('Cannot update ended LOA notice!');
 
     const updatedLoa = await this.loaRepo.save({
       ...loa,
