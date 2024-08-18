@@ -6,11 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, In } from 'typeorm';
-import {
-  ObjectCannedACL,
-  PutObjectCommand,
-  S3Client,
-} from '@aws-sdk/client-s3';
+import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 
 import { Assets } from 'src/asset/entities/asset.entity';
 
@@ -38,7 +34,6 @@ export class AssetService {
         Bucket: this.configService.get('AWS_S3_BUCKET_NAME'),
         Key: `${Date.now()}-${file.originalname}`,
         Body: file.buffer,
-        ACL: ObjectCannedACL.public_read,
       };
 
       await this.s3.send(new PutObjectCommand(uploadedParams));
