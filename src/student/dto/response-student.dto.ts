@@ -29,8 +29,7 @@ export const ResponseStudentSchema = z.object({
   history: z
     .array(
       z.object({
-        id: z.number(),
-        description: z.string(),
+        description: z.string().nullable(),
         classroom: z.object({
           id: z.number(),
           name: z.string(),
