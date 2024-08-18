@@ -43,7 +43,7 @@ export class LoaController {
   ): Promise<any> {
     const res = await this.loaService.findAll(request.user.sub, query);
     return {
-      data: ResponseLoaSchema.parse(res.data),
+      data: res.data.map((datum) => ResponseLoaSchema.parse(datum)),
       pagination: res.pagination,
     };
   }
