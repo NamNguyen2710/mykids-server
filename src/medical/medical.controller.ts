@@ -27,14 +27,12 @@ import {
 } from './dto/update-medical.dto';
 import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
 import { ResponseMedicalSchema } from 'src/medical/dto/medical-response.dto';
-import { StudentService } from 'src/student/student.service';
 
 @Controller('medical')
 export class MedicalController {
   constructor(
     private readonly medicalService: MedicalService,
     private readonly userService: UserService,
-    private readonly studentService: StudentService,
   ) {}
 
   @Post()

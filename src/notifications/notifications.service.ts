@@ -123,7 +123,7 @@ export class NotificationsService {
       skip: (page - 1) * limit,
     });
 
-    const unreadCount = this.notificationRepo.countBy({
+    const unreadCount = await this.notificationRepo.countBy({
       userId: userId,
       readStatus: false,
     });
