@@ -37,7 +37,7 @@ export class LoaService {
 
     return this.loaRepo.findOne({
       where: { id: loa.id },
-      relations: ['students', 'classroom', 'createdBy.children'],
+      relations: ['student', 'classroom', 'createdBy.children'],
     });
   }
 
@@ -137,7 +137,7 @@ export class LoaService {
 
     const loa = await this.loaRepo.findOne({
       where: { id: loaId },
-      relations: ['students', 'classroom', 'createdBy.children'],
+      relations: ['student', 'classroom', 'createdBy.children'],
     });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
     if (loa.approveStatus != LOA_STATUS.PENDING)
