@@ -42,7 +42,7 @@ export class MedicalService {
 
     const [medical, total] = await this.medicalRepository.findAndCount({
       where: whereClause,
-      relations: ['assets', 'student'],
+      relations: ['student'],
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
@@ -62,7 +62,7 @@ export class MedicalService {
   async findOne(id: number) {
     return this.medicalRepository.findOne({
       where: { id },
-      relations: ['assets', 'student'],
+      relations: ['student'],
     });
   }
 

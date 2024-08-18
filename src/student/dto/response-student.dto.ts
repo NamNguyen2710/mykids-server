@@ -26,15 +26,31 @@ export const ResponseStudentSchema = z.object({
       }),
     )
     .optional(),
+  history: z
+    .object({
+      id: z.number(),
+      description: z.string(),
+      classroom: z.object({
+        id: z.number(),
+        name: z.string(),
+      }),
+    })
+    .optional(),
 });
 
 export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
   (data) => ({
     ...data,
-    parents: data.parents.map((parent) => ({
-      relationship: parent.relationship,
-      ...parent.parent,
-    })),
+    parents:
+      data.parents &&
+      data.parents.map((parent) => ({
+        relationship: parent.relationship,
+        ...parent.parent,
+      })),
+    history: data.history && {
+      ...data.history.classroom,
+      description: data.history.description,
+    },
   }),
 );
 

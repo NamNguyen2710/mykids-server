@@ -93,7 +93,10 @@ export class StudentController {
         'You do not have permission to view this student',
       );
 
-    const student = await this.studentService.findOne(id, ['parents.parent']);
+    const student = await this.studentService.findOne(id, [
+      'parents.parent',
+      'history.classroom',
+    ]);
     return ResponseStdWithParentSchema.parse(student);
   }
 
