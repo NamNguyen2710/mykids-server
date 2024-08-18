@@ -10,8 +10,13 @@ import {
   Query,
   Request,
   HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
+
 import { MedicalService } from './medical.service';
+import { UserService } from 'src/users/users.service';
+import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+
 import {
   CreateMedicalDto,
   CreateMedicalSchema,
@@ -21,17 +26,34 @@ import {
   UpdateMedicalSchema,
 } from './dto/update-medical.dto';
 import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
-import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { ResponseMedicalSchema } from 'src/medical/dto/medical-response.dto';
+import { StudentService } from 'src/student/student.service';
 
 @Controller('medical')
 export class MedicalController {
-  constructor(private readonly medicalService: MedicalService) {}
+  constructor(
+    private readonly medicalService: MedicalService,
+    private readonly userService: UserService,
+    private readonly studentService: StudentService,
+  ) {}
 
   @Post()
   async create(
+    @Request() req,
     @Body(new ZodValidationPipe(CreateMedicalSchema))
     createMedicalDto: CreateMedicalDto,
   ) {
+    const permission =
+      (await this.userService.validateParentChildrenPermission(
+        req.user.sub,
+        req.createMedicalDto.schoolId,
+      )) &&
+      (await this.userService.validateParentSchoolPermission(
+        req.user.sub,
+        req.createMedicalDto.studentId,
+      ));
+    if (!permission) throw new ForbiddenException('Permission denied');
+
     return this.medicalService.create(createMedicalDto);
   }
 
@@ -41,12 +63,17 @@ export class MedicalController {
     @Query(new ZodValidationPipe(QueryMedicalSchema))
     query: QueryMedicalDTO,
   ) {
-    return this.medicalService.findAll(query);
+    const res = await this.medicalService.findAll(query);
+    return {
+      data: ResponseMedicalSchema.parse(res.data),
+      pagination: res.pagination,
+    };
   }
 
   @Get(':id')
   async findOne(@Request() req, @Param('id', ParseIntPipe) id: number) {
-    return this.medicalService.findOne(id);
+    const medical = await this.medicalService.findOne(id);
+    return ResponseMedicalSchema.parse(medical);
   }
 
   @Put(':id')
@@ -56,12 +83,31 @@ export class MedicalController {
     @Body(new ZodValidationPipe(UpdateMedicalSchema))
     updateMedicalDto: UpdateMedicalDto,
   ) {
-    return this.medicalService.update(id, updateMedicalDto.assetIds);
+    const permission =
+      await this.medicalService.validateParentMedicalPermission(
+        req.user.sub,
+        id,
+      );
+    if (!permission) throw new ForbiddenException('Permission denied');
+
+    const medical = await this.medicalService.update(
+      id,
+      updateMedicalDto.assetIds,
+    );
+    return ResponseMedicalSchema.parse(medical);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    return this.medicalService.remove(id);
+  async remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
+    const permission =
+      await this.medicalService.validateParentMedicalPermission(
+        req.user.sub,
+        id,
+      );
+    if (!permission) throw new ForbiddenException('Permission denied');
+
+    const medical = await this.medicalService.remove(id);
+    return ResponseMedicalSchema.parse(medical);
   }
 }

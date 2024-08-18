@@ -82,4 +82,11 @@ export class MedicalService {
 
     return { status: true, message: 'Medical record has been deleted!' };
   }
+
+  async validateParentMedicalPermission(parentId: number, medicalId: number) {
+    const medical = await this.medicalRepository.findOne({
+      where: { id: medicalId, student: { parents: { parentId } } },
+    });
+    return !!medical;
+  }
 }
