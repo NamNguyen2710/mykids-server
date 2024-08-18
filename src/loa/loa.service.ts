@@ -92,6 +92,7 @@ export class LoaService {
           classId: query.classId,
         },
         relations: ['student', 'classroom', 'createdBy.children'],
+        order: { createdAt: 'DESC' },
         take: limit,
         skip: skip,
       });
@@ -133,7 +134,9 @@ export class LoaService {
   }
 
   async update(loaId: number, updateLoaDto: UpdateLoaDto) {
-    const assets = await this.assetService.findByIds(updateLoaDto.assetIds);
+    let assets;
+    if (updateLoaDto.assetIds)
+      assets = await this.assetService.findByIds(updateLoaDto.assetIds);
 
     const loa = await this.loaRepo.findOne({
       where: { id: loaId },

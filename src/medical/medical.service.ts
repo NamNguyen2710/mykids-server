@@ -52,7 +52,7 @@ export class MedicalService {
       data: medical,
       pagination: {
         totalItems: total,
-        totalPage: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit),
         page,
         limit,
       },
