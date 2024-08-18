@@ -86,9 +86,12 @@ export class AlbumService {
 
   async update(albumId: number, album: UpdateAlbumDto): Promise<Albums> {
     // Update array of assets to an album
-    const assets = await this.assetService.findByIds(album.assetIds);
+    if (album.assetIds) {
+      const assets = await this.assetService.findByIds(album.assetIds);
+      (album as any).assets = assets;
+    }
 
-    const res = await this.albumRepo.update(albumId, { ...album, assets });
+    const res = await this.albumRepo.update(albumId, { ...album });
     if (res.affected === 0) throw new NotFoundException();
 
     return this.albumRepo.findOne({ where: { id: albumId } });

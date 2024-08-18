@@ -134,22 +134,23 @@ export class LoaService {
   }
 
   async update(loaId: number, updateLoaDto: UpdateLoaDto) {
-    let assets;
-    if (updateLoaDto.assetIds)
-      assets = await this.assetService.findByIds(updateLoaDto.assetIds);
-
     const loa = await this.loaRepo.findOne({
       where: { id: loaId },
       relations: ['student', 'classroom', 'createdBy.children'],
     });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
+
+    if (updateLoaDto.assetIds) {
+      const assets = await this.assetService.findByIds(updateLoaDto.assetIds);
+      loa.assets = assets;
+    }
+
     if (loa.approveStatus != LOA_STATUS.PENDING)
       throw new BadRequestException('Cannot update ended LOA notice!');
 
     const updatedLoa = await this.loaRepo.save({
       ...loa,
       ...updateLoaDto,
-      assets,
     });
     return updatedLoa;
   }
