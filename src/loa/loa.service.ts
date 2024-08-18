@@ -65,7 +65,7 @@ export class LoaService {
 
       const [data, total] = await this.loaRepo.findAndCount({
         where: whereClause,
-        relations: ['students', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy.children'],
         take: limit,
         skip: skip,
       });
@@ -91,7 +91,7 @@ export class LoaService {
           studentId: query.studentId,
           classId: query.classId,
         },
-        relations: ['students', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy.children'],
         take: limit,
         skip: skip,
       });
@@ -114,7 +114,7 @@ export class LoaService {
     if (user.role.name == Role.SchoolAdmin.name) {
       const loa = this.loaRepo.findOne({
         where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
-        relations: ['students', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy.children'],
       });
 
       if (!loa) throw new NotFoundException('Cannot find LOA notice!');
@@ -124,7 +124,7 @@ export class LoaService {
     if (user.role.name == Role.Parent.name) {
       const loa = this.loaRepo.findOne({
         where: { id: loaId, student: { parents: { parentId: userId } } },
-        relations: ['students', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy.children'],
       });
 
       if (!loa) throw new NotFoundException('Cannot find LOA notice!');
