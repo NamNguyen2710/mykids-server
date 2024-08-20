@@ -63,7 +63,7 @@ export class MedicalController {
   ) {
     const res = await this.medicalService.findAll(query);
     return {
-      data: ResponseMedicalSchema.parse(res.data),
+      data: res.data.map((med) => ResponseMedicalSchema.parse(med)),
       pagination: res.pagination,
     };
   }
