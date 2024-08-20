@@ -84,10 +84,14 @@ export class StudentController {
   @Get(':id')
   async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const permission =
-      await this.studentService.validateStudentTeacherPermission(
+      (await this.studentService.validateStudentTeacherPermission(
         request.user.sub,
         id,
-      );
+      )) ||
+      (await this.userService.validateParentChildrenPermission(
+        request.user.sub,
+        id,
+      ));
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to view this student',
