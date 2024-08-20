@@ -34,7 +34,8 @@ export class PostService {
     userId: number,
     query: QueryPostDto,
   ): Promise<ListResponse<ResponsePostDto>> {
-    let { schoolId, limit = 20, page = 1, hashtag } = query;
+    const { limit = 20, page = 1, hashtag } = query;
+    let { schoolId } = query;
 
     const user = await this.userService.findOne(userId, [
       'schools',
@@ -88,6 +89,7 @@ export class PostService {
       .leftJoin('post.comments', 'comments')
       .leftJoin('post.likedUsers', 'likedUsers')
       .leftJoinAndSelect('post.createdBy', 'createdBy')
+      .leftJoinAndSelect('post.assets', 'assets')
       .groupBy('post.id')
       .addGroupBy('createdBy.id')
       .addSelect([
@@ -119,6 +121,10 @@ export class PostService {
           lastName: post.createdBy_last_name,
           phoneNumber: post.createdBy_phone_number,
         },
+        assets: post.assets.map((asset) => ({
+          id: asset.asset_id,
+          url: asset.asset_url,
+        })),
       }));
 
     // Get total count of posts
@@ -141,6 +147,7 @@ export class PostService {
     if (!userId) throw new NotFoundException('Unauthorized!');
     const post = await this.postRepo.findOne({
       where: { id: postId, school: { parents: { id: userId } } },
+      relations: ['createdBy', 'comments'],
     });
     if (!post) throw new NotFoundException('Post not found');
 
