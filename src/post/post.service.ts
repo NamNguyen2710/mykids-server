@@ -102,7 +102,6 @@ export class PostService {
       .orderBy('post.createdAt', 'DESC')
       .getRawMany();
     if (!rawPosts) throw new NotFoundException();
-    console.log(rawPosts.slice(limit * (page - 1), limit * page));
 
     const posts = rawPosts
       .slice(limit * (page - 1), limit * page)

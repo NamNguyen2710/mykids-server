@@ -59,7 +59,7 @@ export class NotificationsController {
     );
     return {
       ...notis,
-      data: NotiResponseSchema.parse(notis.data),
+      data: notis.data.map((noti) => NotiResponseSchema.parse(noti)),
     };
   }
 
