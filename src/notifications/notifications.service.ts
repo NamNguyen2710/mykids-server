@@ -117,7 +117,7 @@ export class NotificationsService {
     const { limit = 20, page = 1 } = query;
 
     const [noti, total] = await this.notificationRepo.findAndCount({
-      where: { userId: userId },
+      where: { userId },
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,

@@ -16,7 +16,7 @@ export class Notifications {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @ManyToOne(() => Users, { eager: true })
+  @ManyToOne(() => Users)
   @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
   user: Users;
 
