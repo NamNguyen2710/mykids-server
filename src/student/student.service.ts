@@ -11,7 +11,6 @@ import { StudentsParents } from './entities/students-parents.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { QueryStudentDto } from './dto/query-student.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
 
 @Injectable()
 export class StudentService {
@@ -49,13 +48,22 @@ export class StudentService {
     return student;
   }
 
-  async findAll(query: QueryStudentDto): Promise<ListResponse<Students>> {
-    const { name, schoolId, classId, limit = 20, page = 1 } = query;
+  async findAll(query: QueryStudentDto): Promise<any> {
+    const {
+      name,
+      schoolId,
+      classId,
+      limit = 20,
+      page = 1,
+      hasNoClass = false,
+    } = query;
+
     const qb = this.studentRepository
       .createQueryBuilder('s')
-      .andWhere('s.isActive = :isActive', { isActive: true })
-      .take(limit)
-      .skip((page - 1) * limit);
+      .andWhere('s.isActive = true')
+      .andWhere('classroom.is_active = true')
+      .limit(limit)
+      .offset((page - 1) * limit);
 
     if (name)
       qb.andWhere('s.first_name ILIKE :name OR s.last_name ILIKE :name', {
@@ -63,12 +71,39 @@ export class StudentService {
       });
 
     if (schoolId) qb.andWhere('s.school_id = :schoolId', { schoolId });
-    if (classId) qb.andWhere('s.class_id = :classId', { classId });
+    if (classId) qb.andWhere('history.class_id = :classId', { classId });
+    if (hasNoClass)
+      qb.leftJoin('s.history', 'history')
+        .leftJoin('history.classroom', 'classroom')
+        .groupBy('s.id')
+        .having(
+          'SUM(CASE WHEN classroom.is_active = true THEN 1 ELSE 0 END) = 0',
+        );
+    else
+      qb.leftJoinAndSelect('s.history', 'history').leftJoinAndSelect(
+        'history.classroom',
+        'classroom',
+      );
 
-    const [students, total] = await qb.getManyAndCount();
+    const students = await qb.getRawMany();
+    const total = await qb.getCount();
 
     return {
-      data: students,
+      data: students.map((s) => ({
+        id: s.s_student_id,
+        firstName: s.s_first_name,
+        lastName: s.s_last_name,
+        dateOfBirth: s.s_date_of_birth,
+        currentAddress: s.s_current_address,
+        ethnic: s.s_ethnic,
+        gender: s.s_gender,
+        isActive: s.s_is_active,
+        classroom: {
+          description: s.history_description,
+          id: s.classroom_class_id,
+          name: s.classroom_name,
+        },
+      })),
       pagination: {
         totalItems: total,
         totalPages: Math.ceil(total / limit),
@@ -90,6 +125,7 @@ export class StudentService {
         throw new NotFoundException('Cannot find parents!');
 
       delete updateStudentDto.parentIds;
+      (updateStudentDto as any).parents = parents;
     }
 
     if (updateStudentDto.studentCvIds) {
@@ -100,12 +136,11 @@ export class StudentService {
         throw new NotFoundException('Cannot find student CVs!');
 
       delete updateStudentDto.studentCvIds;
+      (updateStudentDto as any).studentCvs = studentCvs;
     }
 
     const res = await this.studentRepository.update(id, {
       ...updateStudentDto,
-      parents,
-      studentCvs,
     });
     if (res.affected === 0) return null;
 

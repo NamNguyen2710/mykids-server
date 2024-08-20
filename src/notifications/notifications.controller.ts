@@ -21,6 +21,7 @@ import {
   QueryNotiSchema,
 } from 'src/notifications/dto/query-noti.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { NotiResponseSchema } from 'src/notifications/dto/notification-response.dto';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
@@ -52,10 +53,14 @@ export class NotificationsController {
     @Query(new ZodValidationPipe(QueryNotiSchema))
     notificationQuery: QueryNotiDTO,
   ) {
-    return this.notificationsService.findAll(
+    const notis = await this.notificationsService.findAll(
       request.user.sub,
       notificationQuery,
     );
+    return {
+      ...notis,
+      data: NotiResponseSchema.parse(notis.data),
+    };
   }
 
   @Post(':notificationId/read')

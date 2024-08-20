@@ -6,6 +6,7 @@ export const QueryStudentSchema = z.object({
   page: z.coerce.number().optional(),
   schoolId: z.coerce.number(),
   classId: z.coerce.number().optional(),
+  hasNoClass: z.coerce.boolean().optional(),
 });
 
 export type QueryStudentDto = z.infer<typeof QueryStudentSchema>;
