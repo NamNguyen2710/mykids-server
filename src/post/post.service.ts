@@ -89,21 +89,23 @@ export class PostService {
       .leftJoin('post.comments', 'comments')
       .leftJoin('post.likedUsers', 'likedUsers')
       .leftJoinAndSelect('post.createdBy', 'createdBy')
-      .leftJoinAndSelect('post.assets', 'assets')
+      .leftJoin('post.assets', 'assets')
       .groupBy('post.id')
       .addGroupBy('createdBy.id')
       .addSelect([
         'COUNT(DISTINCT comments.id) as commentcount',
         'COUNT(DISTINCT likedUsers.id) as likecount',
         'SUM(CASE WHEN likedUsers.id = :userId THEN 1 ELSE 0 END) as userliked',
+        `COALESCE(JSON_AGG(JSON_BUILD_OBJECT('id', assets.id,'url', assets.url)) FILTER (WHERE assets.id IS NOT NULL), '[]') AS assets`,
       ])
       .setParameter('userId', userId)
       .orderBy('post.createdAt', 'DESC')
       .getRawMany();
     if (!rawPosts) throw new NotFoundException();
+    console.log(rawPosts.slice(limit * (page - 1), limit * page));
 
     const posts = rawPosts
-      .splice(limit * (page - 1), limit * page)
+      .slice(limit * (page - 1), limit * page)
       .map((post) => ({
         id: post.post_post_id,
         message: post.post_message,
@@ -121,10 +123,7 @@ export class PostService {
           lastName: post.createdBy_last_name,
           phoneNumber: post.createdBy_phone_number,
         },
-        assets: post.assets.map((asset) => ({
-          id: asset.asset_id,
-          url: asset.asset_url,
-        })),
+        assets: post.assets,
       }));
 
     // Get total count of posts
