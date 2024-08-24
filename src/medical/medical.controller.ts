@@ -12,6 +12,7 @@ import {
   HttpCode,
   ForbiddenException,
   UseGuards,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { MedicalService } from './medical.service';
@@ -29,6 +30,7 @@ import {
 } from './dto/update-medical.dto';
 import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
 import { ResponseMedicalSchema } from 'src/medical/dto/medical-response.dto';
+import * as Role from 'src/users/entity/roles.data';
 
 @Controller('medical')
 @UseGuards(LoginGuard)
@@ -44,16 +46,25 @@ export class MedicalController {
     @Body(new ZodValidationPipe(CreateMedicalSchema))
     createMedicalDto: CreateMedicalDto,
   ) {
-    const permission =
-      (await this.userService.validateParentChildrenPermission(
+    const studentPermission =
+      await this.userService.validateParentChildrenPermission(
         req.user.sub,
-        req.createMedicalDto.schoolId,
-      )) &&
-      (await this.userService.validateParentSchoolPermission(
+        createMedicalDto.studentId,
+      );
+    if (!studentPermission)
+      throw new ForbiddenException(
+        'You do not have permission to create a medical record for this student',
+      );
+
+    const schoolPermission =
+      await this.userService.validateParentSchoolPermission(
         req.user.sub,
-        req.createMedicalDto.studentId,
-      ));
-    if (!permission) throw new ForbiddenException('Permission denied');
+        createMedicalDto.schoolId,
+      );
+    if (!schoolPermission)
+      throw new ForbiddenException(
+        'You do not have permission to create a medical record in this school',
+      );
 
     return this.medicalService.create(createMedicalDto);
   }
@@ -64,6 +75,31 @@ export class MedicalController {
     @Query(new ZodValidationPipe(QueryMedicalSchema))
     query: QueryMedicalDTO,
   ) {
+    if (req.user.role === Role.Parent.name) {
+      if (!query.studentId)
+        throw new BadRequestException('Student id is required');
+
+      const permission =
+        await this.userService.validateParentChildrenPermission(
+          req.user.sub,
+          query.studentId,
+        );
+      if (!permission) throw new ForbiddenException('Permission denied');
+    } else if (req.user.role === Role.SchoolAdmin.name) {
+      if (!query.schoolId)
+        throw new BadRequestException('School id is required');
+
+      const permission = await this.userService.validateSchoolAdminPermission(
+        req.user.sub,
+        query.schoolId,
+      );
+      if (!permission) throw new ForbiddenException('Permission denied');
+    } else {
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+    }
+
     const res = await this.medicalService.findAll(query);
     return {
       data: res.data.map((med) => ResponseMedicalSchema.parse(med)),

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import { CreateMedicalDto } from './dto/create-medical.dto';
 import { QueryMedicalDTO } from './dto/query-medical.dto';
@@ -28,16 +28,21 @@ export class MedicalService {
 
   async findAll(query: QueryMedicalDTO) {
     const { limit = 20, page = 1 } = query;
-    const whereClause = {};
+    const whereClause: FindOptionsWhere<Medicals> = {};
 
     if (query.schoolId) {
       whereClause['school'] = { id: query.schoolId };
     }
     if (query.classId) {
-      whereClause['student'] = { history: { class: { id: query.classId } } };
+      whereClause['student'] = {
+        history: { classroom: { id: query.classId } },
+      };
     }
     if (query.studentId) {
-      whereClause['student'] = { id: query.studentId };
+      whereClause['student'] = {
+        ...((whereClause.student as object) || {}),
+        id: query.studentId,
+      };
     }
 
     const [medical, total] = await this.medicalRepository.findAndCount({
