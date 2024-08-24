@@ -78,7 +78,7 @@ export class UsersController {
   }
 
   @Post()
-  async createAdmin(
+  async createSchoolAdmin(
     @Request() request,
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
@@ -87,11 +87,10 @@ export class UsersController {
       request.user.sub,
       Role.SuperAdmin.id,
     );
-    if (!permission) {
+    if (!permission)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
       );
-    }
 
     const user = await this.usersService.create(createUserDto);
     return ResponseUserSchema.parse(user);

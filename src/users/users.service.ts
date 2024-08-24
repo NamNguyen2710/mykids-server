@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In } from 'typeorm';
+import bcrypt from 'bcrypt';
 
 import { Users } from './entity/users.entity';
 import { Schools } from 'src/school/entities/school.entity';
@@ -109,19 +110,25 @@ export class UserService {
     });
   }
 
-  async findOneByPhone(number: string, clientId: string) {
+  async findOneByPhone(number: string) {
     return this.userRepository.findOne({
-      where: {
-        phoneNumber: number,
-        isActive: true,
-        role: { clients: { clientId } },
-      },
+      where: { phoneNumber: number, isActive: true },
+      relations: ['role.clients'],
+    });
+  }
+
+  async findOneByEmail(email: string) {
+    return this.userRepository.findOne({
+      where: { email, isActive: true },
+      relations: ['role.clients'],
     });
   }
 
   async create(createUserDto: CreateUserDto): Promise<Users> {
     if (createUserDto.roleId === Role.SuperAdmin.id) {
-      delete createUserDto.schoolId;
+      const hashPassword = await bcrypt.hash(createUserDto.password, 10);
+      createUserDto.password = hashPassword;
+
       const newUser = this.userRepository.create(createUserDto);
 
       await this.userRepository.save(newUser);
@@ -133,8 +140,11 @@ export class UserService {
         where: { id: createUserDto.schoolId! },
       });
       if (!school) throw new Error('School not found');
-
       delete createUserDto.schoolId;
+
+      const hashPassword = await bcrypt.hash(createUserDto.password, 10);
+      createUserDto.password = hashPassword;
+
       const newUser = this.userRepository.create({
         ...createUserDto,
         assignedSchool: school,

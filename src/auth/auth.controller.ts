@@ -8,19 +8,18 @@ import { VerifyDTO, VerifySchema } from './dto/verify.dto';
 import { LoginDto, LoginSchema } from './dto/login.dto';
 
 @Controller('login')
+@UseGuards(ClientGuard)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @UseGuards(ClientGuard)
   @Post()
   async login(
     @Request() req,
     @Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto,
   ) {
-    return this.authService.login(loginDto, req.client);
+    return this.authService.requestOtp(loginDto, req.client);
   }
 
-  @UseGuards(ClientGuard)
   @Post('verify-otp')
   async verify(
     @Body(new ZodValidationPipe(VerifySchema)) verifyDto: VerifyDTO,

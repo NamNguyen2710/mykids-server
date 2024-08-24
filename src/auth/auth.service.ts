@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import bcrypt from 'bcrypt';
 
 import { UserService } from 'src/users/users.service';
 import { VerifyDTO } from './dto/verify.dto';
@@ -24,12 +25,11 @@ export class AuthService {
   ) {}
 
   // Verify the user and send OTP
-  async login(loginDto: LoginDto, client: AppClients) {
-    const user = await this.userService.findOneByPhone(
-      loginDto.phoneNumber,
-      client.id,
-    );
+  async requestOtp(loginDto: LoginDto, client: AppClients) {
+    const user = await this.userService.findOneByPhone(loginDto.phoneNumber);
     if (!user) throw new NotFoundException('User does not exist!');
+    if (user.role.clients.every((cl) => cl.clientId !== client.id))
+      throw new UnauthorizedException('Invalid client');
 
     const otpNum = Math.floor(Math.random() * 1000000);
     const otp = otpNum.toString().padStart(6, '0');
@@ -43,11 +43,10 @@ export class AuthService {
   }
 
   async verifyOtp(verifyDto: VerifyDTO, client: AppClients) {
-    const user = await this.userService.findOneByPhone(
-      verifyDto.phoneNumber,
-      client.id,
-    );
+    const user = await this.userService.findOneByPhone(verifyDto.phoneNumber);
     if (!user) throw new NotFoundException('User does not exist!');
+    if (user.role.clients.every((cl) => cl.clientId !== client.id))
+      throw new UnauthorizedException('Invalid client');
 
     if (verifyDto.otp !== user.otp)
       throw new UnauthorizedException('Invalid OTP');
@@ -61,6 +60,23 @@ export class AuthService {
       access_token: await this.jwtService.signAsync(payload, {
         expiresIn: client.expiresIn,
       }),
+      expires_in: client.expiresIn,
+    };
+  }
+
+  async verifyPassword(username: string, password: string, client: AppClients) {
+    const user = await this.userService.findOneByEmail(username);
+    if (!user) throw new NotFoundException('Invalid username or password');
+    if (user.role.clients.every((cl) => cl.clientId !== client.id))
+      throw new UnauthorizedException('Invalid client');
+
+    if (!(await bcrypt.compare(password, user.password)))
+      throw new UnauthorizedException('Invalid username or password');
+
+    const payload: JwtPayload = { role: user.role.name, sub: user.id };
+
+    return {
+      access_token: await this.jwtService.signAsync(payload),
       expires_in: client.expiresIn,
     };
   }

@@ -32,6 +32,12 @@ export class Users {
   role: Roles;
 
   @Column()
+  email: string;
+
+  @Column()
+  password: string;
+
+  @Column()
   firstName: string;
 
   @Column()
