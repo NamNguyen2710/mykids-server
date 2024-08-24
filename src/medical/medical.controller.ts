@@ -11,11 +11,13 @@ import {
   Request,
   HttpCode,
   ForbiddenException,
+  UseGuards,
 } from '@nestjs/common';
 
 import { MedicalService } from './medical.service';
 import { UserService } from 'src/users/users.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { LoginGuard } from 'src/guard/login.guard';
 
 import {
   CreateMedicalDto,
@@ -29,6 +31,7 @@ import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
 import { ResponseMedicalSchema } from 'src/medical/dto/medical-response.dto';
 
 @Controller('medical')
+@UseGuards(LoginGuard)
 export class MedicalController {
   constructor(
     private readonly medicalService: MedicalService,
