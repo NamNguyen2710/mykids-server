@@ -2,13 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
+  ForbiddenException,
   Get,
   ParseIntPipe,
   Post,
   Put,
   Query,
   Request,
-  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 
@@ -51,7 +51,7 @@ export class ScheduleController {
         query.classId,
       ));
     if (!validate)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to get this class schedule',
       );
 

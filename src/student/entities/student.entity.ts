@@ -7,6 +7,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   JoinTable,
+  OneToOne,
 } from 'typeorm';
 
 import { Schools } from 'src/school/entities/school.entity';
@@ -58,6 +59,13 @@ export class Students {
 
   @Column()
   schoolId: number;
+
+  @Column({ nullable: true })
+  logoId: number;
+
+  @OneToOne(() => Assets, { eager: true, cascade: true })
+  @JoinColumn({ name: 'logo_id' })
+  logo: Assets;
 
   @OneToMany(() => StudentsParents, (parent) => parent.student)
   parents: StudentsParents[];

@@ -18,6 +18,7 @@ import { Notifications } from 'src/notifications/entities/notification.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { StudentsParents } from 'src/student/entities/students-parents.entity';
 import { Albums } from 'src/album/entities/album.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
 
 @Entity()
 export class Users {
@@ -63,6 +64,13 @@ export class Users {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  logoId: number;
+
+  @OneToOne(() => Assets, { eager: true, cascade: true })
+  @JoinColumn({ name: 'logo_id' })
+  logo: Assets;
 
   @OneToOne(() => Schools, (school) => school.schoolAdmin)
   assignedSchool: Schools;

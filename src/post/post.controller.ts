@@ -9,9 +9,9 @@ import {
   UseGuards,
   Query,
   Body,
-  UnauthorizedException,
   ParseIntPipe,
   HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { LoginGuard } from 'src/guard/login.guard';
@@ -48,7 +48,7 @@ export class PostController {
       createPostDto.schoolId,
     );
     if (!permission)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You are not allowed to create post for this school',
       );
 
@@ -66,9 +66,7 @@ export class PostController {
       postId,
     );
     if (!validate)
-      throw new UnauthorizedException(
-        'You are not allowed to update this post',
-      );
+      throw new ForbiddenException('You are not allowed to update this post');
 
     return this.postService.update(postId, updatePostDto);
   }
@@ -81,9 +79,7 @@ export class PostController {
       postId,
     );
     if (!validate)
-      throw new UnauthorizedException(
-        'You are not allowed to delete this post',
-      );
+      throw new ForbiddenException('You are not allowed to delete this post');
 
     return this.postService.remove(postId);
   }
