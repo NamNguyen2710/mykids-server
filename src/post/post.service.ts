@@ -89,9 +89,11 @@ export class PostService {
       .leftJoin('post.comments', 'comments')
       .leftJoin('post.likedUsers', 'likedUsers')
       .leftJoinAndSelect('post.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.logo', 'logo')
       .leftJoin('post.assets', 'assets')
       .groupBy('post.id')
       .addGroupBy('createdBy.id')
+      .addGroupBy('logo.id')
       .addSelect([
         'COUNT(DISTINCT comments.id) as commentcount',
         'COUNT(DISTINCT likedUsers.id) as likecount',
@@ -121,6 +123,12 @@ export class PostService {
           firstName: post.createdBy_first_name,
           lastName: post.createdBy_last_name,
           phoneNumber: post.createdBy_phone_number,
+          logo: post.logo_asset_id
+            ? {
+                id: post.logo_asset_id,
+                url: post.logo_url,
+              }
+            : null,
         },
         assets: post.assets,
       }));

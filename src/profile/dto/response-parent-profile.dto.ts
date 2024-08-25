@@ -5,6 +5,12 @@ export const OriginalProfileSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   phoneNumber: z.string(),
+  logo: z
+    .object({
+      id: z.number(),
+      url: z.string(),
+    })
+    .nullable(),
   children: z.array(
     z.object({
       studentId: z.number(),
@@ -12,6 +18,12 @@ export const OriginalProfileSchema = z.object({
         id: z.number(),
         firstName: z.string(),
         lastName: z.string(),
+        logo: z
+          .object({
+            id: z.number(),
+            url: z.string(),
+          })
+          .nullable(),
         school: z.object({
           id: z.number(),
           name: z.string(),
@@ -34,10 +46,12 @@ export const ParentProfileSchema = OriginalProfileSchema.transform((data) => ({
   firstName: data.firstName,
   lastName: data.lastName,
   phoneNumber: data.phoneNumber,
+  logo: data.logo,
   children: data.children.map((child) => ({
     id: child.student.id,
     firstName: child.student.firstName,
     lastName: child.student.lastName,
+    logo: child.student.logo,
     school: {
       id: child.student.school.id,
       name: child.student.school.name,

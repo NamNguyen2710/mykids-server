@@ -15,6 +15,7 @@ export const CreateStudentSchema = z.object({
   information: z.string().optional(),
   schoolId: z.number(),
   parentIds: z.array(z.number()),
+  logoId: z.number().optional(),
 });
 
 export type CreateStudentDto = z.infer<typeof CreateStudentSchema>;

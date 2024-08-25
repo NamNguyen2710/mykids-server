@@ -15,6 +15,7 @@ export const UpdateStudentSchema = z.object({
   information: z.string().optional(),
   studentCvIds: z.array(z.number()).optional(),
   parentIds: z.array(z.number()).optional(),
+  logoId: z.number().optional(),
 });
 
 export type UpdateStudentDto = z.infer<typeof UpdateStudentSchema>;

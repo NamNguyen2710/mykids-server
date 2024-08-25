@@ -4,6 +4,12 @@ export const ResponseStudentSchema = z.object({
   id: z.number(),
   firstName: z.string(),
   lastName: z.string(),
+  logo: z
+    .object({
+      id: z.number(),
+      url: z.string(),
+    })
+    .nullable(),
   dateOfBirth: z.coerce.date(),
   permanentAddress: z.string(),
   currentAddress: z.string(),
@@ -20,6 +26,12 @@ export const ResponseStudentSchema = z.object({
           id: z.number(),
           firstName: z.string(),
           lastName: z.string(),
+          logo: z
+            .object({
+              id: z.number(),
+              url: z.string(),
+            })
+            .nullable(),
           phoneNumber: z.string(),
           profession: z.string().nullable(),
         }),

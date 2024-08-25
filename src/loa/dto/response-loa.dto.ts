@@ -6,6 +6,12 @@ export const OriginalLoaSchema = z.object({
     id: z.number(),
     firstName: z.string(),
     lastName: z.string(),
+    logo: z
+      .object({
+        id: z.number(),
+        url: z.string(),
+      })
+      .nullable(),
   }),
   classroom: z.object({
     id: z.number(),
@@ -15,6 +21,12 @@ export const OriginalLoaSchema = z.object({
     id: z.number(),
     firstName: z.string(),
     lastName: z.string(),
+    logo: z
+      .object({
+        id: z.number(),
+        url: z.string(),
+      })
+      .nullable(),
     children: z.array(
       z.object({ studentId: z.number(), relationship: z.string() }),
     ),
@@ -33,6 +45,7 @@ export const ResponseLoaSchema = OriginalLoaSchema.transform((data) => ({
     id: data.createdBy.id,
     firstName: data.createdBy.firstName,
     lastName: data.createdBy.lastName,
+    logo: data.createdBy.logo,
     relation:
       data.student &&
       data.createdBy.children.find(

@@ -11,6 +11,7 @@ export const CreateUserSchema = z
     roleId: z.number(),
     schoolId: z.number().optional(),
     profession: z.string().optional(),
+    logoId: z.number().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.roleId === Role.SchoolAdmin.id) {

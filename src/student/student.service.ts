@@ -37,6 +37,12 @@ export class StudentService {
       parents,
     });
 
+    if (createStudentDto.logoId) {
+      const logo = await this.assetService.findByIds([createStudentDto.logoId]);
+      if (logo.length === 0) throw new NotFoundException('Cannot find logo!');
+      student.logo = logo[0];
+    }
+
     await this.studentRepository.manager.transaction(async (manager) => {
       await manager.save(student);
       await this.schoolService.addParents(
@@ -60,6 +66,7 @@ export class StudentService {
 
     const qb = this.studentRepository
       .createQueryBuilder('s')
+      .leftJoinAndSelect('s.logo', 'logo')
       .andWhere('s.isActive = true')
       .andWhere('classroom.is_active = true')
       .limit(limit)
@@ -76,6 +83,7 @@ export class StudentService {
       qb.leftJoin('s.history', 'history')
         .leftJoin('history.classroom', 'classroom')
         .groupBy('s.id')
+        .addGroupBy('logo.id')
         .having(
           'SUM(CASE WHEN classroom.is_active = true THEN 1 ELSE 0 END) = 0',
         );
@@ -98,6 +106,10 @@ export class StudentService {
         ethnic: s.s_ethnic,
         gender: s.s_gender,
         isActive: s.s_is_active,
+        logo: {
+          id: s.logo_asset_id,
+          url: s.logo_url,
+        },
         classroom: {
           description: s.history_description,
           id: s.classroom_class_id,
@@ -118,33 +130,44 @@ export class StudentService {
   }
 
   async update(id: number, updateStudentDto: UpdateStudentDto) {
-    let parents, studentCvs;
+    const student = await this.studentRepository.findOne({ where: { id } });
+
     if (updateStudentDto.parentIds) {
-      parents = await this.userService.findByIds(updateStudentDto.parentIds);
+      const parents = await this.userService.findByIds(
+        updateStudentDto.parentIds,
+      );
       if (parents.length !== updateStudentDto.parentIds.length)
         throw new NotFoundException('Cannot find parents!');
 
       delete updateStudentDto.parentIds;
-      (updateStudentDto as any).parents = parents;
+      student.parents = parents.map((parent) =>
+        this.stdParentRepository.create({ studentId: id, parentId: parent.id }),
+      );
     }
 
     if (updateStudentDto.studentCvIds) {
-      studentCvs = await this.assetService.findByIds(
+      const studentCvs = await this.assetService.findByIds(
         updateStudentDto.studentCvIds,
       );
       if (studentCvs.length !== updateStudentDto.studentCvIds.length)
         throw new NotFoundException('Cannot find student CVs!');
 
       delete updateStudentDto.studentCvIds;
-      (updateStudentDto as any).studentCvs = studentCvs;
+      student.studentCvs = studentCvs;
     }
 
-    const res = await this.studentRepository.update(id, {
+    if (updateStudentDto.logoId) {
+      const logo = await this.assetService.findByIds([updateStudentDto.logoId]);
+      if (logo.length === 0) throw new NotFoundException('Cannot find logo!');
+      student.logo = logo[0];
+    }
+
+    const res = await this.studentRepository.save({
+      ...student,
       ...updateStudentDto,
     });
-    if (res.affected === 0) return null;
 
-    return this.studentRepository.findOne({ where: { id } });
+    return res;
   }
 
   async deactivate(id: number) {

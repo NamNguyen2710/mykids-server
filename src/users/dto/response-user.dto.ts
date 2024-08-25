@@ -6,6 +6,12 @@ export const ResponseUserSchema = z.object({
   lastName: z.string(),
   phoneNumber: z.string(),
   profession: z.string().nullable(),
+  logo: z
+    .object({
+      id: z.number(),
+      url: z.string(),
+    })
+    .nullable(),
   assignedSchool: z
     .object({
       id: z.number(),

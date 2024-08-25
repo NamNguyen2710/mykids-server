@@ -22,6 +22,12 @@ export const DefaultClassSchema = z.object({
           id: z.number(),
           firstName: z.string(),
           lastName: z.string(),
+          logo: z
+            .object({
+              id: z.number(),
+              url: z.string(),
+            })
+            .nullable(),
           parents: z
             .array(
               z.object({
@@ -33,6 +39,12 @@ export const DefaultClassSchema = z.object({
                   phoneNumber: z.string(),
                   firstName: z.string(),
                   lastName: z.string(),
+                  logo: z
+                    .object({
+                      id: z.number(),
+                      url: z.string(),
+                    })
+                    .nullable(),
                 }),
               }),
             )
@@ -51,12 +63,14 @@ export const ResponseClassSchema = DefaultClassSchema.transform((data) => ({
     id: student.student.id,
     firstName: student.student.firstName,
     lastName: student.student.lastName,
+    logo: { ...student.student.logo },
     parents: student.student.parents.map((parent) => ({
       id: parent.parent.id,
       relationship: parent.relationship,
       phoneNumber: parent.parent.phoneNumber,
       firstName: parent.parent.firstName,
       lastName: parent.parent.lastName,
+      logo: { ...parent.parent.logo },
     })),
   })),
 }));

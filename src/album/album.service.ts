@@ -59,6 +59,7 @@ export class AlbumService {
       .leftJoin('album.school', 'school')
       .leftJoinAndSelect('album.class', 'class')
       .leftJoinAndSelect('album.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.logo', 'logo')
       .leftJoin('album.assets', 'assets')
       .addSelect([
         'COUNT(DISTINCT assets.id) as assetcount',
@@ -70,6 +71,7 @@ export class AlbumService {
       .addGroupBy('school.id')
       .addGroupBy('class.id')
       .addGroupBy('createdBy.id')
+      .addGroupBy('logo.id')
       .orderBy('album.createdDate', 'DESC')
       .skip(skip)
       .take(limit);
@@ -89,6 +91,12 @@ export class AlbumService {
         id: album.createdBy_user_id,
         firstName: album.createdBy_first_name,
         lastName: album.createdBy_last_name,
+        logo: album.logo_asset_id
+          ? {
+              id: album.logo_asset_id,
+              url: album.logo_url,
+            }
+          : null,
       },
       assetCount: album.assetcount,
       assets: album.assets,

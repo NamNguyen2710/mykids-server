@@ -9,6 +9,12 @@ export const ResponseCommentSchema = z.object({
     id: z.number(),
     firstName: z.string(),
     lastName: z.string(),
+    logo: z
+      .object({
+        id: z.number(),
+        url: z.string(),
+      })
+      .nullable(),
   }),
   taggedUsers: z
     .array(
@@ -19,6 +25,12 @@ export const ResponseCommentSchema = z.object({
           id: z.number(),
           firstName: z.string(),
           lastName: z.string(),
+          logo: z
+            .object({
+              id: z.number(),
+              url: z.string(),
+            })
+            .nullable(),
         }),
       }),
     )

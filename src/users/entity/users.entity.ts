@@ -68,7 +68,11 @@ export class Users {
   @Column({ nullable: true })
   logoId: number;
 
-  @OneToOne(() => Assets, { eager: true, cascade: true })
+  @OneToOne(() => Assets, (asset) => asset.userLogo, {
+    eager: true,
+    cascade: true,
+    nullable: true,
+  })
   @JoinColumn({ name: 'logo_id' })
   logo: Assets;
 
