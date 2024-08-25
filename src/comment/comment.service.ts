@@ -44,12 +44,14 @@ export class CommentService {
       }),
     );
 
-    const comment = this.commentRepo.create(createCommentDto);
-    comment.createdById = userId;
-    comment.belongedToId = postId;
+    const comment = this.commentRepo.create({
+      ...createCommentDto,
+      createdById: userId,
+      belongedToId: postId,
+    });
     // comment.taggedUsers = taggedUsers;
 
-    await this.commentRepo.save(createCommentDto);
+    await this.commentRepo.save(comment);
 
     return this.commentRepo.findOne({
       where: { id: comment.id },
@@ -81,31 +83,22 @@ export class CommentService {
   }
 
   async update(commentId: number, updateCommentDto: UpdateCommentDto) {
-    await this.commentRepo.update(commentId, updateCommentDto);
+    const res = await this.commentRepo.update(commentId, updateCommentDto);
+    if (res.affected === 0) throw new NotFoundException();
+
     const result = await this.commentRepo.findOne({
       where: { id: commentId },
-      relations: { createdBy: true },
+      relations: ['createdBy', 'taggedUsers'],
     });
 
-    const updatedComment = {
-      id: result.id,
-      message: result.message,
-      createdAt: result.updatedAt,
-      updatedAt: result.createdAt,
-      createdBy: {
-        id: result.createdBy.id,
-        firstName: result.createdBy.firstName,
-        lastName: result.createdBy.lastName,
-        phoneNumber: result.createdBy.phoneNumber,
-      },
-    };
-
-    return updatedComment;
+    return result;
   }
 
-  async remove(commentId: number): Promise<boolean> {
-    await this.commentRepo.softDelete(commentId);
-    return true;
+  async remove(commentId: number) {
+    const res = await this.commentRepo.softDelete(commentId);
+    if (res.affected === 0) throw new NotFoundException();
+
+    return { status: true, message: 'Comment has been deleted!' };
   }
 
   async validateCommentOwnership(userId: number, commentId: number) {

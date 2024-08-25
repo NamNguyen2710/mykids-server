@@ -41,7 +41,7 @@ export class AuthService {
       otp,
       otpExpiresAt: new Date(Date.now() + OTP_EXPIRES_IN * 1000),
     });
-    return { msg: 'Please Verify OTP to finish logging in' };
+    return { message: 'Please Verify OTP to finish logging in' };
   }
 
   async verifyLoginOtp(verifyDto: VerifyLoginOTPDTO, client: AppClients) {
@@ -85,7 +85,7 @@ export class AuthService {
 
   async resetPassword(email: string) {
     const user = await this.userService.findOneByEmail(email);
-    if (!user) return { msg: 'Please Verify OTP to reset password' };
+    if (!user) return { message: 'Please Verify OTP to reset password' };
 
     const otpNum = Math.floor(Math.random() * 1000000);
     const otp = otpNum.toString().padStart(6, '0');
@@ -95,7 +95,7 @@ export class AuthService {
       otp,
       otpExpiresAt: new Date(Date.now() + OTP_EXPIRES_IN * 1000),
     });
-    return { msg: 'Please Verify OTP to reset password' };
+    return { message: 'Please Verify OTP to reset password' };
   }
 
   async verifyResetPasswordOtp(verifyDto: VerifyResetOTPDTO) {
@@ -116,7 +116,7 @@ export class AuthService {
     if (!res)
       throw new InternalServerErrorException('Failed to reset password');
 
-    return { msg: 'Please login again using your new password' };
+    return { message: 'Please login again using your new password' };
   }
 
   async findClient(clientId: string, clientSecret: string) {

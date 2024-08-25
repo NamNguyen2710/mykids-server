@@ -16,6 +16,7 @@ import { CommentService } from './comment.service';
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { LoginGuard } from 'src/guard/login.guard';
+import { ResponseCommentSchema } from 'src/comment/dto/response-comment.dto';
 
 @UseGuards(LoginGuard)
 @Controller('post/:postId/comment')
@@ -28,16 +29,21 @@ export class CommentController {
     @Param('postId', ParseIntPipe) postId: number,
     @Body() createCommentDto: CreateCommentDto,
   ) {
-    return this.commentService.create(
+    const comment = await this.commentService.create(
       request.user.sub,
       postId,
       createCommentDto,
     );
+    return ResponseCommentSchema.parse(comment);
   }
 
   @Get('all')
   async findAllOfPost(@Param('postId') postId: number) {
-    return this.commentService.findAllCommentsOfPost(postId);
+    const res = await this.commentService.findAllCommentsOfPost(postId);
+    return {
+      data: res.data.map((comment) => ResponseCommentSchema.parse(comment)),
+      pagination: res.pagination,
+    };
   }
 
   @Put(':commentId')
@@ -53,7 +59,11 @@ export class CommentController {
     if (!permission)
       throw new ForbiddenException('You are not allowed to edit this comment');
 
-    return this.commentService.update(commentId, updateCommentDto);
+    const comment = await this.commentService.update(
+      commentId,
+      updateCommentDto,
+    );
+    return ResponseCommentSchema.parse(comment);
   }
 
   @Delete(':commentId')

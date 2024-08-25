@@ -24,7 +24,7 @@ export class Comments {
   @Column()
   createdById: number;
 
-  @Column()
+  @Column({ name: 'belonged_to_id' })
   belongedToId: number;
 
   @CreateDateColumn({ type: 'timestamptz' })
