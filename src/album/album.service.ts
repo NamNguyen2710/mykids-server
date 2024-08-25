@@ -25,7 +25,7 @@ export class AlbumService {
 
   // Create new album
   async createAlbum(userId: number, createAlbumDto: CreateAlbumDto) {
-    const { schoolId, classId, publishedDate } = createAlbumDto;
+    const { schoolId, classId } = createAlbumDto;
 
     if (classId) {
       const classEntity = await this.classService.validateSchoolClass(
@@ -42,7 +42,9 @@ export class AlbumService {
     const album = this.albumRepo.create({
       ...createAlbumDto,
       createdById: userId,
-      publishedDate: publishedDate ? new Date(publishedDate) : null,
+      publishedDate: createAlbumDto.isPublished
+        ? new Date()
+        : createAlbumDto.publishedDate,
     });
 
     return this.albumRepo.save(album);
@@ -54,22 +56,48 @@ export class AlbumService {
 
     const queryBuilder = this.albumRepo
       .createQueryBuilder('album')
-      .leftJoinAndSelect('album.school', 'school')
+      .leftJoin('album.school', 'school')
       .leftJoinAndSelect('album.class', 'class')
       .leftJoinAndSelect('album.createdBy', 'createdBy')
-      .leftJoinAndSelect('album.assets', 'assets')
-      .addSelect('COUNT(DISTINCT assets.id) as assetcount')
+      .leftJoin('album.assets', 'assets')
+      .addSelect([
+        'COUNT(DISTINCT assets.id) as assetcount',
+        `COALESCE(JSON_AGG(JSON_BUILD_OBJECT('id', assets.id,'url', assets.url)) FILTER (WHERE assets.id IS NOT NULL), '[]') AS assets`,
+      ])
       .where('album.schoolId = :schoolId', { schoolId })
+      .andWhere('album.isPublished = true')
       .groupBy('album.id')
+      .addGroupBy('school.id')
+      .addGroupBy('class.id')
+      .addGroupBy('createdBy.id')
       .orderBy('album.createdDate', 'DESC')
       .skip(skip)
       .take(limit);
     const albums = await queryBuilder.getRawMany();
+    const res = albums.map((album) => ({
+      id: album.album_album_id,
+      title: album.album_title,
+      isPublished: album.album_is_published,
+      createdDate: album.album_created_date,
+      updatedDate: album.album_updated_date,
+      publishedDate: album.album_published_date,
+      classroom: {
+        id: album.class_class_id,
+        name: album.class_name,
+      },
+      createdBy: {
+        id: album.createdBy_user_id,
+        firstName: album.createdBy_first_name,
+        lastName: album.createdBy_last_name,
+      },
+      assetCount: album.assetcount,
+      assets: album.assets,
+    }));
 
     const totalItems = await this.albumRepo.count({ where: { schoolId } });
 
     return {
-      data: albums,
+      data: res,
       pagination: {
         totalItems,
         totalPages: Math.ceil(totalItems / limit),
@@ -79,22 +107,28 @@ export class AlbumService {
     };
   }
 
-  async findOne(userId: number, albumId: number) {
+  async findOne(albumId: number) {
     const album = await this.albumRepo.findOne({ where: { id: albumId } });
     return album;
   }
 
   async update(albumId: number, album: UpdateAlbumDto): Promise<Albums> {
+    const albumEntity = await this.albumRepo.findOne({
+      where: { id: albumId },
+    });
+    if (!albumEntity)
+      throw new NotFoundException(`Album with ID ${albumId} not found`);
+
     // Update array of assets to an album
     if (album.assetIds) {
       const assets = await this.assetService.findByIds(album.assetIds);
-      (album as any).assets = assets;
+      albumEntity.assets = [...assets];
     }
 
-    const res = await this.albumRepo.update(albumId, { ...album });
-    if (res.affected === 0) throw new NotFoundException();
+    Object.assign(albumEntity, album);
+    await this.albumRepo.save(albumEntity);
 
-    return this.albumRepo.findOne({ where: { id: albumId } });
+    return albumEntity;
   }
 
   async remove(albumId: number): Promise<any> {

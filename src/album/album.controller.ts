@@ -10,7 +10,7 @@ import {
   Request,
   ParseIntPipe,
   Query,
-  UnauthorizedException,
+  ForbiddenException,
   HttpCode,
 } from '@nestjs/common';
 
@@ -45,7 +45,7 @@ export class AlbumController {
       createAlbumDto.schoolId,
     );
     if (!permission)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to create album in this school',
       );
 
@@ -58,12 +58,17 @@ export class AlbumController {
     @Query(new ZodValidationPipe(QueryAlbumSchema))
     query: QueryAlbumDto,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      req.user.sub,
-      query.schoolId,
-    );
+    const permission =
+      (await this.userService.validateSchoolAdminPermission(
+        req.user.sub,
+        query.schoolId,
+      )) ||
+      (await this.userService.validateParentSchoolPermission(
+        req.user.sub,
+        query.schoolId,
+      ));
     if (!permission)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to view albums in this school',
       );
 
@@ -86,17 +91,17 @@ export class AlbumController {
       ));
 
     if (!permission)
-      throw new UnauthorizedException(
+      throw new ForbiddenException(
         'You do not have permission to view this album',
       );
 
-    return this.albumService.findOne(req.user.sub, albumId);
+    return this.albumService.findOne(albumId);
   }
 
   @Put(':albumId')
   async update(
     @Request() req,
-    @Param(':albumId', ParseIntPipe) albumId: number,
+    @Param('albumId', ParseIntPipe) albumId: number,
     @Body(new ZodValidationPipe(UpdateAlbumSchema))
     updateAlbumDto: UpdateAlbumDto,
   ) {
@@ -105,8 +110,8 @@ export class AlbumController {
       req.user.sub,
     );
     if (!permission)
-      throw new UnauthorizedException(
-        'You do not have permission to view this album',
+      throw new ForbiddenException(
+        'You do not have permission to update this album',
       );
 
     return this.albumService.update(albumId, updateAlbumDto);
@@ -123,8 +128,8 @@ export class AlbumController {
       req.user.sub,
     );
     if (!permission)
-      throw new UnauthorizedException(
-        'You do not have permission to view this album',
+      throw new ForbiddenException(
+        'You do not have permission to delete this album',
       );
     return this.albumService.remove(albumId);
   }

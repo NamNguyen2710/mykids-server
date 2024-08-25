@@ -30,6 +30,9 @@ export class Albums {
   @Column()
   classId: number;
 
+  @Column({ default: true })
+  isPublished: boolean;
+
   @ManyToOne(() => Schools, (school) => school.albums)
   school: Schools;
 

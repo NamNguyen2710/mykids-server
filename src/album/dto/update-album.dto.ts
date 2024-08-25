@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const UpdateAlbumSchema = z.object({
-  title: z.string(),
-  publishedDate: z.string().optional(),
+  title: z.string().optional(),
+  publishedDate: z.coerce.date().optional(),
   assetIds: z.array(z.number()).optional(),
 });
 
