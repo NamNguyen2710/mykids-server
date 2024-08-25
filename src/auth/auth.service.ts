@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 import { UserService } from 'src/users/users.service';
 import { VerifyLoginOTPDTO } from './dto/verifyLoginOtp.dto';
@@ -68,12 +68,12 @@ export class AuthService {
 
   async verifyPassword(username: string, password: string, client: AppClients) {
     const user = await this.userService.findOneByEmail(username);
-    if (!user) throw new NotFoundException('Invalid username or password');
+    if (!user) throw new NotFoundException('Invalid username');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
       throw new UnauthorizedException('Invalid client');
 
     if (!(await bcrypt.compare(password, user.password)))
-      throw new UnauthorizedException('Invalid username or password');
+      throw new UnauthorizedException('Invalid password');
 
     const payload: JwtPayload = { role: user.role.name, sub: user.id };
 

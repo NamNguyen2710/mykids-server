@@ -5,6 +5,7 @@ import {
   Body,
   UseGuards,
   Request,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { AuthService } from './auth.service';
@@ -20,6 +21,7 @@ import {
   VerifyResetOTPSchema,
 } from 'src/auth/dto/verifyResetOtp.dto';
 import { LoginDto, LoginSchema } from './dto/login.dto';
+import { GRANT_TYPE } from 'src/auth/entities/grant_type.data';
 
 @Controller('login')
 export class AuthController {
@@ -31,7 +33,17 @@ export class AuthController {
     @Request() req,
     @Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto,
   ) {
-    return this.authService.requestOtp(loginDto, req.client);
+    if (loginDto.grantType === GRANT_TYPE.OTP) {
+      return this.authService.requestOtp(loginDto, req.client);
+    } else if (loginDto.grantType === GRANT_TYPE.PASSWORD) {
+      return this.authService.verifyPassword(
+        loginDto.email,
+        loginDto.password,
+        req.client,
+      );
+    }
+
+    throw new BadRequestException('Invalid grant type');
   }
 
   @UseGuards(ClientGuard)
