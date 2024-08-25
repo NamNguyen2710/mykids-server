@@ -7,6 +7,7 @@ import { QueryMedicalDTO } from './dto/query-medical.dto';
 
 import { Medicals } from './entities/medical.entity';
 import { AssetService } from 'src/asset/asset.service';
+import { UpdateMedicalDto } from 'src/medical/dto/update-medical.dto';
 
 @Injectable()
 export class MedicalService {
@@ -71,13 +72,19 @@ export class MedicalService {
     });
   }
 
-  async update(id: number, assetIds: number[]) {
-    const assets = await this.assetService.findByIds(assetIds);
-    const res = await this.medicalRepository.update(id, { assets });
-    if (res.affected === 0)
-      throw new BadRequestException('Cannot find medical record!');
+  async update(id: number, medicalDto: UpdateMedicalDto) {
+    const medical = await this.medicalRepository.findOne({ where: { id } });
+    if (!medical) throw new BadRequestException('Cannot find medical record!');
 
-    return this.findOne(id);
+    if (medicalDto.assetIds) {
+      const assets = await this.assetService.findByIds(medicalDto.assetIds);
+      medical.assets = assets;
+    }
+
+    Object.assign(medical, medicalDto);
+    await this.medicalRepository.save(medical);
+
+    return medical;
   }
 
   async remove(id: number) {

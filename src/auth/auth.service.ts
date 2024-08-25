@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -31,7 +32,7 @@ export class AuthService {
     const user = await this.userService.findOneByPhone(loginDto.phoneNumber);
     if (!user) throw new NotFoundException('User does not exist!');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
-      throw new UnauthorizedException('Invalid client');
+      throw new ForbiddenException('Invalid client');
 
     const otpNum = Math.floor(Math.random() * 1000000);
     const otp = otpNum.toString().padStart(6, '0');
@@ -48,7 +49,7 @@ export class AuthService {
     const user = await this.userService.findOneByPhone(verifyDto.phoneNumber);
     if (!user) throw new NotFoundException('User does not exist!');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
-      throw new UnauthorizedException('Invalid client');
+      throw new ForbiddenException('Invalid client');
 
     if (verifyDto.otp !== user.otp)
       throw new UnauthorizedException('Invalid OTP');
@@ -70,7 +71,7 @@ export class AuthService {
     const user = await this.userService.findOneByEmail(username);
     if (!user) throw new NotFoundException('Invalid username');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
-      throw new UnauthorizedException('Invalid client');
+      throw new ForbiddenException('Invalid client');
 
     if (!(await bcrypt.compare(password, user.password)))
       throw new UnauthorizedException('Invalid password');

@@ -127,10 +127,7 @@ export class MedicalController {
       );
     if (!permission) throw new ForbiddenException('Permission denied');
 
-    const medical = await this.medicalService.update(
-      id,
-      updateMedicalDto.assetIds,
-    );
+    const medical = await this.medicalService.update(id, updateMedicalDto);
     return ResponseMedicalSchema.parse(medical);
   }
 

@@ -23,6 +23,21 @@ export class Medicals {
   @Column({ name: 'student_id' })
   studentId: number;
 
+  @Column({ default: '' })
+  history: string;
+
+  @Column({ default: '' })
+  currentMedication: string;
+
+  @Column({ default: '' })
+  allergies: string;
+
+  @Column({ default: '' })
+  vacinations: string;
+
+  @Column({ default: '' })
+  instruction: string;
+
   @ManyToOne(() => Schools, (school) => school.medicals)
   school: Schools;
 
