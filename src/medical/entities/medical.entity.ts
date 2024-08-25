@@ -33,7 +33,7 @@ export class Medicals {
   allergies: string;
 
   @Column({ default: '' })
-  vacinations: string;
+  vaccinations: string;
 
   @Column({ default: '' })
   instruction: string;

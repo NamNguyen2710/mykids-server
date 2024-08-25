@@ -27,7 +27,7 @@ export class HotfixErrors1724566968488 implements MigrationInterface {
     await queryRunner.query(`
 			ALTER TABLE "medicals"
 			ADD COLUMN history TEXT NOT NULL DEFAULT '',
-			ADD COLUMN currentMedication TEXT NOT NULL DEFAULT '',
+			ADD COLUMN current_medication TEXT NOT NULL DEFAULT '',
 			ADD COLUMN allergies TEXT NOT NULL DEFAULT '',
 			ADD COLUMN vaccinations TEXT NOT NULL DEFAULT '',
 			ADD COLUMN instruction TEXT NOT NULL DEFAULT '';

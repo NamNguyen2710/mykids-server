@@ -5,7 +5,7 @@ export const ResponseMedicalSchema = z.object({
   history: z.string(),
   currentMedication: z.string(),
   allergies: z.string(),
-  vacinations: z.string(),
+  vaccinations: z.string(),
   instruction: z.string(),
   student: z.object({
     id: z.number(),

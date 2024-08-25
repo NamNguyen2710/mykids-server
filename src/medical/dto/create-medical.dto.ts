@@ -7,7 +7,7 @@ export const CreateMedicalSchema = z.object({
   history: z.string().optional(),
   currentMedication: z.string().optional(),
   allergies: z.string().optional(),
-  vacinations: z.string().optional(),
+  vaccinations: z.string().optional(),
   instruction: z.string().optional(),
 });
 export type CreateMedicalDto = z.infer<typeof CreateMedicalSchema>;
