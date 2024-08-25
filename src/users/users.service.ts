@@ -156,6 +156,7 @@ export class UserService {
 
     if (createUserDto.roleId === Role.Parent.id) {
       const newUser = this.userRepository.create(createUserDto);
+      delete createUserDto.password;
 
       await this.userRepository.save(newUser);
       return newUser;
