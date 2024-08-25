@@ -20,10 +20,10 @@ export const CreateUserSchema = z
           message: 'School ID is required for School Admin',
         });
       }
-      if (!data.email || !data.phoneNumber) {
+      if (!data.email) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Email or Phone number is required for School Admin',
+          message: 'Email is required for School Admin',
         });
       }
       if (!data.password) {

@@ -78,7 +78,7 @@ export class UsersController {
   }
 
   @Post()
-  async createSchoolAdmin(
+  async createAdmin(
     @Request() request,
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
