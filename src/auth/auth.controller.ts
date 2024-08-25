@@ -1,11 +1,27 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Put,
+  Body,
+  UseGuards,
+  Request,
+  BadRequestException,
+} from '@nestjs/common';
 
 import { AuthService } from './auth.service';
 import { ClientGuard } from 'src/guard/client.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import { VerifyDTO, VerifySchema } from './dto/verify.dto';
+import {
+  VerifyLoginOTPDTO,
+  VerifyLoginOTPSchema,
+} from './dto/verifyLoginOtp.dto';
+import {
+  VerifyResetOTPDTO,
+  VerifyResetOTPSchema,
+} from 'src/auth/dto/verifyResetOtp.dto';
 import { LoginDto, LoginSchema } from './dto/login.dto';
+import { GRANT_TYPE } from 'src/auth/entities/grant_type.data';
 
 @Controller('login')
 export class AuthController {
@@ -17,15 +33,34 @@ export class AuthController {
     @Request() req,
     @Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto,
   ) {
-    return this.authService.login(loginDto, req.client);
+    if (loginDto.grantType === GRANT_TYPE.OTP) {
+      return this.authService.requestOtp(loginDto, req.client);
+    } else if (loginDto.grantType === GRANT_TYPE.PASSWORD) {
+      return this.authService.verifyPassword(
+        loginDto.email,
+        loginDto.password,
+        req.client,
+      );
+    }
+
+    throw new BadRequestException('Invalid grant type');
   }
 
   @UseGuards(ClientGuard)
   @Post('verify-otp')
   async verify(
-    @Body(new ZodValidationPipe(VerifySchema)) verifyDto: VerifyDTO,
+    @Body(new ZodValidationPipe(VerifyLoginOTPSchema))
+    verifyDto: VerifyLoginOTPDTO,
     @Request() req,
   ) {
-    return this.authService.verifyOtp(verifyDto, req.client);
+    return this.authService.verifyLoginOtp(verifyDto, req.client);
+  }
+
+  @Put('reset-password')
+  async resetPassword(
+    @Body(new ZodValidationPipe(VerifyResetOTPSchema))
+    verifyReset: VerifyResetOTPDTO,
+  ) {
+    return this.authService.verifyResetPasswordOtp(verifyReset);
   }
 }
