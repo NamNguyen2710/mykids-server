@@ -66,6 +66,28 @@ export class AssetService {
     return assets;
   }
 
+  async findBySchoolPost(
+    schoolId: number,
+    limit: number = 50,
+    page: number = 1,
+  ) {
+    const [assets, total] = await this.assetRepository.findAndCount({
+      where: { posts: { schoolId } },
+      order: { id: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data: assets,
+      pagination: {
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        page,
+        limit,
+      },
+    };
+  }
+
   remove(id: number) {
     return `This action removes a #${id} image`;
   }

@@ -14,6 +14,7 @@ import {
 
 import { SchoolService } from './school.service';
 import { UserService } from 'src/users/users.service';
+import { AssetService } from 'src/asset/asset.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
@@ -24,6 +25,7 @@ import {
   QuerySchoolDto,
   QuerySchoolSchema,
 } from 'src/school/dto/query-school.dto';
+import { QueryAssetSchema, QueryAssetDto } from 'src/asset/dto/query-asset.dto';
 
 @Controller('school')
 @UseGuards(LoginGuard)
@@ -31,6 +33,7 @@ export class SchoolController {
   constructor(
     private readonly schoolService: SchoolService,
     private readonly userService: UserService,
+    private readonly assetService: AssetService,
   ) {}
 
   @Post()
@@ -144,5 +147,27 @@ export class SchoolController {
       );
 
     return this.schoolService.update(id, updateSchoolDto);
+  }
+
+  @Get(':schoolId/assets')
+  async findSchoolPostAssets(
+    @Request() request,
+    @Param('schoolId', ParseIntPipe) schoolId: number,
+    @Query(new ZodValidationPipe(QueryAssetSchema)) query: QueryAssetDto,
+  ) {
+    const permission = await this.userService.validateSchoolAdminPermission(
+      request.user.sub,
+      schoolId,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to access this resource',
+      );
+
+    return this.assetService.findBySchoolPost(
+      schoolId,
+      query.limit,
+      query.page,
+    );
   }
 }
