@@ -64,6 +64,7 @@ export const ResponseClassSchema = DefaultClassSchema.transform((data) => ({
     firstName: student.student.firstName,
     lastName: student.student.lastName,
     logo: { ...student.student.logo },
+    description: student.description,
     parents: student.student.parents.map((parent) => ({
       id: parent.parent.id,
       relationship: parent.relationship,
