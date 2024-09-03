@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In, EntityManager } from 'typeorm';
+import { Repository, In, EntityManager, ILike } from 'typeorm';
 import bcrypt from 'bcrypt';
 
 import { Users } from './entity/users.entity';
@@ -33,7 +33,11 @@ export class UserService {
     const whereClause = { isActive };
 
     if (query.q) {
-      whereClause['firstName'] = query.q;
+      whereClause['firstName'] = ILike(`%${query.q}%`);
+      whereClause['lastName'] = ILike(`%${query.q}%`);
+    }
+    if (query.phoneNumber) {
+      whereClause['phoneNumber'] = ILike(`%${query.phoneNumber}%`);
     }
     if (query.roleId) {
       whereClause['roleId'] = query.roleId;
