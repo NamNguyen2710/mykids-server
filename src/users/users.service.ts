@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, EntityManager } from 'typeorm';
 import bcrypt from 'bcrypt';
 
 import { Users } from './entity/users.entity';
@@ -124,7 +124,10 @@ export class UserService {
     });
   }
 
-  async create(createUserDto: CreateUserDto): Promise<Users> {
+  async create(
+    createUserDto: CreateUserDto,
+    transactionalManager?: EntityManager,
+  ): Promise<Users> {
     if (createUserDto.roleId === Role.SuperAdmin.id) {
       const hashPassword = await bcrypt.hash(createUserDto.password, 10);
       createUserDto.password = hashPassword;
@@ -158,7 +161,8 @@ export class UserService {
       const newUser = this.userRepository.create(createUserDto);
       delete createUserDto.password;
 
-      await this.userRepository.save(newUser);
+      const manager = transactionalManager || this.userRepository.manager;
+      await manager.save(newUser);
       return newUser;
     }
   }

@@ -35,6 +35,8 @@ import {
   ResponseStdWithParentSchema,
   ResponseStudentSchema,
 } from 'src/student/dto/response-student.dto';
+import { CreateParentDto, CreateParentSchema } from './dto/create-parent.dto';
+import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
 import * as Role from 'src/users/entity/roles.data';
 
 @Controller('student')
@@ -148,6 +150,32 @@ export class StudentController {
       updateStudentDto,
     );
     return ResponseStudentSchema.parse(updatedStudent);
+  }
+
+  @Post(':id/parent')
+  async createParent(
+    @Request() request,
+    @Param('id', ParseIntPipe) studentId: number,
+    @Body(new ZodValidationPipe(CreateParentSchema))
+    createParentDto: CreateParentDto,
+  ) {
+    const permission =
+      await this.studentService.validateStudentTeacherPermission(
+        request.user.sub,
+        studentId,
+      );
+
+    if (!permission) {
+      throw new ForbiddenException(
+        'You do not have permission to create parent users',
+      );
+    }
+
+    const newParent = await this.studentService.createParent(
+      createParentDto,
+      studentId,
+    );
+    return ResponseUserSchema.parse(newParent); // Assuming you have a response schema for parent
   }
 
   @Delete(':id')

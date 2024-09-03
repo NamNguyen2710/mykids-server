@@ -5,18 +5,18 @@ export const ResponseUserSchema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   phoneNumber: z.string(),
-  profession: z.string().nullable(),
+  profession: z.string().nullish(),
   logo: z
     .object({
       id: z.number(),
       url: z.string(),
     })
-    .nullable(),
+    .nullish(),
   assignedSchool: z
     .object({
       id: z.number(),
       name: z.string(),
     })
-    .nullable(),
+    .nullish(),
 });
 export type ResponseUserDto = z.infer<typeof ResponseUserSchema>;

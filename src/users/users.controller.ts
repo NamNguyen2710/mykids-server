@@ -55,7 +55,7 @@ export class UsersController {
       };
     }
     if (user.roleId === Role.SchoolAdmin.id) {
-      query.schoolId = user.assignedSchool.id;
+      // query.schoolId = user.assignedSchool.id;
       const users = await this.usersService.findAll([], query);
       return {
         data: users.data.map((user) => ResponseUserSchema.parse(user)),

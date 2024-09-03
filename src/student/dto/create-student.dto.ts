@@ -14,7 +14,6 @@ export const CreateStudentSchema = z.object({
   gender: z.enum(genderList),
   information: z.string().optional(),
   schoolId: z.number(),
-  parentIds: z.array(z.number()),
   logoId: z.number().optional(),
 });
 

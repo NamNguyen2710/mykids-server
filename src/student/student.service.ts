@@ -11,6 +11,7 @@ import { StudentsParents } from './entities/students-parents.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { QueryStudentDto } from './dto/query-student.dto';
+import { CreateParentDto } from './dto/create-parent.dto';
 
 @Injectable()
 export class StudentService {
@@ -25,16 +26,8 @@ export class StudentService {
   ) {}
 
   async create(createStudentDto: CreateStudentDto) {
-    const parents = await Promise.all(
-      createStudentDto.parentIds.map(async (parentId) => {
-        const parent = await this.userService.findOne(parentId);
-        return this.stdParentRepository.create({ parent });
-      }),
-    );
-
     const student = this.studentRepository.create({
       ...createStudentDto,
-      parents,
     });
 
     if (createStudentDto.logoId) {
@@ -45,11 +38,6 @@ export class StudentService {
 
     await this.studentRepository.manager.transaction(async (manager) => {
       await manager.save(student);
-      await this.schoolService.addParents(
-        createStudentDto.schoolId,
-        parents.map((parent) => parent.parentId),
-        manager,
-      );
     });
     return student;
   }
@@ -196,6 +184,35 @@ export class StudentService {
         manager,
       );
     });
+  }
+
+  async createParent(createParentDto: CreateParentDto, studentId: number) {
+    const student = await this.studentRepository.findOne({
+      where: { id: studentId },
+    });
+
+    let parent;
+    await this.studentRepository.manager.transaction(async (manager) => {
+      // Create parent
+      parent = await this.userService.create(createParentDto, manager);
+
+      // Create student parent relation
+      const parents = this.stdParentRepository.create({
+        parent,
+        student,
+        relationship: createParentDto.relation,
+      });
+      await manager.save(parents);
+
+      // Add parent to school
+      await this.schoolService.addParents(
+        student.schoolId,
+        [parent.id],
+        manager,
+      );
+    });
+
+    return parent;
   }
 
   async validateStudentTeacherPermission(

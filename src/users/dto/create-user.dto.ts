@@ -3,8 +3,8 @@ import * as Role from '../entity/roles.data';
 
 export const CreateUserSchema = z
   .object({
-    firstname: z.string(),
-    lastname: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
     phoneNumber: z.string(),
     email: z.string().email().optional(),
     password: z.string().optional(),
