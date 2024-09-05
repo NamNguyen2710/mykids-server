@@ -190,26 +190,29 @@ export class StudentService {
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
     });
+    const { relationship, ...parentData } = createParentDto;
 
     let parent;
     await this.studentRepository.manager.transaction(async (manager) => {
-      if (createParentDto.id) {
+      if (parentData.id) {
         // Update existing parent
         parent = await this.userService.update(
-          createParentDto.id,
-          createParentDto,
+          parentData.id,
+          parentData,
           manager,
         );
+
+        if (!parent) throw new NotFoundException('Parent not found');
       } else {
         // Create parent
-        parent = await this.userService.create(createParentDto, manager);
+        parent = await this.userService.create(parentData, manager);
       }
 
       // Create student parent relation
       const parents = this.stdParentRepository.create({
         parent,
         student,
-        relationship: createParentDto.relationship,
+        relationship,
       });
       await manager.save(parents);
 
