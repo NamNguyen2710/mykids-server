@@ -48,7 +48,7 @@ export class MedicalService {
 
     const [medical, total] = await this.medicalRepository.findAndCount({
       where: whereClause,
-      relations: ['student', 'classroom'],
+      relations: ['student'],
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
