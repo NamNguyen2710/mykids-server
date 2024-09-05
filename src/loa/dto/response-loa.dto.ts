@@ -46,7 +46,7 @@ export const ResponseLoaSchema = OriginalLoaSchema.transform((data) => ({
     firstName: data.createdBy.firstName,
     lastName: data.createdBy.lastName,
     logo: data.createdBy.logo,
-    relation:
+    relationship:
       data.student &&
       data.createdBy.children.find(
         (child) => child.studentId === data.student.id,

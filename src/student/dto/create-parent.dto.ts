@@ -6,7 +6,7 @@ export const CreateParentSchema = z.object({
   phoneNumber: z.string(),
   roleId: z.literal(3),
   profession: z.string().optional(),
-  relation: z.string(),
+  relationship: z.string(),
   logoId: z.number().optional(),
 });
 
