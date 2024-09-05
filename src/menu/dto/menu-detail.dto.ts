@@ -5,7 +5,7 @@ import { MealPeriod } from '../entities/menu.entity';
 export const MenuDetailSchema = z.object({
   name: z.string(),
   description: z.string().nullish(),
-  mealPerioad: z.nativeEnum(MealPeriod),
+  mealPeriod: z.nativeEnum(MealPeriod),
   meals: z.array(MealDetailSchema),
   date: z.coerce.date(),
   classId: z.number(),
