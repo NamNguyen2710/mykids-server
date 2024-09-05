@@ -58,22 +58,7 @@ export class MenuController {
   }
 
   @Get('meals')
-  async getMeals(@Request() request, @Query() query) {
-    const permission =
-      (await this.classService.validateTeacherClass(
-        request.user.sub,
-        query.classId,
-      )) ||
-      (await this.userService.validateParentClassPermission(
-        request.user.sub,
-        query.classId,
-      ));
-    if (!permission) {
-      throw new ForbiddenException(
-        'You dont have permission to access this class information',
-      );
-    }
-
+  async getMeals(@Query() query) {
     return this.menuService.findMeals(query.query);
   }
 

@@ -180,7 +180,7 @@ export class StudentController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(
+  async deactivate(
     @Request() request,
     @Param('id', ParseIntPipe) studentId: number,
   ) {
@@ -197,5 +197,25 @@ export class StudentController {
 
     await this.studentService.deactivate(studentId);
     return { status: true, message: 'Student deactivated successfully' };
+  }
+
+  @Post(':id/activate')
+  async activate(
+    @Request() request,
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const student = await this.studentService.findOne(studentId);
+
+    const permission = await this.userService.validateSchoolAdminPermission(
+      request.user.sub,
+      student.schoolId,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to view students in this school',
+      );
+
+    await this.studentService.activate(studentId);
+    return { status: true, message: 'Student activated successfully' };
   }
 }
