@@ -171,8 +171,13 @@ export class UserService {
     }
   }
 
-  async update(userId: number, user: Partial<Users>): Promise<Users | null> {
-    const res = await this.userRepository.update(userId, user);
+  async update(
+    userId: number,
+    user: Partial<Users>,
+    transactionalManager?: EntityManager,
+  ) {
+    const manager = transactionalManager || this.userRepository.manager;
+    const res = await manager.update(Users, userId, user);
     if (res.affected === 0) return null;
 
     return this.userRepository.findOne({ where: { id: userId } });

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const CreateParentSchema = z.object({
+  id: z.number().optional(),
   firstName: z.string(),
   lastName: z.string(),
   phoneNumber: z.string(),

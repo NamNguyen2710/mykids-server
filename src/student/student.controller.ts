@@ -153,7 +153,7 @@ export class StudentController {
   }
 
   @Post(':id/parent')
-  async createParent(
+  async addStudentParent(
     @Request() request,
     @Param('id', ParseIntPipe) studentId: number,
     @Body(new ZodValidationPipe(CreateParentSchema))
@@ -171,7 +171,7 @@ export class StudentController {
       );
     }
 
-    const newParent = await this.studentService.createParent(
+    const newParent = await this.studentService.addStudentParent(
       createParentDto,
       studentId,
     );

@@ -186,15 +186,24 @@ export class StudentService {
     });
   }
 
-  async createParent(createParentDto: CreateParentDto, studentId: number) {
+  async addStudentParent(createParentDto: CreateParentDto, studentId: number) {
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
     });
 
     let parent;
     await this.studentRepository.manager.transaction(async (manager) => {
-      // Create parent
-      parent = await this.userService.create(createParentDto, manager);
+      if (createParentDto.id) {
+        // Update existing parent
+        parent = await this.userService.update(
+          createParentDto.id,
+          createParentDto,
+          manager,
+        );
+      } else {
+        // Create parent
+        parent = await this.userService.create(createParentDto, manager);
+      }
 
       // Create student parent relation
       const parents = this.stdParentRepository.create({
