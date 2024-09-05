@@ -190,17 +190,13 @@ export class StudentService {
     const student = await this.studentRepository.findOne({
       where: { id: studentId },
     });
-    const { relationship, ...parentData } = createParentDto;
+    const { id, relationship, ...parentData } = createParentDto;
 
     let parent;
     await this.studentRepository.manager.transaction(async (manager) => {
-      if (parentData.id) {
+      if (id) {
         // Update existing parent
-        parent = await this.userService.update(
-          parentData.id,
-          parentData,
-          manager,
-        );
+        parent = await this.userService.update(id, parentData, manager);
 
         if (!parent) throw new NotFoundException('Parent not found');
       } else {
