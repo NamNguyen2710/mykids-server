@@ -200,7 +200,7 @@ export class StudentService {
       const parents = this.stdParentRepository.create({
         parent,
         student,
-        relationship: createParentDto.relation,
+        relationship: createParentDto.relationship,
       });
       await manager.save(parents);
 
