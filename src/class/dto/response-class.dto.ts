@@ -18,6 +18,8 @@ export const DefaultClassSchema = z.object({
         classId: z.number(),
         studentId: z.number(),
         description: z.string().nullable(),
+        gender: z.string(),
+        dateOfBirth: z.string(),
         student: z.object({
           id: z.number(),
           firstName: z.string(),
@@ -65,6 +67,8 @@ export const ResponseClassSchema = DefaultClassSchema.transform((data) => ({
     lastName: student.student.lastName,
     logo: { ...student.student.logo },
     description: student.description,
+    gender: student.gender,
+    dateOfBirth: student.dateOfBirth,
     parents: student.student.parents.map((parent) => ({
       id: parent.parent.id,
       relationship: parent.relationship,
