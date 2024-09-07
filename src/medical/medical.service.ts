@@ -72,6 +72,13 @@ export class MedicalService {
     });
   }
 
+  async findOneByStudent(studentId: number) {
+    return this.medicalRepository.findOne({
+      where: { studentId },
+      relations: ['student'],
+    });
+  }
+
   async update(id: number, medicalDto: UpdateMedicalDto) {
     const medical = await this.medicalRepository.findOne({ where: { id } });
     if (!medical) throw new BadRequestException('Cannot find medical record!');

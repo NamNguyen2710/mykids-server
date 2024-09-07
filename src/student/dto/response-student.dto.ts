@@ -37,7 +37,7 @@ export const ResponseStudentSchema = z.object({
         }),
       }),
     )
-    .optional(),
+    .nullish(),
   history: z
     .array(
       z.object({
@@ -45,10 +45,24 @@ export const ResponseStudentSchema = z.object({
         classroom: z.object({
           id: z.number(),
           name: z.string(),
+          schoolYear: z.object({
+            id: z.number(),
+            startDate: z.coerce.date(),
+            endDate: z.coerce.date(),
+          }),
         }),
       }),
     )
-    .optional(),
+    .nullish(),
+  medical: z
+    .object({
+      history: z.string(),
+      currentMedication: z.string(),
+      allergies: z.string(),
+      vaccinations: z.string(),
+      instruction: z.string(),
+    })
+    .nullish(),
 });
 
 export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(

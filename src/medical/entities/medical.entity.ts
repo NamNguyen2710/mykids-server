@@ -6,6 +6,9 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   JoinTable,
+  Unique,
+  OneToOne,
+  JoinColumn,
 } from 'typeorm';
 
 import { Assets } from 'src/asset/entities/asset.entity';
@@ -13,6 +16,7 @@ import { Schools } from 'src/school/entities/school.entity';
 import { Students } from 'src/student/entities/student.entity';
 
 @Entity({ name: 'medicals' })
+@Unique(['studentId'])
 export class Medicals {
   @PrimaryGeneratedColumn({ name: 'medical_id' })
   id: number;
@@ -55,6 +59,7 @@ export class Medicals {
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @ManyToOne(() => Students, (student) => student.medicals)
+  @OneToOne(() => Students, (student) => student.medical)
+  @JoinColumn({ name: 'student_id' })
   student: Students;
 }

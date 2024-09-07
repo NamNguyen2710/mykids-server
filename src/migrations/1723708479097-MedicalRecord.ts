@@ -8,7 +8,7 @@ export class MedicalRecord1723708479097 implements MigrationInterface {
       `CREATE TABLE "medicals" (
         "medical_id" int generated always as identity primary key, 
         "school_id" integer NOT NULL, 
-        "student_id" integer NOT NULL,
+        "student_id" integer NOT NULL UNIQUE,
         "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(), 
         FOREIGN KEY (school_id) REFERENCES schools (school_id),
         FOREIGN KEY (student_id) REFERENCES students (student_id)

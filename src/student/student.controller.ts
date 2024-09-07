@@ -38,6 +38,7 @@ import {
 import { CreateParentDto, CreateParentSchema } from './dto/create-parent.dto';
 import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
 import * as Role from 'src/users/entity/roles.data';
+import { MedicalService } from 'src/medical/medical.service';
 
 @Controller('student')
 @UseGuards(LoginGuard)
@@ -45,6 +46,7 @@ export class StudentController {
   constructor(
     private readonly studentService: StudentService,
     private readonly userService: UserService,
+    private readonly medicalService: MedicalService,
   ) {}
 
   @Post()
@@ -101,7 +103,8 @@ export class StudentController {
 
     const student = await this.studentService.findOne(id, [
       'parents.parent',
-      'history.classroom',
+      'history.classroom.schoolYear',
+      'medical',
     ]);
     return ResponseStdWithParentSchema.parse(student);
   }
@@ -217,5 +220,22 @@ export class StudentController {
 
     await this.studentService.activate(studentId);
     return { status: true, message: 'Student activated successfully' };
+  }
+
+  @Get(':id/medical')
+  async getStudentMedical(
+    @Request() request,
+    @Param('id', ParseIntPipe) studentId: number,
+  ) {
+    const permission = await this.userService.validateParentChildrenPermission(
+      request.user.sub,
+      studentId,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You do not have permission to view this student medical record',
+      );
+
+    return this.medicalService.findOneByStudent(studentId);
   }
 }

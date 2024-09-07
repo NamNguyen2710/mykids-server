@@ -95,6 +95,6 @@ export class Students {
   })
   studentCvs: Assets[];
 
-  @OneToMany(() => Medicals, (medical) => medical.student)
-  medicals: Medicals[];
+  @OneToOne(() => Medicals, (medical) => medical.student, { nullable: true })
+  medical: Medicals;
 }

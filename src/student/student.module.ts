@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { SchoolModule } from 'src/school/school.module';
+import { MedicalModule } from 'src/medical/medical.module';
 import { StudentService } from './student.service';
 import { StudentController } from './student.controller';
 
@@ -12,6 +13,7 @@ import { StudentsParents } from 'src/student/entities/students-parents.entity';
   imports: [
     TypeOrmModule.forFeature([Students, StudentsParents]),
     SchoolModule,
+    MedicalModule,
   ],
   controllers: [StudentController],
   providers: [StudentService],
