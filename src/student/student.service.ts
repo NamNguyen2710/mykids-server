@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 
 import { UserService } from 'src/users/users.service';
 import { SchoolService } from 'src/school/school.service';
@@ -118,7 +118,10 @@ export class StudentService {
   }
 
   async update(id: number, updateStudentDto: UpdateStudentDto) {
-    const student = await this.studentRepository.findOne({ where: { id } });
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['parents'],
+    });
 
     if (updateStudentDto.parentIds) {
       const parents = await this.userService.findByIds(
@@ -128,9 +131,40 @@ export class StudentService {
         throw new NotFoundException('Cannot find parents!');
 
       delete updateStudentDto.parentIds;
-      student.parents = parents.map((parent) =>
-        this.stdParentRepository.create({ studentId: id, parentId: parent.id }),
+
+      const createParentIds = parents
+        .filter((p) => student.parents.every((stdp) => stdp.parentId !== p.id))
+        .map((p) => p.id);
+
+      const createStdParents = createParentIds.map((p) =>
+        this.stdParentRepository.create({
+          studentId: id,
+          parentId: p,
+        }),
       );
+
+      const deleteParentIds = student.parents
+        .filter((stdp) => parents.every((p) => p.id !== stdp.parentId))
+        .map((stdp) => stdp.parentId);
+
+      this.studentRepository.manager.transaction(async (manager) => {
+        await manager.save(createStdParents);
+        await this.schoolService.addParents(
+          student.schoolId,
+          createParentIds,
+          manager,
+        );
+
+        await this.stdParentRepository.delete({
+          studentId: id,
+          parentId: In(deleteParentIds),
+        });
+        await this.schoolService.removeParents(
+          student.schoolId,
+          deleteParentIds,
+          manager,
+        );
+      });
     }
 
     if (updateStudentDto.studentCvIds) {
