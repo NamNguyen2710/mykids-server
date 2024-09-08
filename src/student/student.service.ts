@@ -56,9 +56,9 @@ export class StudentService {
       .createQueryBuilder('s')
       .leftJoinAndSelect('s.logo', 'logo')
       .andWhere('s.isActive = true')
-      .andWhere('classroom.is_active = true')
       .limit(limit)
-      .offset((page - 1) * limit);
+      .offset((page - 1) * limit)
+      .orderBy('s.id', 'DESC');
 
     if (name)
       qb.andWhere('s.first_name ILIKE :name OR s.last_name ILIKE :name', {

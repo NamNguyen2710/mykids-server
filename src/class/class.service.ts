@@ -24,7 +24,14 @@ export class ClassService {
   }
 
   async findAll(query: QueryClassesDto): Promise<ListResponse<Classrooms>> {
-    const { q = '', schoolId, schoolYearId, page = 1, limit = 20 } = query;
+    const {
+      q = '',
+      schoolId,
+      schoolYearId,
+      page = 1,
+      limit = 20,
+      isActive = true,
+    } = query;
 
     const qb = this.classRepository
       .createQueryBuilder('class')
@@ -33,6 +40,9 @@ export class ClassService {
       .andWhere('class.name ILIKE :q OR class.location ILIKE :q', {
         q: `%${q}%`,
       })
+      .andWhere('class.isActive = :isActive', { isActive })
+      .orderBy('schoolYear.startDate', 'DESC')
+      .addOrderBy('class.id', 'DESC')
       .take(limit)
       .skip((page - 1) * limit);
 
