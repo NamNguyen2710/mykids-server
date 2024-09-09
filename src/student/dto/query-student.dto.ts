@@ -6,8 +6,14 @@ export const QueryStudentSchema = z.object({
   page: z.coerce.number().optional(),
   schoolId: z.coerce.number(),
   classId: z.coerce.number().optional(),
-  hasNoClass: z.coerce.boolean().optional(),
-  isActive: z.coerce.boolean().optional(),
+  hasNoClass: z
+    .enum(['true', 'false'])
+    .nullish()
+    .transform((v) => v === 'true'),
+  isActive: z
+    .enum(['true', 'false'])
+    .nullish()
+    .transform((v) => v === 'true'),
 });
 
 export type QueryStudentDto = z.infer<typeof QueryStudentSchema>;

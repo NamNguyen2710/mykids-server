@@ -56,7 +56,7 @@ export class StudentService {
     const qb = this.studentRepository
       .createQueryBuilder('s')
       .leftJoinAndSelect('s.logo', 'logo')
-      .andWhere('s.isActive = :isActive', { isActive })
+      .andWhere('s.is_active = :isActive', { isActive })
       .limit(limit)
       .offset((page - 1) * limit)
       .orderBy('s.id', 'DESC');
@@ -81,6 +81,7 @@ export class StudentService {
         'history.classroom',
         'classroom',
       );
+    console.log(qb.getQuery());
 
     const students = await qb.getRawMany();
     const total = await qb.getCount();

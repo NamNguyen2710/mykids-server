@@ -10,6 +10,9 @@ export const QueryUserSchema = z.object({
   roleId: z.coerce.number().optional(),
   schoolId: z.coerce.number().optional(),
   classId: z.coerce.number().optional(),
-  isActive: z.boolean().optional(),
+  isActive: z
+    .enum(['true', 'false'])
+    .nullish()
+    .transform((v) => v === 'true'),
 });
 export type QueryUserDto = z.infer<typeof QueryUserSchema>;
