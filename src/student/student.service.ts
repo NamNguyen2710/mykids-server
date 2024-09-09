@@ -50,18 +50,19 @@ export class StudentService {
       limit = 20,
       page = 1,
       hasNoClass = false,
+      isActive = true,
     } = query;
 
     const qb = this.studentRepository
       .createQueryBuilder('s')
       .leftJoinAndSelect('s.logo', 'logo')
-      .andWhere('s.isActive = true')
+      .andWhere('s.isActive = :isActive', { isActive })
       .limit(limit)
       .offset((page - 1) * limit)
       .orderBy('s.id', 'DESC');
 
     if (name)
-      qb.andWhere('s.first_name ILIKE :name OR s.last_name ILIKE :name', {
+      qb.andWhere('(s.first_name ILIKE :name OR s.last_name ILIKE :name)', {
         name: `%${name}%`,
       });
 
