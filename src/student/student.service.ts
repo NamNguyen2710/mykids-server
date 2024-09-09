@@ -56,8 +56,23 @@ export class StudentService {
     const qb = this.studentRepository
       .createQueryBuilder('s')
       .leftJoinAndSelect('s.logo', 'logo')
+      .leftJoin('s.history', 'history')
+      .leftJoin('history.classroom', 'classroom', 'classroom.is_active = true')
       .andWhere('s.is_active = :isActive', { isActive })
       .limit(limit)
+      .groupBy('s.id')
+      .addGroupBy('logo.id')
+      .addSelect([
+        `COALESCE(
+          JSON_AGG(
+            JSON_BUILD_OBJECT(
+              'id', classroom.id, 
+              'name', classroom.name, 
+              'description', history.description
+            ) 
+          ) FILTER (WHERE classroom.id IS NOT NULL AND classroom.is_active = true), 
+        '[]') AS history`,
+      ])
       .offset((page - 1) * limit)
       .orderBy('s.id', 'DESC');
 
@@ -67,19 +82,10 @@ export class StudentService {
       });
 
     if (schoolId) qb.andWhere('s.school_id = :schoolId', { schoolId });
-    if (classId) qb.andWhere('history.class_id = :classId', { classId });
+    if (classId) qb.andWhere('classroom.id = :classId', { classId });
     if (hasNoClass)
-      qb.leftJoin('s.history', 'history')
-        .leftJoin('history.classroom', 'classroom')
-        .groupBy('s.id')
-        .addGroupBy('logo.id')
-        .having(
-          'SUM(CASE WHEN classroom.is_active = true THEN 1 ELSE 0 END) = 0',
-        );
-    else
-      qb.leftJoinAndSelect('s.history', 'history').leftJoinAndSelect(
-        'history.classroom',
-        'classroom',
+      qb.having(
+        'SUM(CASE WHEN classroom.is_active = true THEN 1 ELSE 0 END) = 0',
       );
 
     const students = await qb.getRawMany();
@@ -99,11 +105,7 @@ export class StudentService {
           id: s.logo_asset_id,
           url: s.logo_url,
         },
-        classroom: {
-          description: s.history_description,
-          id: s.classroom_class_id,
-          name: s.classroom_name,
-        },
+        classroom: s.history[0] || null,
       })),
       pagination: {
         totalItems: total,
