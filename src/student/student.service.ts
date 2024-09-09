@@ -120,7 +120,7 @@ export class StudentService {
   async update(id: number, updateStudentDto: UpdateStudentDto) {
     const student = await this.studentRepository.findOne({
       where: { id },
-      relations: ['parents'],
+      relations: ['parents.parent'],
     });
 
     if (updateStudentDto.parentIds) {
