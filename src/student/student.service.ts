@@ -140,6 +140,7 @@ export class StudentService {
         this.stdParentRepository.create({
           studentId: id,
           parentId: p,
+          relationship: 'Parent',
         }),
       );
 
@@ -147,7 +148,7 @@ export class StudentService {
         .filter((stdp) => parents.every((p) => p.id !== stdp.parentId))
         .map((stdp) => stdp.parentId);
 
-      this.studentRepository.manager.transaction(async (manager) => {
+      await this.studentRepository.manager.transaction(async (manager) => {
         await manager.save(createStdParents);
         await this.schoolService.addParents(
           student.schoolId,
@@ -184,12 +185,16 @@ export class StudentService {
       student.logo = logo[0];
     }
 
-    const res = await this.studentRepository.save({
+    delete student.parents;
+    await this.studentRepository.save({
       ...student,
       ...updateStudentDto,
     });
 
-    return res;
+    return await this.studentRepository.findOne({
+      where: { id },
+      relations: ['parents.parent'],
+    });
   }
 
   async deactivate(id: number) {
