@@ -8,12 +8,12 @@ export const QueryStudentSchema = z.object({
   classId: z.coerce.number().optional(),
   hasNoClass: z
     .enum(['true', 'false'])
-    .nullish()
+    .optional()
     .transform((v) => v === 'true'),
   isActive: z
     .enum(['true', 'false'])
-    .nullish()
-    .transform((v) => v === 'true'),
+    .optional()
+    .transform((v) => v === undefined || v === 'true'),
 });
 
 export type QueryStudentDto = z.infer<typeof QueryStudentSchema>;

@@ -8,7 +8,7 @@ export const QueryClassesSchema = z.object({
   schoolYearId: z.coerce.number().int().positive().optional(),
   isActive: z
     .enum(['true', 'false'])
-    .nullish()
+    .optional()
     .transform((v) => v === 'true'),
 });
 

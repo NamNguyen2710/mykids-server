@@ -81,7 +81,6 @@ export class StudentService {
         'history.classroom',
         'classroom',
       );
-    console.log(qb.getQuery());
 
     const students = await qb.getRawMany();
     const total = await qb.getCount();
