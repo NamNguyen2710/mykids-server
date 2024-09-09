@@ -30,7 +30,14 @@ import {
   DefaultClassSchema,
 } from 'src/class/dto/response-class.dto';
 import { UserService } from 'src/users/users.service';
-import { UpdateClassHistoryDto } from 'src/class/dto/update-class-history.dto';
+import {
+  UpdateClassHistoryDto,
+  UpdateClassHistorySchema,
+} from 'src/class/dto/update-class-history.dto';
+import {
+  AddStudentsDto,
+  AddStudentsSchema,
+} from 'src/class/dto/add-students.dto';
 
 @Controller('class')
 @UseGuards(LoginGuard)
@@ -140,10 +147,10 @@ export class ClassController {
   }
 
   @Post(':id/student')
-  async addStudent(
+  async addStudents(
     @Request() request,
     @Param('id', ParseIntPipe) id: number,
-    @Body('studentId', ParseIntPipe) studentId: number,
+    @Body(new ZodValidationPipe(AddStudentsSchema)) body: AddStudentsDto,
   ) {
     const classroom = await this.classService.findOne(id);
 
@@ -156,7 +163,7 @@ export class ClassController {
         'You do not have permission to update this class',
       );
 
-    return this.classHistoryService.create(id, studentId);
+    return this.classHistoryService.create(body.studentIds, id);
   }
 
   @Put(':id/student/:studentId')
@@ -164,7 +171,8 @@ export class ClassController {
     @Request() request,
     @Param('id', ParseIntPipe) classId: number,
     @Param('studentId', ParseIntPipe) studentId: number,
-    @Body() updateDto: UpdateClassHistoryDto,
+    @Body(new ZodValidationPipe(UpdateClassHistorySchema))
+    updateDto: UpdateClassHistoryDto,
   ) {
     const classroom = await this.classService.findOne(classId);
 

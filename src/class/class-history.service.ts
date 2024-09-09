@@ -12,11 +12,13 @@ export class ClassHistoryService {
     private classHistoryRepository: Repository<ClassHistories>,
   ) {}
 
-  async create(studentId: number, classId: number) {
-    const classHistory = this.classHistoryRepository.create({
-      studentId,
-      classId,
-    });
+  async create(studentIds: number[], classId: number) {
+    const classHistory = studentIds.map((studentId) =>
+      this.classHistoryRepository.create({
+        studentId,
+        classId,
+      }),
+    );
     await this.classHistoryRepository.save(classHistory);
 
     return classHistory;
