@@ -37,7 +37,7 @@ export class NotificationsController {
     private readonly userService: UserService,
   ) {}
 
-  @Post('send')
+  @Post('announcement')
   async sendNotification(
     @Request() request,
     @Body(new ZodValidationPipe(SendNotificationSchema))
