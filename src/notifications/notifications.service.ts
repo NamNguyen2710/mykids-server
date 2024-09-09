@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import { FireBaseService } from 'src/firebase/firebase.service';
 
@@ -8,6 +8,7 @@ import { NotificationToken } from './entities/notification-token.entity';
 import { Notifications } from './entities/notification.entity';
 import { SaveTokenDTO } from './dto/save-token.dto';
 import { QueryNotiDTO } from './dto/query-noti.dto';
+import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -51,14 +52,21 @@ export class NotificationsService {
   }
 
   // Create and send notification
-  async createSchoolNotification(
-    schoolId: number,
-    title: string,
-    body: string,
-    data?: { [key: string]: string },
-  ) {
+  async createSchoolNotification(notificationDto: SendNotificationDTO) {
+    const whereClause: FindOptionsWhere<NotificationToken> = {
+      user: { schools: { id: notificationDto.schoolId } },
+    };
+    if (notificationDto.classId) {
+      whereClause.user = {
+        ...(whereClause.user as object),
+        children: {
+          student: { history: { classId: notificationDto.classId } },
+        },
+      };
+    }
+
     const getTokens = await this.notificationTokenRepo.find({
-      where: { user: { schools: { id: schoolId } } },
+      where: whereClause,
     });
 
     // Get token as string array
@@ -68,8 +76,8 @@ export class NotificationsService {
     const notificationsData = getTokens.map((token) => {
       const notification = this.notificationRepo.create({
         userId: token.user.id,
-        title: title,
-        body: body,
+        title: notificationDto.title,
+        body: notificationDto.body,
       });
       return notification;
     });
@@ -78,10 +86,9 @@ export class NotificationsService {
     const notification = {
       tokens: tokens,
       notification: {
-        title: title,
-        body: body,
+        title: notificationDto.title,
+        body: notificationDto.body,
       },
-      data: data,
     };
 
     // Send notification

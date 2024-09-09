@@ -10,6 +10,7 @@ import {
   Query,
   ParseIntPipe,
   HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 
 import { NotificationsService } from './notifications.service';
@@ -22,16 +23,36 @@ import {
 } from 'src/notifications/dto/query-noti.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { NotiResponseSchema } from 'src/notifications/dto/notification-response.dto';
+import {
+  SendNotificationSchema,
+  SendNotificationDTO,
+} from './dto/send-notification.dto';
+import { UserService } from 'src/users/users.service';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
 export class NotificationsController {
-  constructor(private readonly notificationsService: NotificationsService) {}
+  constructor(
+    private readonly notificationsService: NotificationsService,
+    private readonly userService: UserService,
+  ) {}
 
-  // @Post('send')
-  // async sendNotification(@Body() sendNotificationDto: SendNotificationDTO) {
-  //   this.notificationsService.sendingNotification(sendNotificationDto);
-  // }
+  @Post('send')
+  async sendNotification(
+    @Request() request,
+    @Body(new ZodValidationPipe(SendNotificationSchema))
+    sendNotificationDto: SendNotificationDTO,
+  ) {
+    const permission = await this.userService.validateSchoolAdminPermission(
+      request.user.sub,
+      sendNotificationDto.schoolId,
+    );
+    if (!permission) {
+      throw new ForbiddenException('You do not have permission');
+    }
+
+    this.notificationsService.createSchoolNotification(sendNotificationDto);
+  }
 
   // @Post('test')
   // async sendTestNoti(@Body() token: string) {

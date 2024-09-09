@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
 
 import { NotificationToken } from 'src/notifications/entities/notification-token.entity';
-import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
 
 @Injectable()
 export class FireBaseService {
@@ -14,7 +13,7 @@ export class FireBaseService {
     @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: admin.app.App,
   ) {}
 
-  async sendNotiFirebase(sendNotificationDTO: SendNotificationDTO) {
+  async sendNotiFirebase(sendNotificationDTO) {
     const { tokens, notification, data } = sendNotificationDTO;
     const payload = {
       notification,
