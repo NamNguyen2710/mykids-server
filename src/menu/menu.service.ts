@@ -77,7 +77,7 @@ export class MenuService {
       )
       .where('m.rn = 1')
       .orderBy('m.name')
-      .take(10)
+      .limit(10)
       .getRawMany();
 
     const mealsData = meals.map((meal) => ({

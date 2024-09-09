@@ -73,8 +73,9 @@ export class AlbumService {
       .addGroupBy('createdBy.id')
       .addGroupBy('logo.id')
       .orderBy('album.createdDate', 'DESC')
-      .skip(skip)
-      .take(limit);
+      .offset(skip)
+      .limit(limit);
+
     const albums = await queryBuilder.getRawMany();
     const res = albums.map((album) => ({
       id: album.album_album_id,
