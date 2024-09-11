@@ -51,7 +51,7 @@ export class AlbumService {
   }
 
   async findAll(query: QueryAlbumDto) {
-    const { schoolId, limit = 20, page = 0 } = query;
+    const { schoolId, limit = 20, page = 1 } = query;
     const skip = (page - 1) * limit;
 
     const queryBuilder = this.albumRepo
