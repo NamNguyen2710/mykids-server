@@ -9,7 +9,7 @@ export const QueryClassesSchema = z.object({
   isActive: z
     .enum(['true', 'false'])
     .optional()
-    .transform((v) => v === 'true'),
+    .transform((v) => v === undefined || v === 'true'),
 });
 
 export type QueryClassesDto = z.infer<typeof QueryClassesSchema>;

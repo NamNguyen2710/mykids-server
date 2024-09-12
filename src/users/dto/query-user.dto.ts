@@ -13,6 +13,6 @@ export const QueryUserSchema = z.object({
   isActive: z
     .enum(['true', 'false'])
     .optional()
-    .transform((v) => v === 'true'),
+    .transform((v) => v === undefined || v === 'true'),
 });
 export type QueryUserDto = z.infer<typeof QueryUserSchema>;
