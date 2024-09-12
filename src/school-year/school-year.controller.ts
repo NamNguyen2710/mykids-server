@@ -66,7 +66,7 @@ export class SchoolYearController {
         'You do not have permission to assess this resource.',
       );
 
-    const user = await this.userService.findOne(req.user.id, [
+    const user = await this.userService.findOne(req.user.sub, [
       'assignedSchool',
     ]);
     return this.schoolYearService.findAll(user.assignedSchool.id);
