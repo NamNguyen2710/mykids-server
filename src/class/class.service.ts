@@ -37,7 +37,7 @@ export class ClassService {
       .createQueryBuilder('class')
       .leftJoinAndSelect('class.school', 'school')
       .leftJoinAndSelect('class.schoolYear', 'schoolYear')
-      .andWhere('class.name ILIKE :q OR class.location ILIKE :q', {
+      .andWhere('(class.name ILIKE :q OR class.location ILIKE :q)', {
         q: `%${q}%`,
       })
       .andWhere('class.isActive = :isActive', { isActive })
