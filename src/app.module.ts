@@ -27,7 +27,7 @@ import { MedicalModule } from 'src/medical/medical.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true, load: [typeorm] }),
-    ThrottlerModule.forRoot([{ ttl: 3000, limit: 3 }]),
+    ThrottlerModule.forRoot([{ ttl: 3000, limit: 100 }]),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
       useFactory: async (configService: ConfigService) =>
