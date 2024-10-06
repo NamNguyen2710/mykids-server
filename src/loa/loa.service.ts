@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 
-import { UserService } from 'src/users/users.service';
+import { AssetService } from 'src/asset/asset.service';
 
 import { LOA_STATUS, Loa } from './entities/loa.entity';
 import * as Role from 'src/users/entity/roles.data';
@@ -14,13 +14,11 @@ import { QueryLoaDto } from './dto/query-loa.dto';
 import { CreateLoaDto } from './dto/create-loa.dto';
 import { UpdateLoaDto } from './dto/update-loa.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
-import { AssetService } from 'src/asset/asset.service';
 
 @Injectable()
 export class LoaService {
   constructor(
     @InjectRepository(Loa) private readonly loaRepo: Repository<Loa>,
-    private readonly userService: UserService,
     private readonly assetService: AssetService,
   ) {}
 
@@ -37,21 +35,20 @@ export class LoaService {
 
     return this.loaRepo.findOne({
       where: { id: loa.id },
-      relations: ['student', 'classroom', 'createdBy.children'],
+      relations: ['student', 'classroom', 'createdBy'],
     });
   }
 
   async findAll(
-    userId: number,
     query: QueryLoaDto,
+    userId: number,
+    userRole: string,
   ): Promise<ListResponse<Loa>> {
     const limit = query.limit || 10;
     const page = query.page || 1;
     const skip = (page - 1) * limit;
 
-    const user = await this.userService.findOne(userId);
-
-    if (user.role.name == Role.SchoolAdmin.name) {
+    if (userRole == Role.SchoolAdmin.name) {
       const whereClause: FindOptionsWhere<Loa> = {
         student: { school: { schoolAdminId: userId } },
       };
@@ -65,7 +62,7 @@ export class LoaService {
 
       const [data, total] = await this.loaRepo.findAndCount({
         where: whereClause,
-        relations: ['student', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy'],
         take: limit,
         skip: skip,
       });
@@ -81,7 +78,7 @@ export class LoaService {
       };
     }
 
-    if (user.role.name == Role.Parent.name) {
+    if (userRole == Role.Parent.name) {
       if (!query.studentId) throw new BadRequestException('Missing student id');
       if (!query.classId) throw new BadRequestException('Missing class id');
 
@@ -91,7 +88,7 @@ export class LoaService {
           studentId: query.studentId,
           classId: query.classId,
         },
-        relations: ['student', 'classroom', 'createdBy.children'],
+        relations: ['student', 'classroom', 'createdBy'],
         order: { createdAt: 'DESC' },
         take: limit,
         skip: skip,
@@ -109,34 +106,20 @@ export class LoaService {
     }
   }
 
-  async findOne(loaId: number, userId: number) {
-    const user = await this.userService.findOne(userId);
+  async findOne(loaId: number) {
+    const loa = this.loaRepo.findOne({
+      where: { id: loaId },
+      relations: ['student', 'classroom', 'createdBy'],
+    });
 
-    if (user.role.name == Role.SchoolAdmin.name) {
-      const loa = this.loaRepo.findOne({
-        where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
-        relations: ['student', 'classroom', 'createdBy.children'],
-      });
-
-      if (!loa) throw new NotFoundException('Cannot find LOA notice!');
-      return loa;
-    }
-
-    if (user.role.name == Role.Parent.name) {
-      const loa = this.loaRepo.findOne({
-        where: { id: loaId, student: { parents: { parentId: userId } } },
-        relations: ['student', 'classroom', 'createdBy.children'],
-      });
-
-      if (!loa) throw new NotFoundException('Cannot find LOA notice!');
-      return loa;
-    }
+    if (!loa) throw new NotFoundException('Cannot find LOA notice!');
+    return loa;
   }
 
   async update(loaId: number, updateLoaDto: UpdateLoaDto) {
     const loa = await this.loaRepo.findOne({
       where: { id: loaId },
-      relations: ['student', 'classroom', 'createdBy.children'],
+      relations: ['student', 'classroom', 'createdBy'],
     });
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
 

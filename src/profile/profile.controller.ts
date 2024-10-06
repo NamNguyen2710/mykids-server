@@ -13,13 +13,15 @@ import {
 } from '@nestjs/common';
 
 import { UserService } from '../users/users.service';
+import { ValidationService } from '../users/validation.service';
+import { StudentService } from 'src/student/student.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import * as Role from '../users/entity/roles.data';
 import { ParentProfileSchema } from 'src/profile/dto/response-parent-profile.dto';
 import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
-import { StudentService } from 'src/student/student.service';
+
 import {
   UpdateParentProfileDto,
   UpdateParentProfileSchema,
@@ -36,6 +38,7 @@ export class ProfileController {
   constructor(
     private readonly usersService: UserService,
     private readonly studentService: StudentService,
+    private readonly validationService: ValidationService,
   ) {}
 
   @Get()
@@ -72,10 +75,11 @@ export class ProfileController {
     @Body(new ZodValidationPipe(UpdateStudentSchema))
     studentDto: UpdateStudentDto,
   ): Promise<any> {
-    const permission = await this.usersService.validateParentChildrenPermission(
-      request.user.sub,
-      studentId,
-    );
+    const permission =
+      await this.validationService.validateParentChildrenPermission(
+        request.user.sub,
+        studentId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to update this student',

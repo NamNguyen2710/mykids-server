@@ -13,6 +13,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 
+import { ValidationService } from 'src/users/validation.service';
 import { NotificationsService } from './notifications.service';
 import { LoginGuard } from 'src/guard/login.guard';
 
@@ -27,14 +28,13 @@ import {
   SendNotificationSchema,
   SendNotificationDTO,
 } from './dto/send-notification.dto';
-import { UserService } from 'src/users/users.service';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
 export class NotificationsController {
   constructor(
     private readonly notificationsService: NotificationsService,
-    private readonly userService: UserService,
+    private readonly validationService: ValidationService,
   ) {}
 
   @Post('announcement')
@@ -43,10 +43,11 @@ export class NotificationsController {
     @Body(new ZodValidationPipe(SendNotificationSchema))
     sendNotificationDto: SendNotificationDTO,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      sendNotificationDto.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        sendNotificationDto.schoolId,
+      );
     if (!permission) {
       throw new ForbiddenException('You do not have permission');
     }

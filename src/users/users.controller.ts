@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 
 import { UserService } from './users.service';
+import { ValidationService } from 'src/users/validation.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
@@ -33,7 +34,10 @@ import { UpdateUserDto, UpdateUserSchema } from 'src/users/dto/update-user.dto';
 @Controller('users')
 @UseGuards(LoginGuard)
 export class UsersController {
-  constructor(private readonly usersService: UserService) {}
+  constructor(
+    private readonly usersService: UserService,
+    private readonly validationService: ValidationService,
+  ) {}
 
   @Get()
   async findAll(
@@ -54,21 +58,32 @@ export class UsersController {
         pagination,
       };
     }
-    if (user.roleId === Role.SchoolAdmin.id) {
-      // query.schoolId = user.assignedSchool.id;
-      const users = await this.usersService.findAll([], query);
-      return {
-        data: users.data.map((user) => ResponseUserSchema.parse(user)),
-        pagination: users.pagination,
-      };
-    }
+    // if (user.roleId === Role.SchoolAdmin.id) {
+    //   query.schoolId = user.assignedSchool.id;
+    //   const users = await this.usersService.findAll([], query);
+    //   return {
+    //     data: users.data.map((user) => ResponseUserSchema.parse(user)),
+    //     pagination: users.pagination,
+    //   };
+    // }
 
     throw new ForbiddenException('You are not allowed to access this resource');
   }
 
   @Get(':userId')
-  async findOne(@Param('userId', ParseIntPipe) userId: number): Promise<Users> {
-    // TODO: Add validation
+  async findOne(
+    @Request() req,
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<Users> {
+    const permission = this.validationService.validateUserRole(
+      req.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
+
     const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException('User does not exist!');
@@ -83,7 +98,7 @@ export class UsersController {
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
   ): Promise<ResponseUserDto> {
-    const permission = this.usersService.validateUserRole(
+    const permission = this.validationService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
     );
@@ -98,17 +113,38 @@ export class UsersController {
 
   @Put(':userId')
   async update(
+    @Request() request,
     @Param('userId', ParseIntPipe) userId: number,
     @Body(new ZodValidationPipe(UpdateUserSchema)) userDto: UpdateUserDto,
   ): Promise<ResponseUserDto> {
-    // TODO: Add validation
+    const permission = this.validationService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
+
     const user = await this.usersService.update(userId, userDto);
     return ResponseUserSchema.parse(user);
   }
 
   @Delete(':userId')
   @HttpCode(204)
-  async delete(@Param('userId', ParseIntPipe) userId: number) {
+  async delete(
+    @Request() request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    const permission = this.validationService.validateUserRole(
+      request.user.sub,
+      Role.SuperAdmin.id,
+    );
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
+
     const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException('User does not exist!');

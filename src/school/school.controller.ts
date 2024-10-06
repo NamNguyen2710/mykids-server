@@ -13,12 +13,13 @@ import {
 } from '@nestjs/common';
 
 import { SchoolService } from './school.service';
-import { UserService } from 'src/users/users.service';
+import { ValidationService } from 'src/users/validation.service';
 import { AssetService } from 'src/asset/asset.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import * as Role from 'src/users/entity/roles.data';
+import { Users } from 'src/users/entity/users.entity';
 import { CreateSchoolDto, CreateSchoolSchema } from './dto/create-school.dto';
 import { UpdateSchoolDto, UpdateSchoolSchema } from './dto/update-school.dto';
 import {
@@ -32,7 +33,7 @@ import { QueryAssetSchema, QueryAssetDto } from 'src/asset/dto/query-asset.dto';
 export class SchoolController {
   constructor(
     private readonly schoolService: SchoolService,
-    private readonly userService: UserService,
+    private readonly validationService: ValidationService,
     private readonly assetService: AssetService,
   ) {}
 
@@ -42,7 +43,7 @@ export class SchoolController {
     @Body(new ZodValidationPipe(CreateSchoolSchema))
     createSchoolDto: CreateSchoolDto,
   ) {
-    const permission = await this.userService.validateUserRole(
+    const permission = await this.validationService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
     );
@@ -60,7 +61,7 @@ export class SchoolController {
     @Query(new ZodValidationPipe(QuerySchoolSchema))
     query: QuerySchoolDto,
   ) {
-    const permission = await this.userService.validateUserRole(
+    const permission = await this.validationService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
     );
@@ -75,11 +76,11 @@ export class SchoolController {
   @Get(':id')
   async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const permission =
-      (await this.userService.validateUserRole(
+      (await this.validationService.validateUserRole(
         request.user.sub,
         Role.SuperAdmin.id,
       )) ||
-      (await this.userService.validateSchoolAdminPermission(
+      (await this.validationService.validateSchoolAdminPermission(
         request.user.sub,
         id,
       ));
@@ -96,7 +97,7 @@ export class SchoolController {
     @Request() request,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    const permission = await this.userService.validateUserRole(
+    const permission = await this.validationService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
     );
@@ -113,7 +114,7 @@ export class SchoolController {
     @Request() request,
     @Param('id', ParseIntPipe) id: number,
   ) {
-    const permission = await this.userService.validateUserRole(
+    const permission = await this.validationService.validateUserRole(
       request.user.sub,
       Role.SuperAdmin.id,
     );
@@ -132,15 +133,17 @@ export class SchoolController {
     @Body(new ZodValidationPipe(UpdateSchoolSchema))
     updateSchoolDto: UpdateSchoolDto,
   ) {
-    const permission =
-      (await this.userService.validateUserRole(
+    let permission: Users | null = null;
+    if (request.user.role === Role.SuperAdmin.name)
+      permission = await this.validationService.validateUserRole(
         request.user.sub,
         Role.SuperAdmin.id,
-      )) ||
-      (await this.userService.validateSchoolAdminPermission(
+      );
+    if (request.user.role === Role.SchoolAdmin.name)
+      permission = await this.validationService.validateSchoolAdminPermission(
         request.user.sub,
         id,
-      ));
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to access this resource',
@@ -155,10 +158,11 @@ export class SchoolController {
     @Param('schoolId', ParseIntPipe) schoolId: number,
     @Query(new ZodValidationPipe(QueryAssetSchema)) query: QueryAssetDto,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to access this resource',

@@ -109,11 +109,4 @@ export class ClassService {
     });
     return !!classroom;
   }
-
-  async validateTeacherClass(userId: number, classId: number) {
-    const classroom = await this.classRepository.findOne({
-      where: { id: classId, school: { schoolAdminId: userId } },
-    });
-    return !!classroom;
-  }
 }

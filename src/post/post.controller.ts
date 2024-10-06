@@ -19,14 +19,14 @@ import { QueryPostDto, QueryPostSchema } from 'src/post/dto/query-post.dto';
 import { CreatePostDto, CreatePostSchema } from 'src/post/dto/create-post.dto';
 import { UpdatePostDto, UpdatePostSchema } from 'src/post/dto/update-post.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
-import { UserService } from 'src/users/users.service';
+import { ValidationService } from 'src/users/validation.service';
 
 @Controller('post')
 @UseGuards(LoginGuard)
 export class PostController {
   constructor(
     private readonly postService: PostService,
-    private readonly userService: UserService,
+    private readonly validationService: ValidationService,
   ) {}
 
   // Get all school post
@@ -43,7 +43,7 @@ export class PostController {
     @Request() req,
     @Body(new ZodValidationPipe(CreatePostSchema)) createPostDto: CreatePostDto,
   ) {
-    const permission = this.userService.validateSchoolAdminPermission(
+    const permission = this.validationService.validateSchoolAdminPermission(
       req.user.sub,
       createPostDto.schoolId,
     );

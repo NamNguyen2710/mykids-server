@@ -38,31 +38,6 @@ export const ResponseStudentSchema = z.object({
       }),
     )
     .nullish(),
-  history: z
-    .array(
-      z.object({
-        description: z.string().nullable(),
-        classroom: z.object({
-          id: z.number(),
-          name: z.string(),
-          schoolYear: z.object({
-            id: z.number(),
-            startDate: z.coerce.date(),
-            endDate: z.coerce.date(),
-          }),
-        }),
-      }),
-    )
-    .nullish(),
-  medical: z
-    .object({
-      history: z.string(),
-      currentMedication: z.string(),
-      allergies: z.string(),
-      vaccinations: z.string(),
-      instruction: z.string(),
-    })
-    .nullish(),
 });
 
 export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
@@ -74,9 +49,6 @@ export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
         relationship: parent.relationship,
         ...parent.parent,
       })),
-    history:
-      data.history &&
-      data.history.map((h) => ({ ...h.classroom, description: h.description })),
   }),
 );
 

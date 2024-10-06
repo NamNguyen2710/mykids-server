@@ -128,6 +128,18 @@ export class AlbumService {
     if (!albumEntity)
       throw new NotFoundException(`Album with ID ${albumId} not found`);
 
+    if (album.classId) {
+      const classEntity = await this.classService.validateSchoolClass(
+        albumEntity.schoolId,
+        album.classId,
+      );
+      if (!classEntity) {
+        throw new BadRequestException(
+          `Class with id cannot be found in user school!`,
+        );
+      }
+    }
+
     // Update array of assets to an album
     if (album.assetIds) {
       const assets = await this.assetService.findByIds(album.assetIds);
@@ -166,9 +178,19 @@ export class AlbumService {
 
   async validateAlbumParentPermission(albumId: number, userId: number) {
     const album = await this.albumRepo.findOne({
-      where: { id: albumId, school: { parents: { id: userId } } },
+      where: { id: albumId },
+      relations: ['school.parents', 'class.students.student.parents'],
     });
+    if (!album) return false;
 
-    return !!album;
+    if (album.class?.students)
+      return album.class.students.reduce((acc, student) => {
+        const parent = student.student.parents.find(
+          (parent) => parent.parentId === userId,
+        );
+        return acc || !!parent;
+      }, false);
+
+    return album.school.parents.some((parent) => parent.id === userId);
   }
 }

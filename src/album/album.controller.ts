@@ -17,7 +17,7 @@ import {
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { AlbumService } from './album.service';
-import { UserService } from 'src/users/users.service';
+import { ValidationService } from 'src/users/validation.service';
 
 import { CreateAlbumDto, CreateAlbumSchema } from './dto/create-album.dto';
 import { QueryAlbumDto, QueryAlbumSchema } from './dto/query-album.dto';
@@ -25,13 +25,15 @@ import {
   UpdateAlbumDto,
   UpdateAlbumSchema,
 } from 'src/album/dto/update-album.dto';
+import * as Role from 'src/users/entity/roles.data';
+import { Users } from 'src/users/entity/users.entity';
 
 @UseGuards(LoginGuard)
 @Controller('album')
 export class AlbumController {
   constructor(
     private readonly albumService: AlbumService,
-    private readonly userService: UserService,
+    private readonly validationService: ValidationService,
   ) {}
 
   @Post()
@@ -40,10 +42,11 @@ export class AlbumController {
     @Body(new ZodValidationPipe(CreateAlbumSchema))
     createAlbumDto: CreateAlbumDto,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      req.user.sub,
-      createAlbumDto.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        req.user.sub,
+        createAlbumDto.schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to create album in this school',
@@ -58,15 +61,18 @@ export class AlbumController {
     @Query(new ZodValidationPipe(QueryAlbumSchema))
     query: QueryAlbumDto,
   ) {
-    const permission =
-      (await this.userService.validateSchoolAdminPermission(
+    let permission: Users | null = null;
+    if (req.user.role === Role.SchoolAdmin.name)
+      permission = await this.validationService.validateSchoolAdminPermission(
         req.user.sub,
         query.schoolId,
-      )) ||
-      (await this.userService.validateParentSchoolPermission(
+      );
+    if (req.user.role === Role.Parent.name)
+      permission = await this.validationService.validateParentSchoolPermission(
         req.user.sub,
         query.schoolId,
-      ));
+      );
+
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to view albums in this school',
@@ -80,15 +86,18 @@ export class AlbumController {
     @Request() req,
     @Param('albumId', ParseIntPipe) albumId: number,
   ) {
-    const permission =
-      (await this.albumService.validateAlbumAdminPermission(
+    let permission = false;
+    if (req.user.role === Role.SchoolAdmin.name)
+      permission = permission =
+        await this.albumService.validateAlbumAdminPermission(
+          albumId,
+          req.user.sub,
+        );
+    if (req.user.role === Role.Parent.name)
+      permission = await this.albumService.validateAlbumParentPermission(
         albumId,
         req.user.sub,
-      )) ||
-      (await this.albumService.validateAlbumParentPermission(
-        albumId,
-        req.user.sub,
-      ));
+      );
 
     if (!permission)
       throw new ForbiddenException(

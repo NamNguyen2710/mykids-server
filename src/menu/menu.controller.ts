@@ -14,20 +14,20 @@ import {
 
 import { LoginGuard } from 'src/guard/login.guard';
 import { MenuService } from 'src/menu/menu.service';
-import { UserService } from 'src/users/users.service';
+import { ValidationService } from 'src/users/validation.service';
 
 import { MenuDetail, MenuDetailSchema } from 'src/menu/dto/menu-detail.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { QueryMenuDto, QueryMenuSchema } from 'src/menu/dto/query-menu.dto';
-import { ClassService } from 'src/class/class.service';
+import * as Role from 'src/users/entity/roles.data';
+import { Users } from 'src/users/entity/users.entity';
 
 @Controller('menu')
 @UseGuards(LoginGuard)
 export class MenuController {
   constructor(
     private readonly menuService: MenuService,
-    private readonly userService: UserService,
-    private readonly classService: ClassService,
+    private readonly validationService: ValidationService,
   ) {}
 
   @Get()
@@ -35,15 +35,18 @@ export class MenuController {
     @Request() request,
     @Query(new ZodValidationPipe(QueryMenuSchema)) query: QueryMenuDto,
   ) {
-    const permission =
-      (await this.classService.validateTeacherClass(
+    let permission: Users | null = null;
+    if (request.user.role === Role.SchoolAdmin.name)
+      permission =
+        await this.validationService.validateSchoolAdminClassPermission(
+          request.user.sub,
+          query.classId,
+        );
+    if (request.user.role === Role.Parent.name)
+      await this.validationService.validateParentClassPermission(
         request.user.sub,
         query.classId,
-      )) ||
-      (await this.userService.validateParentClassPermission(
-        request.user.sub,
-        query.classId,
-      ));
+      );
     if (!permission) {
       throw new ForbiddenException(
         'You dont have permission to access this class information',
@@ -67,10 +70,11 @@ export class MenuController {
     @Request() request,
     @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
   ) {
-    const permission = await this.classService.validateTeacherClass(
-      request.user.sub,
-      menu.classId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminClassPermission(
+        request.user.sub,
+        menu.classId,
+      );
     if (!permission) {
       throw new ForbiddenException(
         'You dont have permission to update this class information',
@@ -86,10 +90,11 @@ export class MenuController {
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
   ) {
-    const permission = await this.classService.validateTeacherClass(
-      request.user.sub,
-      menu.classId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminClassPermission(
+        request.user.sub,
+        menu.classId,
+      );
     if (!permission) {
       throw new ForbiddenException(
         'You dont have permission to update this class information',

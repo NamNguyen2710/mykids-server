@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 
 import { StudentService } from './student.service';
-import { UserService } from 'src/users/users.service';
+import { ValidationService } from 'src/users/validation.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { LoginGuard } from 'src/guard/login.guard';
 
@@ -38,15 +38,13 @@ import {
 import { CreateParentDto, CreateParentSchema } from './dto/create-parent.dto';
 import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
 import * as Role from 'src/users/entity/roles.data';
-import { MedicalService } from 'src/medical/medical.service';
 
 @Controller('student')
 @UseGuards(LoginGuard)
 export class StudentController {
   constructor(
     private readonly studentService: StudentService,
-    private readonly userService: UserService,
-    private readonly medicalService: MedicalService,
+    private readonly validationService: ValidationService,
   ) {}
 
   @Post()
@@ -55,10 +53,11 @@ export class StudentController {
     @Body(new ZodValidationPipe(CreateStudentSchema))
     createStudentDto: CreateStudentDto,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      createStudentDto.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        createStudentDto.schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to create a student in this school',
@@ -73,10 +72,11 @@ export class StudentController {
     @Query(new ZodValidationPipe(QueryStudentSchema))
     query: QueryStudentDto,
   ) {
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      query.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        query.schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to view students in this school',
@@ -92,7 +92,7 @@ export class StudentController {
         request.user.sub,
         id,
       )) ||
-      (await this.userService.validateParentChildrenPermission(
+      (await this.validationService.validateParentChildrenPermission(
         request.user.sub,
         id,
       ));
@@ -116,23 +116,23 @@ export class StudentController {
     @Body(new ZodValidationPipe(UpdateStudentSchema))
     updateStudentDto: UpdateStudentDto,
   ) {
-    const user = await this.userService.findOne(request.user.sub);
     const student = await this.studentService.findOne(studentId);
 
-    if (user.role.name === Role.SchoolAdmin.name) {
-      const permission = await this.userService.validateSchoolAdminPermission(
-        request.user.sub,
-        student.schoolId,
-      );
+    if (request.user.role === Role.SchoolAdmin.name) {
+      const permission =
+        await this.validationService.validateSchoolAdminPermission(
+          request.user.sub,
+          student.schoolId,
+        );
       if (!permission)
         throw new ForbiddenException(
           'You do not have permission to update students in this school',
         );
 
       delete updateStudentDto.studentCvIds;
-    } else if (user.role.name === Role.Parent.name) {
+    } else if (request.user.role === Role.Parent.name) {
       const permission =
-        await this.userService.validateParentChildrenPermission(
+        await this.validationService.validateParentChildrenPermission(
           request.user.sub,
           studentId,
         );
@@ -189,10 +189,11 @@ export class StudentController {
   ) {
     const student = await this.studentService.findOne(studentId);
 
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      student.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        student.schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to view students in this school',
@@ -209,10 +210,11 @@ export class StudentController {
   ) {
     const student = await this.studentService.findOne(studentId);
 
-    const permission = await this.userService.validateSchoolAdminPermission(
-      request.user.sub,
-      student.schoolId,
-    );
+    const permission =
+      await this.validationService.validateSchoolAdminPermission(
+        request.user.sub,
+        student.schoolId,
+      );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to view students in this school',
@@ -220,22 +222,5 @@ export class StudentController {
 
     await this.studentService.activate(studentId);
     return { status: true, message: 'Student activated successfully' };
-  }
-
-  @Get(':id/medical')
-  async getStudentMedical(
-    @Request() request,
-    @Param('id', ParseIntPipe) studentId: number,
-  ) {
-    const permission = await this.userService.validateParentChildrenPermission(
-      request.user.sub,
-      studentId,
-    );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to view this student medical record',
-      );
-
-    return this.medicalService.findOneByStudent(studentId);
   }
 }

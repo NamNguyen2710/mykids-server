@@ -21,6 +21,7 @@ import { CreateLoaDto, CreateLoaSchema } from './dto/create-loa.dto';
 import { QueryLoaDto, QueryLoaSchema } from './dto/query-loa.dto';
 import { UpdateLoaDto, UpdateLoaSchema } from './dto/update-loa.dto';
 import { ResponseLoaSchema } from 'src/loa/dto/response-loa.dto';
+import * as Role from 'src/users/entity/roles.data';
 
 @UseGuards(LoginGuard)
 @Controller('loa')
@@ -41,7 +42,11 @@ export class LoaController {
     @Query(new ZodValidationPipe(QueryLoaSchema))
     query: QueryLoaDto,
   ): Promise<any> {
-    const res = await this.loaService.findAll(request.user.sub, query);
+    const res = await this.loaService.findAll(
+      query,
+      request.user.sub,
+      request.user.role,
+    );
     return {
       data: res.data.map((datum) => ResponseLoaSchema.parse(datum)),
       pagination: res.pagination,
@@ -53,18 +58,20 @@ export class LoaController {
     @Request() request,
     @Param('loaID', ParseIntPipe) loaID: number,
   ) {
-    const validation =
-      (await this.loaService.validateLoaAdminPermission(
+    let permission = false;
+    if (request.user.role === Role.SuperAdmin.name)
+      permission = await this.loaService.validateLoaAdminPermission(
         loaID,
         request.user.sub,
-      )) ||
-      (await this.loaService.validateLoaParentPermission(
+      );
+    if (request.user.role === Role.Parent.name)
+      permission = await this.loaService.validateLoaParentPermission(
         loaID,
         request.user.sub,
-      ));
-    if (!validation) throw new NotFoundException('Cannot find LOA notice!');
+      );
+    if (!permission) throw new NotFoundException('Cannot find LOA notice!');
 
-    const res = await this.loaService.findOne(request.user.sub, loaID);
+    const res = await this.loaService.findOne(request.user.sub);
     return ResponseLoaSchema.parse(res);
   }
 

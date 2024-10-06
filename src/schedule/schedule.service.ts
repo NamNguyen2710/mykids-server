@@ -41,4 +41,25 @@ export class ScheduleService {
 
     return this.scheduleRepository.findOne({ where: { id: scheduleId } });
   }
+
+  async deleteSchedule(scheduleId: number) {
+    const res = await this.scheduleRepository.delete(scheduleId);
+    if (res.affected === 0) throw new BadRequestException('Schedule not found');
+
+    return true;
+  }
+
+  async validateSchoolAdminSchedulePermission(
+    userId: number,
+    scheduleId: number,
+  ) {
+    const schedule = await this.scheduleRepository.findOne({
+      where: {
+        id: scheduleId,
+        classroom: { school: { schoolAdminId: userId } },
+      },
+    });
+
+    return !!schedule;
+  }
 }
