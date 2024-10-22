@@ -1,5 +1,5 @@
-import { Roles } from 'src/users/entity/roles.entity';
-import { Entity, Column, PrimaryColumn, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryColumn, OneToMany } from 'typeorm';
+import { Roles } from 'src/role/entities/roles.entity';
 import { AppClientsRole } from './client_role.entity';
 
 @Entity({ name: 'app_clients' })

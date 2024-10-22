@@ -1,6 +1,6 @@
-import { Students } from 'src/student/entities/student.entity';
-import { Users } from 'src/users/entity/users.entity';
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Students } from 'src/student/entities/student.entity';
+import { Parents } from 'src/users/entity/parent.entity';
 
 @Entity({ name: 'students_parents' })
 export class StudentsParents {
@@ -13,9 +13,9 @@ export class StudentsParents {
   @Column()
   relationship: string;
 
-  @ManyToOne(() => Users, (user) => user.children)
+  @ManyToOne(() => Parents, (user) => user.children)
   @JoinColumn({ name: 'parent_id' })
-  parent: Users;
+  parent: Parents;
 
   @ManyToOne(() => Students, (student) => student.parents)
   @JoinColumn({ name: 'student_id' })

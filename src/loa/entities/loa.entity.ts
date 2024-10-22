@@ -1,7 +1,3 @@
-import { Classrooms } from 'src/class/entities/class.entity';
-import { Assets } from 'src/asset/entities/asset.entity';
-import { Students } from 'src/student/entities/student.entity';
-import { Users } from 'src/users/entity/users.entity';
 import {
   Column,
   CreateDateColumn,
@@ -12,6 +8,10 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import { Classrooms } from 'src/class/entities/class.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
+import { Students } from 'src/student/entities/student.entity';
+import { Parents } from 'src/users/entity/parent.entity';
 
 export enum LOA_STATUS {
   PENDING = 'pending',
@@ -32,9 +32,9 @@ export class Loa {
   @JoinColumn({ name: 'class_id' })
   classroom: Classrooms;
 
-  @ManyToOne(() => Users, (users) => users.loa)
+  @ManyToOne(() => Parents, (users) => users.loa)
   @JoinColumn({ name: 'created_by_id' })
-  createdBy: Users;
+  createdBy: Parents;
 
   @ManyToMany(() => Assets, (asset) => asset.loas, {
     cascade: true,

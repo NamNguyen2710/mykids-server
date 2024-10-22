@@ -20,4 +20,10 @@ export class ClassHistories {
 
   @Column()
   description: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  startDate: Date;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  endDate: Date;
 }

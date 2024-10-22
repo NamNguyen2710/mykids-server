@@ -15,8 +15,8 @@ export class NotificationToken {
   @Column({ name: 'user_id' })
   userId: number;
 
-  @JoinColumn({ name: 'user_id', referencedColumnName: 'id' })
-  @ManyToOne(() => Users)
+  @ManyToOne(() => Users, (user) => user.notiTokens)
+  @JoinColumn({ name: 'user_id' })
   user: Users;
 
   @Column({ name: 'device_type' })

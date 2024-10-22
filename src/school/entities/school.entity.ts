@@ -11,11 +11,13 @@ import {
 import { Classrooms } from 'src/class/entities/class.entity';
 import { Assets } from 'src/asset/entities/asset.entity';
 import { Posts } from 'src/post/entities/post.entity';
-import { Users } from 'src/users/entity/users.entity';
 import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { Students } from 'src/student/entities/student.entity';
 import { Albums } from 'src/album/entities/album.entity';
 import { Medicals } from 'src/medical/entities/medical.entity';
+import { SchoolFaculties } from 'src/users/entity/school-faculty.entity';
+import { Parents } from 'src/users/entity/parent.entity';
+import { Roles } from 'src/role/entities/roles.entity';
 
 @Entity()
 export class Schools {
@@ -25,12 +27,8 @@ export class Schools {
   @Column()
   name: string;
 
-  @Column()
-  schoolAdminId: number;
-
-  @OneToOne(() => Users, (admin) => admin.assignedSchool)
-  @JoinColumn({ name: 'school_admin_id' })
-  schoolAdmin: Users;
+  @OneToMany(() => SchoolFaculties, (faculty) => faculty.assignedSchool)
+  faculties: SchoolFaculties[];
 
   @Column({ nullable: true })
   logoId: number;
@@ -48,13 +46,13 @@ export class Schools {
   @OneToMany(() => Posts, (post) => post.school)
   posts: Posts[];
 
-  @ManyToMany(() => Users, (user) => user.schools)
+  @ManyToMany(() => Parents, (user) => user.schools)
   @JoinTable({
     name: 'school_parents',
     joinColumn: { name: 'school_id' },
     inverseJoinColumn: { name: 'parent_id' },
   })
-  parents: Users[];
+  parents: Parents[];
 
   @OneToMany(() => SchoolYears, (schoolYear) => schoolYear.school)
   schoolYears: SchoolYears[];
@@ -70,4 +68,7 @@ export class Schools {
 
   @OneToMany(() => Medicals, (medical) => medical.school)
   medicals: Medicals[];
+
+  @OneToMany(() => Roles, (role) => role.school)
+  roles: Roles[];
 }

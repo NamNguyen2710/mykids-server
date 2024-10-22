@@ -13,6 +13,8 @@ import { SchoolYears } from 'src/school-year/entities/school-year.entity';
 import { ClassHistories } from 'src/class/entities/class-history.entity';
 import { Loa } from 'src/loa/entities/loa.entity';
 import { Albums } from 'src/album/entities/album.entity';
+import { WorkHistories } from 'src/class/entities/work-history.entity';
+import { Posts } from 'src/post/entities/post.entity';
 
 @Entity()
 export class Classrooms {
@@ -48,6 +50,9 @@ export class Classrooms {
   @OneToMany(() => Menus, (menu) => menu.classroom)
   menus: Menus[];
 
+  @OneToMany(() => WorkHistories, (faculty) => faculty.classroom)
+  faculties: WorkHistories[];
+
   @OneToMany(() => ClassHistories, (history) => history.classroom)
   students: ClassHistories[];
 
@@ -56,4 +61,7 @@ export class Classrooms {
 
   @OneToMany(() => Albums, (album) => album.class)
   albums: Albums[];
+
+  @OneToMany(() => Posts, (post) => post.classroom)
+  posts: Posts[];
 }

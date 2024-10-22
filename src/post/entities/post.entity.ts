@@ -16,6 +16,7 @@ import {
   DeleteDateColumn,
   JoinColumn,
 } from 'typeorm';
+import { Classrooms } from 'src/class/entities/class.entity';
 
 @Entity()
 export class Posts {
@@ -43,14 +44,22 @@ export class Posts {
   @Column({ name: 'school_id' })
   schoolId: number;
 
+  @Column({ name: 'class_id', nullable: true })
+  classId: number;
+
   @Column({ name: 'created_by_id' })
   createdById: number;
 
   @ManyToOne(() => Schools, (school) => school.posts)
+  @JoinColumn({ name: 'school_id' })
   school: Schools;
 
+  @ManyToOne(() => Classrooms, (classroom) => classroom.posts)
+  @JoinColumn({ name: 'class_id' })
+  classroom: Classrooms;
+
   @ManyToOne(() => Users, (user) => user.createdPosts, { eager: true })
-  @JoinColumn()
+  @JoinColumn({ name: 'created_by_id' })
   createdBy: Users;
 
   @OneToMany(() => Comments, (comment) => comment.belongedTo)

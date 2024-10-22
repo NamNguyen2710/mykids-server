@@ -1,5 +1,5 @@
-import { Roles } from 'src/users/entity/roles.entity';
 import { Entity, PrimaryColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Roles } from 'src/role/entities/roles.entity';
 import { AppClients } from './client.entity';
 
 @Entity({ name: 'app_clients_role' })

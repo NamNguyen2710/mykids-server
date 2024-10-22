@@ -10,8 +10,8 @@ import {
 } from 'typeorm';
 import { Schools } from 'src/school/entities/school.entity';
 import { Classrooms } from 'src/class/entities/class.entity';
-import { Users } from 'src/users/entity/users.entity';
 import { Assets } from 'src/asset/entities/asset.entity';
+import { SchoolFaculties } from 'src/users/entity/school-faculty.entity';
 
 @Entity()
 export class Albums {
@@ -39,8 +39,8 @@ export class Albums {
   @ManyToOne(() => Classrooms, (classrooms) => classrooms.albums)
   class: Classrooms;
 
-  @ManyToOne(() => Users, (user) => user.albums)
-  createdBy: Users;
+  @ManyToOne(() => SchoolFaculties, (user) => user.albums)
+  createdBy: SchoolFaculties;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdDate: Date;
