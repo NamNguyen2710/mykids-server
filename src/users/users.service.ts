@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
@@ -7,12 +7,17 @@ import {
   ILike,
   FindOptionsWhere,
 } from 'typeorm';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 
 import { Users } from './entity/users.entity';
-import { Schools } from 'src/school/entities/school.entity';
-import * as Role from './entity/roles.data';
-import { CreateUserDto } from './dto/create-user.dto';
+import { Roles } from 'src/role/entities/roles.entity';
+import { Role } from 'src/role/entities/roles.data';
+import {
+  CreateUserDto,
+  CreateFacultySchema,
+  CreateParentSchema,
+  CreateSuperAdminSchema,
+} from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
 
@@ -21,45 +26,55 @@ export class UserService {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
-    @InjectRepository(Schools)
-    private readonly schoolRepository: Repository<Schools>,
+    @InjectRepository(Roles)
+    private readonly roleRepository: Repository<Roles>,
   ) {}
 
   async findAll(
-    relations: string[] = ['schools'],
+    relations: string[] = [],
     query: QueryUserDto,
   ): Promise<ListResponse<Users>> {
     const {
       limit = 20,
       page = 1,
-      isActive = true,
+      isActive,
       sortType = 'id',
       sortDirection = 'ASC',
     } = query;
-    const whereClause: FindOptionsWhere<Users> = { isActive };
+    const whereClause: FindOptionsWhere<Users> = {};
+
+    if (isActive !== undefined) whereClause.isActive = isActive;
 
     if (query.q) {
-      whereClause['firstName'] = ILike(`%${query.q}%`);
-      whereClause['lastName'] = ILike(`%${query.q}%`);
+      whereClause.firstName = ILike(`%${query.q}%`);
+      whereClause.lastName = ILike(`%${query.q}%`);
     }
-    if (query.phoneNumber) {
-      whereClause['phoneNumber'] = ILike(`%${query.phoneNumber}%`);
-    }
+
     if (query.roleId) {
       whereClause['roleId'] = query.roleId;
 
-      if (query.roleId === Role.SchoolAdmin.id) {
+      if (query.roleId === Role.PARENT) {
         if (query.schoolId) {
-          whereClause['assignedSchool.id'] = query.schoolId;
-        }
-      }
-
-      if (query.roleId === Role.Parent.id) {
-        if (query.schoolId) {
-          whereClause['schools.id'] = query.schoolId;
+          whereClause.parent = { schools: { id: query.schoolId } };
         }
         if (query.classId) {
-          whereClause['children.student.history.classId'] = query.classId;
+          whereClause.parent = {
+            ...((whereClause.parent as any) || {}),
+            children: { student: { history: { classId: query.classId } } },
+          };
+        }
+        if (query.phoneNumber) {
+          whereClause.phoneNumber = ILike(`%${query.phoneNumber}%`);
+        }
+      } else if (query.roleId !== Role.SUPER_ADMIN) {
+        if (query.schoolId) {
+          whereClause.faculty = { schoolId: query.schoolId };
+        }
+        if (query.classId) {
+          whereClause.faculty = {
+            ...((whereClause.faculty as any) || {}),
+            history: { classId: query.classId },
+          };
         }
       }
     }
@@ -88,7 +103,7 @@ export class UserService {
 
   async findOne(
     userId: number,
-    relations: string[] = ['schools'],
+    relations: string[] = [],
     isActive: boolean = true,
   ): Promise<Users> {
     return this.userRepository.findOne({
@@ -102,27 +117,31 @@ export class UserService {
       where: {
         id: userId,
         isActive: true,
-        children: {
-          student: {
-            isActive: true,
-            history: { classroom: { isActive: true } },
+        parent: {
+          children: {
+            student: {
+              isActive: true,
+              history: { classroom: { isActive: true } },
+            },
           },
         },
       },
       relations: {
-        children: {
-          student: {
-            school: true,
-            history: { classroom: true },
+        parent: {
+          children: {
+            student: {
+              school: true,
+              history: { classroom: true },
+            },
           },
         },
       },
     });
   }
 
-  async findOneByPhone(number: string) {
+  async findParentByPhone(number: string) {
     return this.userRepository.findOne({
-      where: { phoneNumber: number, isActive: true },
+      where: { phoneNumber: number, isActive: true, roleId: Role.PARENT },
       relations: ['role.clients'],
     });
   }
@@ -138,42 +157,47 @@ export class UserService {
     createUserDto: CreateUserDto,
     transactionalManager?: EntityManager,
   ): Promise<Users> {
-    if (createUserDto.roleId === Role.SuperAdmin.id) {
-      const hashPassword = await bcrypt.hash(createUserDto.password, 10);
-      createUserDto.password = hashPassword;
+    switch (createUserDto.roleId) {
+      case Role.SUPER_ADMIN: {
+        const userSchema = CreateSuperAdminSchema.parse(createUserDto);
 
-      const newUser = this.userRepository.create(createUserDto);
+        const hashPassword = await bcrypt.hash(userSchema.password, 10);
+        userSchema.password = hashPassword;
 
-      await this.userRepository.save(newUser);
-      return newUser;
-    }
+        const newUser = this.userRepository.create(userSchema);
 
-    if (createUserDto.roleId === Role.SchoolAdmin.id) {
-      const school = await this.schoolRepository.findOne({
-        where: { id: createUserDto.schoolId! },
-      });
-      if (!school) throw new Error('School not found');
-      delete createUserDto.schoolId;
+        await this.userRepository.save(newUser);
+        return newUser;
+      }
 
-      const hashPassword = await bcrypt.hash(createUserDto.password, 10);
-      createUserDto.password = hashPassword;
+      case Role.PARENT: {
+        const userSchema = CreateParentSchema.parse(createUserDto);
 
-      const newUser = this.userRepository.create({
-        ...createUserDto,
-        assignedSchool: school,
-      });
+        const newUser = this.userRepository.create(userSchema);
 
-      await this.userRepository.save(newUser);
-      return newUser;
-    }
+        const manager = transactionalManager || this.userRepository.manager;
+        await manager.save(newUser);
+        return newUser;
+      }
 
-    if (createUserDto.roleId === Role.Parent.id) {
-      const newUser = this.userRepository.create(createUserDto);
-      delete createUserDto.password;
+      default: {
+        const userSchema = CreateFacultySchema.parse(createUserDto);
 
-      const manager = transactionalManager || this.userRepository.manager;
-      await manager.save(newUser);
-      return newUser;
+        const role = await this.roleRepository.findOne({
+          where: { id: userSchema.roleId },
+        });
+        if (!role || role.schoolId !== userSchema.faculty.schoolId) {
+          throw new BadRequestException('Invalid role id');
+        }
+
+        const hashPassword = await bcrypt.hash(userSchema.password, 10);
+        userSchema.password = hashPassword;
+
+        const newUser = this.userRepository.create(userSchema);
+
+        await this.userRepository.save(newUser);
+        return newUser;
+      }
     }
   }
 

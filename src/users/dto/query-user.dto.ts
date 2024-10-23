@@ -1,18 +1,18 @@
 import { z } from 'zod';
 
 export const QueryUserSchema = z.object({
-  limit: z.coerce.number().optional(),
-  page: z.coerce.number().optional(),
+  limit: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().positive().optional(),
   q: z.string().optional(),
   phoneNumber: z.string().optional(),
   sortType: z.string().optional(),
   sortDirection: z.string().optional(),
-  roleId: z.coerce.number().optional(),
-  schoolId: z.coerce.number().optional(),
-  classId: z.coerce.number().optional(),
+  roleId: z.coerce.number().int().positive(),
+  schoolId: z.coerce.number().int().positive().optional(),
+  classId: z.coerce.number().int().positive().optional(),
   isActive: z
-    .enum(['true', 'false'])
+    .string()
     .optional()
-    .transform((v) => v === undefined || v === 'true'),
+    .transform((val) => (val === undefined ? undefined : val === 'true')),
 });
 export type QueryUserDto = z.infer<typeof QueryUserSchema>;

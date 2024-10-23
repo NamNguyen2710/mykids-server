@@ -1,15 +1,21 @@
 import {
   CanActivate,
   ExecutionContext,
+  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { UserService } from 'src/users/users.service';
 
 @Injectable()
 export class LoginGuard implements CanActivate {
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    @Inject(UserService)
+    private readonly userService: UserService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
@@ -19,7 +25,11 @@ export class LoginGuard implements CanActivate {
 
     try {
       const payload = await this.jwtService.verifyAsync(token);
-      request['user'] = payload;
+
+      const user = await this.userService.findOne(payload.sub);
+
+      if (!user) throw new UnauthorizedException('User not found');
+      request.user = user;
     } catch {
       throw new UnauthorizedException('Invalid token');
     }

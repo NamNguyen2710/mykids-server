@@ -1,21 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import { Users } from './entity/users.entity';
-import * as Role from './entity/roles.data';
-import { Classrooms } from 'src/class/entities/class.entity';
-import { Students } from 'src/student/entities/student.entity';
 
 @Injectable()
 export class ValidationService {
   constructor(
     @InjectRepository(Users)
     private readonly userRepository: Repository<Users>,
-    @InjectRepository(Classrooms)
-    private readonly classRepository: Repository<Classrooms>,
-    @InjectRepository(Students)
-    private readonly studentRepository: Repository<Students>,
   ) {}
 
   async validateUserRole(
@@ -33,7 +26,7 @@ export class ValidationService {
     studentId: number,
   ): Promise<Users | null> {
     const user = await this.userRepository.findOne({
-      where: { id: userId, roleId: Role.Parent.id, children: { studentId } },
+      where: { id: userId, parent: { children: { studentId } } },
     });
 
     return user;
@@ -46,8 +39,7 @@ export class ValidationService {
     const user = await this.userRepository.findOne({
       where: {
         id: userId,
-        roleId: Role.Parent.id,
-        children: { student: { history: { classId } } },
+        parent: { children: { student: { history: { classId } } } },
       },
     });
 
@@ -59,82 +51,148 @@ export class ValidationService {
     schoolId: number,
   ): Promise<Users | null> {
     const user = await this.userRepository.findOne({
-      where: { id: userId, roleId: Role.Parent.id, schools: { id: schoolId } },
+      where: { id: userId, parent: { schools: { id: schoolId } } },
     });
 
     return user;
   }
 
-  async validateSchoolAdminPermission(
+  async validateSchoolFacultyPermission(
     userId: number,
-    schoolId: number,
+    {
+      schoolId,
+      classId,
+      studentId,
+      facultyId,
+      permissionId,
+    }: {
+      schoolId?: number;
+      classId?: number;
+      studentId?: number;
+      facultyId?: number;
+      permissionId?: number;
+    },
   ): Promise<Users | null> {
+    const whereClause: FindOptionsWhere<Users> = { id: userId, isActive: true };
+    if (!schoolId && !classId && !studentId && !facultyId) return null;
+
+    if (schoolId) {
+      whereClause.faculty = { schoolId };
+    }
+    if (classId) {
+      whereClause.faculty = { assignedSchool: { classes: { id: classId } } };
+    }
+    if (studentId) {
+      whereClause.faculty = { assignedSchool: { students: { id: studentId } } };
+    }
+    if (facultyId) {
+      whereClause.faculty = {
+        assignedSchool: { faculties: { userId: facultyId } },
+      };
+    }
+    if (permissionId) {
+      whereClause.role = { permissions: { permissionId, isActive: true } };
+    }
+
     const user = await this.userRepository.findOne({
-      where: {
-        id: userId,
-        roleId: Role.SchoolAdmin.id,
-        assignedSchool: { id: schoolId },
-      },
+      where: whereClause,
+      relations: ['faculty.assignedSchool'],
     });
 
     return user;
   }
 
-  async validateSchoolAdminClassPermission(
+  async validateSchoolFacultyClassPermission(
     userId: number,
-    classId: number,
+    {
+      classId,
+      studentId,
+      permissionId,
+    }: { classId?: number; studentId?: number; permissionId?: number },
   ): Promise<Users | null> {
-    const classEntity = await this.classRepository.findOne({
-      where: {
-        id: classId,
-        school: { schoolAdmin: { id: userId, roleId: Role.SchoolAdmin.id } },
-      },
-    });
+    const whereClause: FindOptionsWhere<Users> = { id: userId, isActive: true };
+    if (!classId && !studentId) return null;
 
-    if (!classEntity) return null;
+    if (classId) {
+      whereClause.faculty = { history: { classId } };
+    }
+    if (studentId) {
+      whereClause.faculty = {
+        history: { classroom: { students: { studentId } } },
+      };
+    }
+    if (permissionId) {
+      whereClause.role = { permissions: { permissionId, isActive: true } };
+    }
 
-    // Transform class entity to user entity
-    const {
-      school: { schoolAdmin, ...school },
-      ...classroom
-    } = classEntity;
-
-    const user = this.userRepository.create({
-      ...schoolAdmin,
-      assignedSchool: {
-        ...school,
-        classes: [classroom],
-      },
+    const user = await this.userRepository.findOne({
+      where: whereClause,
+      relations: ['faculty.history.classroom'],
     });
 
     return user;
   }
 
-  async validateSchoolAdminStudentPermission(
-    userId: number,
-    studentId: number,
-  ): Promise<Users | null> {
-    const studentEntity = await this.studentRepository.findOne({
-      where: {
-        id: studentId,
-        school: { schoolAdmin: { id: userId, roleId: Role.SchoolAdmin.id } },
-      },
-    });
-    if (!studentEntity) return null;
+  async validateFacultySchoolClassPermission({
+    userId,
+    schoolId,
+    classId,
+    allPermissionId,
+    classPermissionId,
+    schoolPermissionId,
+  }: {
+    userId: number;
+    schoolId: number;
+    classId?: number;
+    allPermissionId: number;
+    classPermissionId: number;
+    schoolPermissionId?: number;
+  }) {
+    const whereClause: FindOptionsWhere<Users> = {
+      id: userId,
+      isActive: true,
+      faculty: { schoolId },
+    };
+    if (classId)
+      whereClause.faculty = {
+        schoolId,
+        assignedSchool: { classes: { id: classId } },
+      };
 
-    // Transform student entity to user entity
-    const {
-      school: { schoolAdmin, ...school },
-      ...student
-    } = studentEntity;
-    const user = this.userRepository.create({
-      ...schoolAdmin,
-      assignedSchool: {
-        ...school,
-        students: [student],
-      },
+    const user = await this.userRepository.findOne({
+      where: whereClause,
+      relations: ['faculty.history', 'role.permissions'],
     });
 
-    return user;
+    const res = {
+      user,
+      allPermission: false,
+      classPermission: false,
+      schoolPermission: false,
+    };
+
+    if (!user) return res;
+
+    user.role.permissions.forEach((permission) => {
+      if (permission.permissionId === allPermissionId && permission.isActive)
+        res.allPermission = true;
+      if (permission.permissionId === classPermissionId && permission.isActive)
+        res.classPermission = true;
+      if (
+        schoolPermissionId &&
+        permission.permissionId === schoolPermissionId &&
+        permission.isActive
+      )
+        res.schoolPermission = true;
+    });
+
+    if (res.classPermission && classId) {
+      const checkClass = user.faculty.history.some(
+        (history) => history.classId === classId,
+      );
+      if (!checkClass) res.classPermission = false;
+    }
+
+    return res;
   }
 }

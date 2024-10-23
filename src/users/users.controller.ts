@@ -13,6 +13,7 @@ import {
   ForbiddenException,
   ParseIntPipe,
   HttpCode,
+  BadRequestException,
 } from '@nestjs/common';
 
 import { UserService } from './users.service';
@@ -20,18 +21,23 @@ import { ValidationService } from 'src/users/validation.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import { Users } from './entity/users.entity';
-import * as Role from './entity/roles.data';
+import { Role } from 'src/role/entities/roles.data';
 import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { QueryUserDto, QueryUserSchema } from './dto/query-user.dto';
-import {
-  ResponseUserDto,
-  ResponseUserSchema,
-} from 'src/users/dto/response-user.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
+import { ResponseParentSchema } from 'src/users/dto/response-parent.dto';
+import { ResponseFacultySchema } from 'src/users/dto/response-faculty.dto';
+import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto';
 import { UpdateUserDto, UpdateUserSchema } from 'src/users/dto/update-user.dto';
 
-@Controller('users')
+import {
+  READ_SCHOOL_FACULTY_PERMISSION,
+  READ_ALL_PARENT_PERMISSION,
+  CREATE_SCHOOL_FACULTY_PERMISSION,
+  UPDATE_SCHOOL_FACULTY_PERMISSION,
+  DELETE_SCHOOL_FACULTY_PERMISSION,
+} from 'src/role/entities/permission.data';
+
+@Controller('user')
 @UseGuards(LoginGuard)
 export class UsersController {
   constructor(
@@ -43,91 +49,197 @@ export class UsersController {
   async findAll(
     @Request() request,
     @Query(new ZodValidationPipe(QueryUserSchema)) query: QueryUserDto,
-  ): Promise<ListResponse<ResponseUserDto>> {
-    const user = await this.usersService.findOne(request.user.sub, [
-      'assignedSchool',
-    ]);
+  ) {
+    const user = await this.usersService.findOne(request.user.id, ['faculty']);
 
-    if (user.roleId === Role.SuperAdmin.id) {
-      const { data, pagination } = await this.usersService.findAll(
-        ['assignedSchool'],
-        query,
+    if (user.roleId === Role.PARENT) {
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
       );
-      return {
-        data: data.map((user) => ResponseUserSchema.parse(user)),
-        pagination,
-      };
     }
-    // if (user.roleId === Role.SchoolAdmin.id) {
-    //   query.schoolId = user.assignedSchool.id;
-    //   const users = await this.usersService.findAll([], query);
-    //   return {
-    //     data: users.data.map((user) => ResponseUserSchema.parse(user)),
-    //     pagination: users.pagination,
-    //   };
-    // }
 
-    throw new ForbiddenException('You are not allowed to access this resource');
+    let res, data;
+    if (user.roleId === Role.SUPER_ADMIN) {
+      res = await this.usersService.findAll(['faculty.assignedSchool'], query);
+    } else if (user.faculty) {
+      let permission;
+
+      switch (query.roleId) {
+        case Role.SUPER_ADMIN:
+          throw new BadRequestException('Invalid role id');
+        case Role.PARENT:
+          permission =
+            await this.validationService.validateSchoolFacultyPermission(
+              user.id,
+              {
+                schoolId: user.faculty.schoolId,
+                permissionId: READ_ALL_PARENT_PERMISSION,
+              },
+            );
+          break;
+        default:
+          permission =
+            await this.validationService.validateSchoolFacultyPermission(
+              user.id,
+              {
+                schoolId: user.faculty.schoolId,
+                permissionId: READ_SCHOOL_FACULTY_PERMISSION,
+              },
+            );
+          break;
+      }
+      if (!permission)
+        throw new ForbiddenException(
+          'You are not allowed to access this resource',
+        );
+
+      query.schoolId = user.faculty.schoolId;
+      res = await this.usersService.findAll([], query);
+    } else {
+      throw new BadRequestException('Invalid user');
+    }
+
+    switch (query.roleId) {
+      case Role.SUPER_ADMIN:
+        data = res.data.map((user) => ResponseSuperAdminSchema.parse(user));
+        break;
+      case Role.PARENT:
+        data = res.data.map((user) => ResponseParentSchema.parse(user));
+        break;
+      default:
+        data = res.data.map((user) => ResponseFacultySchema.parse(user));
+        break;
+    }
+    return { data, pagination: res.pagination };
   }
 
   @Get(':userId')
-  async findOne(
-    @Request() req,
-    @Param('userId', ParseIntPipe) userId: number,
-  ): Promise<Users> {
-    const permission = this.validationService.validateUserRole(
-      req.user.sub,
-      Role.SuperAdmin.id,
-    );
-    if (!permission)
+  async findOne(@Request() req, @Param('userId', ParseIntPipe) userId: number) {
+    if (req.user.roleId === Role.PARENT)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
       );
 
-    const user = await this.usersService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('User does not exist!');
-    }
+    const user = await this.usersService.findOne(userId, [
+      'faculty',
+      'parent.schools',
+    ]);
+    if (!user) throw new NotFoundException('User does not exist!');
 
-    return user;
+    if (req.user.roleId === Role.SUPER_ADMIN) {
+      switch (user.roleId) {
+        case Role.SUPER_ADMIN:
+          return ResponseSuperAdminSchema.parse(user);
+        case Role.PARENT:
+          return ResponseParentSchema.parse(user);
+        default:
+          return ResponseFacultySchema.parse(user);
+      }
+    } else {
+      if (user.roleId === Role.PARENT) {
+        const permission =
+          user.parent.schools.some(
+            (school) => school.id === req.user.faculty.schoolId,
+          ) &&
+          (await this.validationService.validateSchoolFacultyPermission(
+            req.user.id,
+            {
+              schoolId: req.user.faculty.schoolId,
+              permissionId: READ_ALL_PARENT_PERMISSION,
+            },
+          ));
+
+        if (!permission)
+          throw new ForbiddenException(
+            'You are not allowed to access this resource',
+          );
+
+        return ResponseParentSchema.parse(user);
+      } else {
+        const permission =
+          user.faculty?.schoolId === req.user.faculty.schoolId &&
+          (await this.validationService.validateSchoolFacultyPermission(
+            req.user.id,
+            {
+              schoolId: req.user.faculty.schoolId,
+              permissionId: READ_SCHOOL_FACULTY_PERMISSION,
+            },
+          ));
+
+        if (!permission)
+          throw new ForbiddenException(
+            'You are not allowed to access this resource',
+          );
+
+        return ResponseFacultySchema.parse(user);
+      }
+    }
   }
 
+  // Create super admin or school faculty, not parent
   @Post()
-  async createAdmin(
+  async create(
     @Request() request,
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
-  ): Promise<ResponseUserDto> {
-    const permission = this.validationService.validateUserRole(
-      request.user.sub,
-      Role.SuperAdmin.id,
-    );
+  ) {
+    if (createUserDto.roleId === Role.PARENT)
+      throw new BadRequestException('Invalid role id');
+
+    let permission: any = true;
+
+    if (request.user.roleId !== Role.SUPER_ADMIN) {
+      if (createUserDto.roleId === Role.SUPER_ADMIN) {
+        throw new BadRequestException('Invalid role id');
+      }
+
+      permission = await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: createUserDto.schoolId,
+          permissionId: CREATE_SCHOOL_FACULTY_PERMISSION,
+        },
+      );
+    }
+
     if (!permission)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
       );
 
     const user = await this.usersService.create(createUserDto);
-    return ResponseUserSchema.parse(user);
+    return user.roleId === Role.SUPER_ADMIN
+      ? ResponseSuperAdminSchema.parse(user)
+      : ResponseFacultySchema.parse(user);
   }
 
+  // Update super admin or school faculty, not parent
   @Put(':userId')
   async update(
     @Request() request,
     @Param('userId', ParseIntPipe) userId: number,
     @Body(new ZodValidationPipe(UpdateUserSchema)) userDto: UpdateUserDto,
-  ): Promise<ResponseUserDto> {
-    const permission = this.validationService.validateUserRole(
-      request.user.sub,
-      Role.SuperAdmin.id,
-    );
+  ) {
+    let permission: any = true;
+
+    if (request.user.roleId !== Role.SUPER_ADMIN)
+      permission = await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          facultyId: userId,
+          permissionId: UPDATE_SCHOOL_FACULTY_PERMISSION,
+        },
+      );
+
     if (!permission)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
       );
 
     const user = await this.usersService.update(userId, userDto);
-    return ResponseUserSchema.parse(user);
+    return user.roleId === Role.SUPER_ADMIN
+      ? ResponseSuperAdminSchema.parse(user)
+      : ResponseFacultySchema.parse(user);
   }
 
   @Delete(':userId')
@@ -136,10 +248,17 @@ export class UsersController {
     @Request() request,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
-    const permission = this.validationService.validateUserRole(
-      request.user.sub,
-      Role.SuperAdmin.id,
-    );
+    let permission: any = true;
+
+    if (request.user.roleId !== Role.SUPER_ADMIN)
+      permission = await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          facultyId: userId,
+          permissionId: DELETE_SCHOOL_FACULTY_PERMISSION,
+        },
+      );
+
     if (!permission)
       throw new ForbiddenException(
         'You are not allowed to access this resource',

@@ -10,15 +10,14 @@ import {
   OneToMany,
   OneToOne,
 } from 'typeorm';
-import { Roles } from './roles.entity';
+import { Roles } from 'src/role/entities/roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
-import { Schools } from 'src/school/entities/school.entity';
 import { CommentTaggedUser } from 'src/comment/entities/comment_tagged_user.entity';
 import { Notifications } from 'src/notifications/entities/notification.entity';
-import { Loa } from 'src/loa/entities/loa.entity';
-import { StudentsParents } from 'src/student/entities/students-parents.entity';
-import { Albums } from 'src/album/entities/album.entity';
 import { Assets } from 'src/asset/entities/asset.entity';
+import { Parents } from 'src/users/entity/parent.entity';
+import { SchoolFaculties } from 'src/users/entity/school-faculty.entity';
+import { NotificationToken } from 'src/notifications/entities/notification-token.entity';
 
 @Entity()
 export class Users {
@@ -33,31 +32,28 @@ export class Users {
   role: Roles;
 
   @Column()
-  email: string;
-
-  @Column()
-  password: string;
-
-  @Column()
   firstName: string;
 
   @Column()
   lastName: string;
 
-  @Column()
-  phoneNumber: string;
-
-  @Column({ default: true })
-  isActive: boolean;
+  @Column({ nullable: true })
+  email: string;
 
   @Column({ nullable: true })
-  profession: string;
+  phoneNumber: string;
+
+  @Column({ nullable: true })
+  password: string;
 
   @Column({ nullable: true })
   otp: string;
 
   @Column({ nullable: true, type: 'timestamptz' })
   otpExpiresAt: Date;
+
+  @Column({ default: true })
+  isActive: boolean;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
@@ -76,8 +72,19 @@ export class Users {
   @JoinColumn({ name: 'logo_id' })
   logo: Assets;
 
-  @OneToOne(() => Schools, (school) => school.schoolAdmin)
-  assignedSchool: Schools;
+  @OneToOne(() => Parents, (parent) => parent.user, {
+    eager: true,
+    cascade: true,
+    nullable: true,
+  })
+  parent: Parents;
+
+  @OneToOne(() => SchoolFaculties, (faculty) => faculty.user, {
+    eager: true,
+    cascade: true,
+    nullable: true,
+  })
+  faculty: SchoolFaculties;
 
   @OneToMany(() => Posts, (post) => post.createdBy)
   createdPosts: Posts[];
@@ -91,15 +98,6 @@ export class Users {
   @OneToMany(() => Notifications, (notification) => notification.user)
   notifications: Notifications[];
 
-  @ManyToMany(() => Schools, (school) => school.parents)
-  schools: Schools[];
-
-  @OneToMany(() => StudentsParents, (student) => student.parent)
-  children: StudentsParents[];
-
-  @OneToMany(() => Albums, (album) => album.createdBy)
-  albums: Albums[];
-
-  @OneToMany(() => Loa, (loa) => loa.createdBy)
-  loa: Loa[];
+  @OneToMany(() => NotificationToken, (notiToken) => notiToken.user)
+  notiTokens: NotificationToken[];
 }

@@ -29,7 +29,8 @@ export class AuthService {
 
   // Verify the user and send OTP
   async requestOtp(loginDto: LoginDto, client: AppClients) {
-    const user = await this.userService.findOneByPhone(loginDto.phoneNumber);
+    const user = await this.userService.findParentByPhone(loginDto.phoneNumber);
+
     if (!user) throw new NotFoundException('User does not exist!');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
       throw new ForbiddenException('Invalid client');
@@ -46,7 +47,10 @@ export class AuthService {
   }
 
   async verifyLoginOtp(verifyDto: VerifyLoginOTPDTO, client: AppClients) {
-    const user = await this.userService.findOneByPhone(verifyDto.phoneNumber);
+    const user = await this.userService.findParentByPhone(
+      verifyDto.phoneNumber,
+    );
+
     if (!user) throw new NotFoundException('User does not exist!');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
       throw new ForbiddenException('Invalid client');
@@ -57,7 +61,7 @@ export class AuthService {
       throw new UnauthorizedException('OTP expired');
 
     this.userService.update(user.id, { otp: null });
-    const payload: JwtPayload = { role: user.role.name, sub: user.id };
+    const payload: JwtPayload = { role: user.role.id, sub: user.id };
 
     return {
       access_token: await this.jwtService.signAsync(payload, {
@@ -69,6 +73,7 @@ export class AuthService {
 
   async verifyPassword(username: string, password: string, client: AppClients) {
     const user = await this.userService.findOneByEmail(username);
+
     if (!user) throw new NotFoundException('Invalid username');
     if (user.role.clients.every((cl) => cl.clientId !== client.id))
       throw new ForbiddenException('Invalid client');
@@ -76,7 +81,7 @@ export class AuthService {
     if (!(await bcrypt.compare(password, user.password)))
       throw new UnauthorizedException('Invalid password');
 
-    const payload: JwtPayload = { role: user.role.name, sub: user.id };
+    const payload: JwtPayload = { role: user.role.id, sub: user.id };
 
     return {
       access_token: await this.jwtService.signAsync(payload),
@@ -86,6 +91,7 @@ export class AuthService {
 
   async resetPassword(email: string) {
     const user = await this.userService.findOneByEmail(email);
+
     if (!user) return { message: 'Please Verify OTP to reset password' };
 
     const otpNum = Math.floor(Math.random() * 1000000);
@@ -101,6 +107,7 @@ export class AuthService {
 
   async verifyResetPasswordOtp(verifyDto: VerifyResetOTPDTO) {
     const user = await this.userService.findOneByEmail(verifyDto.email);
+
     if (!user) throw new NotFoundException('User does not exist!');
 
     if (verifyDto.otp !== user.otp)

@@ -18,19 +18,19 @@ import { StudentService } from 'src/student/student.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import * as Role from '../users/entity/roles.data';
+import { Role } from '../role/entities/roles.data';
 import { ParentProfileSchema } from 'src/profile/dto/response-parent-profile.dto';
-import { ResponseUserSchema } from 'src/users/dto/response-user.dto';
-
-import {
-  UpdateParentProfileDto,
-  UpdateParentProfileSchema,
-} from 'src/profile/dto/update-parent-profile.dto';
+import { ResponseFacultySchema } from 'src/users/dto/response-faculty.dto';
+// import {
+//   UpdateParentProfileDto,
+//   UpdateParentProfileSchema,
+// } from 'src/profile/dto/update-parent-profile.dto';
 import {
   UpdateStudentDto,
   UpdateStudentSchema,
 } from 'src/student/dto/update-student.dto';
 import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
+import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto';
 
 @Controller('profile')
 @UseGuards(LoginGuard)
@@ -43,29 +43,33 @@ export class ProfileController {
 
   @Get()
   async getUserProfile(@Request() req) {
-    if (req.user.role === Role.Parent.name) {
-      const user = await this.usersService.findParentProfile(req.user.sub);
-      const parentProfile = ParentProfileSchema.parse(user);
+    switch (req.user.roleId) {
+      case Role.PARENT: {
+        const user = await this.usersService.findParentProfile(req.user.id);
+        const parentProfile = ParentProfileSchema.parse(user);
 
-      return parentProfile;
-    } else {
-      const user = await this.usersService.findOne(req.user.sub, [
-        'assignedSchool',
-      ]);
-      const userProfile = ResponseUserSchema.parse(user);
+        return parentProfile;
+      }
+      case Role.SUPER_ADMIN:
+        return ResponseSuperAdminSchema.parse(req.user);
 
-      return userProfile;
+      default: {
+        const user = await this.usersService.findOne(req.user.id, [
+          'faculty.assignedSchool',
+        ]);
+        return ResponseFacultySchema.parse(user);
+      }
     }
   }
 
-  @Put()
-  async update(
-    @Request() request,
-    @Body(new ZodValidationPipe(UpdateParentProfileSchema))
-    user: UpdateParentProfileDto,
-  ): Promise<any> {
-    return this.usersService.update(request.user.sub, user);
-  }
+  // @Put()
+  // async update(
+  //   @Request() request,
+  //   @Body(new ZodValidationPipe(UpdateParentProfileSchema))
+  //   user: UpdateParentProfileDto,
+  // ): Promise<any> {
+  //   return this.usersService.update(request.user.id, user);
+  // }
 
   @Put('children/:studentId')
   async updateChildrenProfile(
@@ -77,7 +81,7 @@ export class ProfileController {
   ): Promise<any> {
     const permission =
       await this.validationService.validateParentChildrenPermission(
-        request.user.sub,
+        request.user.id,
         studentId,
       );
     if (!permission)
@@ -92,7 +96,7 @@ export class ProfileController {
   @Delete()
   @HttpCode(204)
   async delete(@Request() req): Promise<any> {
-    await this.usersService.delete(req.user.sub);
+    await this.usersService.delete(req.user.id);
     return { status: true, message: 'User deleted successfully' };
   }
 }

@@ -6,16 +6,11 @@ import { UserService } from './users.service';
 import { ValidationService } from './validation.service';
 
 import { Users } from './entity/users.entity';
-import { Schools } from 'src/school/entities/school.entity';
-import { Students } from 'src/student/entities/student.entity';
-import { Classrooms } from 'src/class/entities/class.entity';
+import { Roles } from 'src/role/entities/roles.entity';
 
 @Global()
 @Module({
-  imports: [
-    UsersModule,
-    TypeOrmModule.forFeature([Users, Schools, Students, Classrooms]),
-  ],
+  imports: [TypeOrmModule.forFeature([Users, Roles])],
   controllers: [UsersController],
   providers: [UserService, ValidationService],
   exports: [UserService, ValidationService],

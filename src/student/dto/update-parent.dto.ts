@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
-export const UpdateUserSchema = z.object({
+export const UpdateParentSchema = z.object({
   firstName: z.string().optional(),
   lastName: z.string().optional(),
   phoneNumber: z.string().optional(),
   email: z.string().optional(),
   profession: z.string().optional(),
-  isActive: z.boolean().optional(),
+  relationship: z.string().optional(),
 });
-export type UpdateUserDto = z.infer<typeof UpdateUserSchema>;
+export type UpdateParentDto = z.infer<typeof UpdateParentSchema>;

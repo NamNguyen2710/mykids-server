@@ -4,41 +4,46 @@ export const OriginalProfileSchema = z.object({
   id: z.number(),
   firstName: z.string(),
   lastName: z.string(),
-  phoneNumber: z.string(),
   logo: z
     .object({
       id: z.number(),
       url: z.string(),
     })
     .nullable(),
-  children: z.array(
-    z.object({
-      studentId: z.number(),
-      student: z.object({
-        id: z.number(),
-        firstName: z.string(),
-        lastName: z.string(),
-        logo: z
-          .object({
-            id: z.number(),
-            url: z.string(),
-          })
-          .nullable(),
-        school: z.object({
+  email: z.string(),
+  phoneNumber: z.string(),
+  parent: z.object({
+    profession: z.string().nullable(),
+    children: z.array(
+      z.object({
+        studentId: z.number(),
+        student: z.object({
           id: z.number(),
-          name: z.string(),
-        }),
-        history: z.array(
-          z.object({
-            classroom: z.object({
+          firstName: z.string(),
+          lastName: z.string(),
+          logo: z
+            .object({
               id: z.number(),
-              name: z.string(),
-            }),
+              url: z.string(),
+            })
+            .nullable(),
+          school: z.object({
+            id: z.number(),
+            name: z.string(),
           }),
-        ),
+          history: z.array(
+            z.object({
+              classroom: z.object({
+                id: z.number(),
+                name: z.string(),
+              }),
+            }),
+          ),
+        }),
       }),
-    }),
-  ),
+    ),
+  }),
+  isActive: z.boolean(),
 });
 
 export const ParentProfileSchema = OriginalProfileSchema.transform((data) => ({
@@ -46,8 +51,10 @@ export const ParentProfileSchema = OriginalProfileSchema.transform((data) => ({
   firstName: data.firstName,
   lastName: data.lastName,
   phoneNumber: data.phoneNumber,
+  email: data.email,
   logo: data.logo,
-  children: data.children.map((child) => ({
+  isActive: data.isActive,
+  children: data.parent.children.map((child) => ({
     id: child.student.id,
     firstName: child.student.firstName,
     lastName: child.student.lastName,
