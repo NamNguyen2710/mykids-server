@@ -2,9 +2,9 @@ import {
   Entity,
   Column,
   OneToMany,
-  PrimaryColumn,
   ManyToOne,
   JoinColumn,
+  PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Users } from 'src/users/entity/users.entity';
 import { AppClientsRole } from 'src/auth/entities/client_role.entity';
@@ -13,7 +13,7 @@ import { Schools } from 'src/school/entities/school.entity';
 
 @Entity()
 export class Roles {
-  @PrimaryColumn({ name: 'role_id' })
+  @PrimaryGeneratedColumn({ name: 'role_id' })
   id: number;
 
   @Column({ name: 'role_name' })
