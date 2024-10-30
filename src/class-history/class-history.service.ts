@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository, In } from 'typeorm';
 
 import { ClassHistories } from './entities/class-history.entity';
 import { UpdateClassHistoryDto } from './dto/update-class-history.dto';
@@ -12,11 +12,16 @@ export class ClassHistoryService {
     private classHistoryRepository: Repository<ClassHistories>,
   ) {}
 
-  async create(studentIds: number[], classId: number) {
+  async startClassHistories(
+    classId: number,
+    studentIds: number[],
+    startDate: Date,
+  ) {
     const classHistory = studentIds.map((studentId) =>
       this.classHistoryRepository.create({
         studentId,
         classId,
+        startDate,
       }),
     );
     await this.classHistoryRepository.save(classHistory);
@@ -29,6 +34,13 @@ export class ClassHistoryService {
       where: { classId, studentId },
     });
     return classHistory;
+  }
+
+  async findByStudentIds(studentIds: number[]) {
+    const classHistories = await this.classHistoryRepository.find({
+      where: { studentId: In(studentIds), endDate: null },
+    });
+    return classHistories;
   }
 
   async update(
@@ -46,11 +58,27 @@ export class ClassHistoryService {
     return this.findOne(classId, studentId);
   }
 
-  async remove(classId: number, studentId: number) {
+  async endClassHistory(
+    classId: number,
+    studentId: number,
+    transactionalManager?: EntityManager,
+  ) {
+    const manager = transactionalManager || this.classHistoryRepository.manager;
+    const res = await manager.update(
+      ClassHistories,
+      { classId, studentId },
+      { endDate: new Date() },
+    );
+    if (res.affected === 0)
+      throw new BadRequestException('Class history not found');
+  }
+
+  async delete(classId: number, studentId: number) {
     const res = await this.classHistoryRepository.delete({
       classId,
       studentId,
     });
+
     if (res.affected === 0)
       throw new BadRequestException('Class history not found');
   }

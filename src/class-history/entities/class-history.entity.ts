@@ -21,9 +21,9 @@ export class ClassHistories {
   @Column()
   description: string;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'date', default: () => 'CURRENT_DATE' })
   startDate: Date;
 
-  @Column({ type: 'timestamptz', nullable: true })
+  @Column({ type: 'date', nullable: true })
   endDate: Date;
 }
