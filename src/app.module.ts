@@ -23,6 +23,9 @@ import { LoaModule } from './loa/loa.module';
 import { ProfileModule } from 'src/profile/profile.module';
 import { AlbumModule } from './album/album.module';
 import { MedicalModule } from 'src/medical/medical.module';
+import { RoleModule } from 'src/role/role.module';
+import { ClassHistoryModule } from 'src/class-history/class-history.module';
+import { WorkHistoryModule } from 'src/work-history/work-history.module';
 
 @Module({
   imports: [
@@ -42,25 +45,29 @@ import { MedicalModule } from 'src/medical/medical.module';
     }),
 
     UsersModule,
+    RoleModule,
     AuthModule,
     ProfileModule,
     AssetModule,
 
     SchoolModule,
     SchoolYearModule,
+
     ClassModule,
+    ClassHistoryModule,
+    WorkHistoryModule,
+    ScheduleModule,
+    MenuModule,
 
     StudentModule,
     LoaModule,
     MedicalModule,
 
+    AlbumModule,
     PostModule,
     CommentModule,
 
-    ScheduleModule,
-    MenuModule,
     NotificationsModule,
-    AlbumModule,
   ],
   controllers: [AppController],
   providers: [

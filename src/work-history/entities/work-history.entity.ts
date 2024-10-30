@@ -24,12 +24,12 @@ export class WorkHistories {
   classroom: Classrooms;
 
   @ManyToOne(() => SchoolFaculties, (faculty) => faculty.history)
-  @JoinColumn({ name: 'student_id' })
+  @JoinColumn({ name: 'faculty_id' })
   faculty: SchoolFaculties;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'date', default: () => 'CURRENT_DATE' })
   startDate: Date;
 
-  @Column({ type: 'timestamptz' })
+  @Column({ type: 'date', nullable: true })
   endDate: Date;
 }

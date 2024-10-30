@@ -33,6 +33,7 @@ const config = {
   namingStrategy: new SnakeNamingStrategy(),
   autoLoadEntities: true,
   synchronize: false,
+  // logging: true,
 };
 
 export default registerAs('typeorm', () => config);
