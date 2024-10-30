@@ -6,8 +6,7 @@ import { Classrooms } from 'src/class/entities/class.entity';
 
 import { CreateClassDto } from './dto/create-class.dto';
 import { UpdateClassDto } from './dto/update-class.dto';
-import { QueryClassesDto } from 'src/class/dto/query-classes.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
+import { ConfigedQueryClassesDto } from 'src/class/dto/query-classes.dto';
 
 @Injectable()
 export class ClassService {
@@ -16,18 +15,22 @@ export class ClassService {
     private readonly classRepository: Repository<Classrooms>,
   ) {}
 
-  async create(createClassDto: CreateClassDto): Promise<Classrooms> {
-    const classroom = this.classRepository.create(createClassDto);
+  async create(schoolId: number, createClassDto: CreateClassDto) {
+    const classroom = this.classRepository.create({
+      ...createClassDto,
+      schoolId,
+    });
     await this.classRepository.save(classroom);
 
     return classroom;
   }
 
-  async findAll(query: QueryClassesDto): Promise<ListResponse<Classrooms>> {
+  async findAll(query: ConfigedQueryClassesDto) {
     const {
       q = '',
       schoolId,
       schoolYearId,
+      facultyId,
       page = 1,
       limit = 20,
       isActive = true,
@@ -37,19 +40,27 @@ export class ClassService {
       .createQueryBuilder('class')
       .leftJoinAndSelect('class.school', 'school')
       .leftJoinAndSelect('class.schoolYear', 'schoolYear')
-      .andWhere('(class.name ILIKE :q OR class.location ILIKE :q)', {
+      .where('(class.name ILIKE :q OR class.location ILIKE :q)', {
         q: `%${q}%`,
       })
-      .andWhere('class.isActive = :isActive', { isActive })
       .orderBy('schoolYear.startDate', 'DESC')
       .addOrderBy('class.id', 'DESC')
       .take(limit)
       .skip((page - 1) * limit);
 
+    if (isActive !== undefined)
+      qb.andWhere('class.isActive = :isActive', { isActive });
+
     if (schoolId) qb.andWhere('school.id = :schoolId', { schoolId });
 
     if (schoolYearId)
       qb.andWhere('schoolYear.id = :schoolYearId', { schoolYearId });
+
+    if (facultyId)
+      qb.innerJoin('class.faculties', 'faculty').andWhere(
+        'faculty.facultyId = :facultyId',
+        { facultyId },
+      );
 
     const [classes, total] = await qb.getManyAndCount();
 
@@ -67,8 +78,13 @@ export class ClassService {
   async findOne(id: number): Promise<Classrooms> {
     const classroom = await this.classRepository.findOne({
       where: { id },
-      relations: ['school', 'schoolYear', 'students.student.parents.parent'],
+      relations: [
+        'school',
+        'schoolYear',
+        'students.student.parents.parent.user',
+      ],
     });
+    console.log(classroom.students[0]);
 
     return classroom;
   }
@@ -88,10 +104,16 @@ export class ClassService {
   }
 
   async deactivate(id: number): Promise<Classrooms> {
-    const classroom = await this.classRepository.findOne({ where: { id } });
+    const classroom = await this.classRepository.findOne({
+      where: { id },
+      relations: { students: true, faculties: true },
+    });
     if (!classroom) throw new BadRequestException('Class not found');
 
-    await this.classRepository.update(id, { isActive: false });
+    classroom.isActive = false;
+    classroom.students.forEach((student) => (student.endDate = new Date()));
+    classroom.faculties.forEach((faculty) => (faculty.endDate = new Date()));
+    await this.classRepository.save(classroom);
 
     return classroom;
   }
@@ -101,12 +123,5 @@ export class ClassService {
     if (res.affected === 0) return false;
 
     return true;
-  }
-
-  async validateSchoolClass(schoolId: number, classId: number) {
-    const classroom = await this.classRepository.findOne({
-      where: { id: classId, school: { id: schoolId } },
-    });
-    return !!classroom;
   }
 }

@@ -15,13 +15,13 @@ import {
 } from '@nestjs/common';
 
 import { ClassService } from './class.service';
-import { ClassHistoryService } from './class-history.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { LoginGuard } from 'src/guard/login.guard';
 
 import { CreateClassDto, CreateClassSchema } from './dto/create-class.dto';
 import { UpdateClassDto, UpdateClassSchema } from './dto/update-class.dto';
 import {
+  ConfigedQueryClassesDto,
   QueryClassesDto,
   QueryClassesSchema,
 } from 'src/class/dto/query-classes.dto';
@@ -31,20 +31,20 @@ import {
 } from 'src/class/dto/response-class.dto';
 import { ValidationService } from 'src/users/validation.service';
 import {
-  UpdateClassHistoryDto,
-  UpdateClassHistorySchema,
-} from 'src/class/dto/update-class-history.dto';
-import {
-  AddStudentsDto,
-  AddStudentsSchema,
-} from 'src/class/dto/add-students.dto';
+  CREATE_CLASS_PERMISSION,
+  DELETE_ASSIGNED_CLASS_PERMISSION,
+  DELETE_CLASS_PERMISSION,
+  READ_ALL_CLASS_PERMISSION,
+  READ_ASSIGNED_CLASS_PERMISSION,
+  UPDATE_ASSIGNED_CLASS_PERMISSION,
+  UPDATE_CLASS_PERMISSION,
+} from 'src/role/entities/permission.data';
 
 @Controller('class')
 @UseGuards(LoginGuard)
 export class ClassController {
   constructor(
     private readonly classService: ClassService,
-    private readonly classHistoryService: ClassHistoryService,
     private readonly validationService: ValidationService,
   ) {}
 
@@ -55,16 +55,22 @@ export class ClassController {
     createClassDto: CreateClassDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        createClassDto.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: request.user.faculty.schoolId,
+          permissionId: CREATE_CLASS_PERMISSION,
+        },
       );
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to create a class in this school',
       );
 
-    return this.classService.create(createClassDto);
+    return this.classService.create(
+      request.user.faculty.schoolId,
+      createClassDto,
+    );
   }
 
   @Get()
@@ -73,23 +79,49 @@ export class ClassController {
     @Query(new ZodValidationPipe(QueryClassesSchema)) query: QueryClassesDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        query.schoolId,
-      );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to view classes in this school',
-      );
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        allPermissionId: READ_ALL_CLASS_PERMISSION,
+        classPermissionId: READ_ASSIGNED_CLASS_PERMISSION,
+      });
 
-    const res = await this.classService.findAll(query);
+    const configedQuery: ConfigedQueryClassesDto = {
+      ...query,
+      schoolId: request.user.faculty.schoolId,
+    };
+
+    if (!permission.allPermission) {
+      if (permission.classPermission)
+        configedQuery.facultyId = request.user.faculty.id;
+      else
+        throw new ForbiddenException(
+          'You do not have permission to view classes in this school',
+        );
+    }
+
+    const res = await this.classService.findAll(configedQuery);
 
     const classes = res.data.map((c) => DefaultClassSchema.parse(c));
     return { ...res, data: classes };
   }
 
   @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+    const permission =
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: id,
+        allPermissionId: READ_ALL_CLASS_PERMISSION,
+        classPermissionId: READ_ASSIGNED_CLASS_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
+      throw new ForbiddenException(
+        'You do not have permission to view this class',
+      );
+
     const classroom = await this.classService.findOne(id);
     return ResponseClassSchema.parse(classroom);
   }
@@ -102,11 +134,15 @@ export class ClassController {
     updateClassDto: UpdateClassDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: id,
+        allPermissionId: UPDATE_CLASS_PERMISSION,
+        classPermissionId: UPDATE_ASSIGNED_CLASS_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to update this class',
       );
@@ -117,11 +153,15 @@ export class ClassController {
   @Put(':id/deactivate')
   async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: id,
+        allPermissionId: UPDATE_CLASS_PERMISSION,
+        classPermissionId: UPDATE_ASSIGNED_CLASS_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to update this class',
       );
@@ -133,75 +173,19 @@ export class ClassController {
   @HttpCode(204)
   async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: id,
+        allPermissionId: DELETE_CLASS_PERMISSION,
+        classPermissionId: DELETE_ASSIGNED_CLASS_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to update this class',
       );
 
     return this.classService.remove(id);
-  }
-
-  @Post(':id/student')
-  async addStudents(
-    @Request() request,
-    @Param('id', ParseIntPipe) id: number,
-    @Body(new ZodValidationPipe(AddStudentsSchema)) body: AddStudentsDto,
-  ) {
-    const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to update this class',
-      );
-
-    return this.classHistoryService.create(body.studentIds, id);
-  }
-
-  @Put(':id/student/:studentId')
-  async updateStudent(
-    @Request() request,
-    @Param('id', ParseIntPipe) classId: number,
-    @Param('studentId', ParseIntPipe) studentId: number,
-    @Body(new ZodValidationPipe(UpdateClassHistorySchema))
-    updateDto: UpdateClassHistoryDto,
-  ) {
-    const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        classId,
-      );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to update this class',
-      );
-
-    return this.classHistoryService.update(classId, studentId, updateDto);
-  }
-
-  @Delete(':id/student/:studentId')
-  @HttpCode(204)
-  async removeStudent(
-    @Request() request,
-    @Param('id', ParseIntPipe) classId: number,
-    @Param('studentId', ParseIntPipe) studentId: number,
-  ) {
-    const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        classId,
-      );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to update this class',
-      );
-
-    return this.classHistoryService.remove(classId, studentId);
   }
 }

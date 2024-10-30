@@ -63,14 +63,14 @@ export class ClassHistoryService {
     studentId: number,
     transactionalManager?: EntityManager,
   ) {
+    const classHistory = await this.findOne(classId, studentId);
+    if (!classHistory) throw new BadRequestException('Class history not found');
+
     const manager = transactionalManager || this.classHistoryRepository.manager;
-    const res = await manager.update(
-      ClassHistories,
-      { classId, studentId },
-      { endDate: new Date() },
-    );
-    if (res.affected === 0)
-      throw new BadRequestException('Class history not found');
+    classHistory.endDate = new Date();
+    await manager.save(classHistory);
+
+    return classHistory;
   }
 
   async delete(classId: number, studentId: number) {
