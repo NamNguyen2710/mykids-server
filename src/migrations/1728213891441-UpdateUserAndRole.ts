@@ -56,7 +56,8 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     await queryRunner.query(`
       ALTER TABLE "roles" 
         ADD COLUMN "school_id" integer,
-        ADD FOREIGN KEY ("school_id") REFERENCES schools (school_id) ON DELETE CASCADE
+        ADD FOREIGN KEY ("school_id") REFERENCES schools (school_id) ON DELETE CASCADE,
+        ALTER "role_id" ADD GENERATED ALWAYS AS IDENTITY
     `);
     await queryRunner.query(`
       ALTER TABLE "schools" 
@@ -73,8 +74,8 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
         "work_id" SERIAL NOT NULL PRIMARY KEY,
         "class_id" integer NOT NULL,
         "faculty_id" integer NOT NULL,
-        "start_date" TIMESTAMPTZ NOT NULL,
-        "end_date" TIMESTAMPTZ NOT NULL,
+        "start_date" DATE NOT NULL DEFAULT CURRENT_DATE,
+        "end_date" DATE,
         FOREIGN KEY ("class_id") REFERENCES classrooms (class_id) ON DELETE CASCADE,
         FOREIGN KEY ("faculty_id") REFERENCES school_faculties (user_id) ON DELETE CASCADE
       )
@@ -91,8 +92,8 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     `);
     await queryRunner.query(`
       ALTER TABLE "class_histories"
-        ADD COLUMN "start_date" TIMESTAMPTZ DEFAULT '2024-09-01T00:00:00Z',
-        ADD COLUMN "end_date" TIMESTAMPTZ
+        ADD COLUMN "start_date" DATE NOT NULL DEFAULT CURRENT_DATE,
+        ADD COLUMN "end_date" DATE
     `);
     await queryRunner.query(`
       ALTER TABLE "posts"
@@ -100,9 +101,21 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
         ADD FOREIGN KEY (class_id) REFERENCES classrooms (class_id) ON DELETE CASCADE
     `);
     await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "profession"`);
+    await queryRunner.query(`
+      alter table users 
+        alter column "phone_number" drop not null,
+        drop constraint users_phone_number_key,
+        add constraint users_phone_number_key unique nulls not distinct ("phone_number")
+    `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+      alter table users 
+        alter column "phone_number" set not null,
+        drop constraint users_phone_number_key,
+        add constraint users_phone_number_key unique ("phone_number")
+    `);
     await queryRunner.query(
       `ALTER TABLE "users" ADD COLUMN "profession" character varying`,
     );
@@ -140,7 +153,8 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     await queryRunner.query(`
       ALTER TABLE "roles" 
         DROP CONSTRAINT "roles_school_id_fkey",
-        DROP COLUMN "school_id"
+        DROP COLUMN "school_id",
+        ALTER "role_id" DROP GENERATED ALWAYS
     `);
     await queryRunner.query(`DROP TABLE "role_permissions"`);
     await queryRunner.query(`DROP TABLE "permissions"`);

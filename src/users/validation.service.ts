@@ -161,7 +161,7 @@ export class ValidationService {
 
     const user = await this.userRepository.findOne({
       where: whereClause,
-      relations: ['faculty.history', 'role.permissions'],
+      relations: ['faculty.history.classroom', 'role.permissions'],
     });
 
     const res = {

@@ -28,7 +28,6 @@ import {
   READ_ROLE_PERMISSION,
   UPDATE_ROLE_PERMISSION,
 } from 'src/role/entities/permission.data';
-import { ResponseRolePermissionsSchema } from 'src/role/dto/reponse-role-permissions.dto';
 import {
   UpdatePermissionsDto,
   UpdatePermissionsSchema,
@@ -178,7 +177,7 @@ export class RoleController {
       );
 
     const permissions = await this.permissionService.findPermissionsByRole(id);
-    return ResponseRolePermissionsSchema.parse(permissions);
+    return permissions;
   }
 
   @Put(':id/permissions')
@@ -206,6 +205,6 @@ export class RoleController {
       );
 
     const newPermisions = await this.permissionService.update(roleId, body);
-    return ResponseRolePermissionsSchema.parse(newPermisions);
+    return newPermisions;
   }
 }

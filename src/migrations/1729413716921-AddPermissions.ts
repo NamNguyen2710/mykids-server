@@ -105,7 +105,11 @@ export class AddPermissions1729413716921 implements MigrationInterface {
 			(97, 'CREATE_SCHOOL_POST_COMMENT_PERMISSION', 'Permission to create school post comments'),
 			(98, 'READ_SCHOOL_POST_COMMENT_PERMISSION', 'Permission to read school post comments'),
 			(99, 'UPDATE_SCHOOL_POST_COMMENT_PERMISSION', 'Permission to update school post comments'),
-			(100, 'DELETE_SCHOOL_POST_COMMENT_PERMISSION', 'Permission to delete school post comments');
+			(100, 'DELETE_SCHOOL_POST_COMMENT_PERMISSION', 'Permission to delete school post comments'),
+			(101, 'ADD_CLASS_FACULTY_PERMISSION', 'Permission to add faculty to classes'),
+			(102, 'REMOVE_CLASS_FACULTY_PERMISSION', 'Permission to remove faculty from classes'),
+			(103, 'DELETE_CLASS_HISTORY_PERMISSION', 'Permission to delete class history'),
+			(104, 'DELETE_WORK_HISTORY_PERMISSION', 'Permission to delete work history');
 		`);
   }
 

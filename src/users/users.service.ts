@@ -38,8 +38,8 @@ export class UserService {
       limit = 20,
       page = 1,
       isActive,
-      sortType = 'id',
-      sortDirection = 'ASC',
+      sort = 'id',
+      order = 'ASC',
     } = query;
     const whereClause: FindOptionsWhere<Users> = {};
 
@@ -84,7 +84,7 @@ export class UserService {
       relations,
       take: limit,
       skip: (page - 1) * limit,
-      order: { [sortType]: sortDirection },
+      order: { [sort]: order },
     });
     return {
       data: users,

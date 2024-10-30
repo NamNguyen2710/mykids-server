@@ -10,7 +10,7 @@ import {
 import { Schools } from 'src/school/entities/school.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { Albums } from 'src/album/entities/album.entity';
-import { WorkHistories } from 'src/class/entities/work-history.entity';
+import { WorkHistories } from 'src/work-history/entities/work-history.entity';
 
 @Entity()
 export class SchoolFaculties {
