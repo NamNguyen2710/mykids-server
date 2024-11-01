@@ -62,7 +62,7 @@ export class StudentController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: createStudentDto.schoolId,
+          schoolId: request.user.faculty.schoolId,
           permissionId: CREATE_STUDENT_PERMISSION,
         },
       );
@@ -71,7 +71,10 @@ export class StudentController {
         'You do not have permission to create a student in this school',
       );
 
-    return this.studentService.create(createStudentDto);
+    return this.studentService.create(
+      request.user.faculty.schoolId,
+      createStudentDto,
+    );
   }
 
   @Get()

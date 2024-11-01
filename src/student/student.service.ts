@@ -2,13 +2,16 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
-import { SchoolService } from 'src/school/school.service';
+import { LoaService } from 'src/loa/loa.service';
 import { AssetService } from 'src/asset/asset.service';
+import { SchoolService } from 'src/school/school.service';
+import { ClassHistoryService } from 'src/class-history/class-history.service';
 
 import { Students } from './entities/student.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { QueryStudentDto } from './dto/query-student.dto';
+import { LOA_STATUS } from 'src/loa/entities/loa.entity';
 
 @Injectable()
 export class StudentService {
@@ -17,11 +20,14 @@ export class StudentService {
     private readonly studentRepository: Repository<Students>,
     private readonly schoolService: SchoolService,
     private readonly assetService: AssetService,
+    private readonly classHistoryService: ClassHistoryService,
+    private readonly loaService: LoaService,
   ) {}
 
-  async create(createStudentDto: CreateStudentDto) {
+  async create(schoolId: number, createStudentDto: CreateStudentDto) {
     const student = this.studentRepository.create({
       ...createStudentDto,
+      schoolId,
     });
 
     if (createStudentDto.logoId) {
@@ -157,21 +163,42 @@ export class StudentService {
   }
 
   async deactivate(id: number) {
-    const student = await this.studentRepository.findOne({ where: { id } });
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['parents', 'history', 'loas'],
+    });
     if (!student) throw new NotFoundException('Student not found');
 
     await this.studentRepository.manager.transaction(async (manager) => {
-      await manager.update(Students, id, { isActive: false });
+      student.isActive = false;
+      await manager.save(student);
+
       await this.schoolService.removeParents(
         student.schoolId,
         student.parents.map((p) => p.parentId),
         manager,
       );
+
+      const activeClass = student.history.find((h) => h.endDate === null);
+      if (activeClass)
+        await this.classHistoryService.endClassHistory(
+          activeClass.classId,
+          student.id,
+          manager,
+        );
+
+      student.loas.forEach((loa) => {
+        if (loa.approveStatus === LOA_STATUS.PENDING)
+          this.loaService.update(loa.id, { approveStatus: LOA_STATUS.CANCEL });
+      });
     });
   }
 
   async activate(id: number) {
-    const student = await this.studentRepository.findOne({ where: { id } });
+    const student = await this.studentRepository.findOne({
+      where: { id },
+      relations: ['parents'],
+    });
     if (!student) throw new NotFoundException('Student not found');
 
     await this.studentRepository.manager.transaction(async (manager) => {
