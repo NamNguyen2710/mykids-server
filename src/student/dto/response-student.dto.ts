@@ -23,16 +23,18 @@ export const ResponseStudentSchema = z.object({
       z.object({
         relationship: z.string(),
         parent: z.object({
-          id: z.number(),
-          firstName: z.string(),
-          lastName: z.string(),
-          logo: z
-            .object({
-              id: z.number(),
-              url: z.string(),
-            })
-            .nullable(),
-          phoneNumber: z.string(),
+          user: z.object({
+            id: z.number(),
+            firstName: z.string(),
+            lastName: z.string(),
+            logo: z
+              .object({
+                id: z.number(),
+                url: z.string(),
+              })
+              .nullable(),
+            phoneNumber: z.string(),
+          }),
           profession: z.string().nullable(),
         }),
       }),
@@ -47,7 +49,8 @@ export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
       data.parents &&
       data.parents.map((parent) => ({
         relationship: parent.relationship,
-        ...parent.parent,
+        profession: parent.parent.profession,
+        ...parent.parent.user,
       })),
   }),
 );

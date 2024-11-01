@@ -9,7 +9,7 @@ export const OriginalProfileSchema = z.object({
       id: z.number(),
       url: z.string(),
     })
-    .nullable(),
+    .nullish(),
   email: z.string().nullable(),
   phoneNumber: z.string(),
   parent: z

@@ -20,6 +20,7 @@ import {
 } from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { ListResponse } from 'src/utils/list-response.dto';
+import { UpdateUserDto } from 'src/users/dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -203,12 +204,15 @@ export class UserService {
 
   async update(
     userId: number,
-    user: Partial<Users>,
+    userDto: UpdateUserDto,
     transactionalManager?: EntityManager,
   ) {
+    const user = await this.findOne(userId);
+    if (!user) return null;
+
+    Object.assign(user, userDto);
     const manager = transactionalManager || this.userRepository.manager;
-    const res = await manager.update(Users, userId, user);
-    if (res.affected === 0) return null;
+    await manager.save(user);
 
     return this.userRepository.findOne({ where: { id: userId } });
   }

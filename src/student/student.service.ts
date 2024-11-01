@@ -1,26 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
-import { UserService } from 'src/users/users.service';
 import { SchoolService } from 'src/school/school.service';
 import { AssetService } from 'src/asset/asset.service';
 
 import { Students } from './entities/student.entity';
-import { StudentsParents } from './entities/students-parents.entity';
 import { CreateStudentDto } from './dto/create-student.dto';
 import { UpdateStudentDto } from './dto/update-student.dto';
 import { QueryStudentDto } from './dto/query-student.dto';
-import { CreateParentDto } from './dto/create-parent.dto';
 
 @Injectable()
 export class StudentService {
   constructor(
     @InjectRepository(Students)
     private readonly studentRepository: Repository<Students>,
-    @InjectRepository(StudentsParents)
-    private readonly stdParentRepository: Repository<StudentsParents>,
-    private readonly userService: UserService,
     private readonly schoolService: SchoolService,
     private readonly assetService: AssetService,
   ) {}
@@ -50,7 +44,9 @@ export class StudentService {
       limit = 20,
       page = 1,
       hasNoClass = false,
-      isActive = true,
+      isActive,
+      sort = 'name',
+      order = 'ASC',
     } = query;
 
     const qb = this.studentRepository
@@ -58,7 +54,6 @@ export class StudentService {
       .leftJoinAndSelect('s.logo', 'logo')
       .leftJoin('s.history', 'history')
       .leftJoin('history.classroom', 'classroom', 'classroom.is_active = true')
-      .andWhere('s.is_active = :isActive', { isActive })
       .limit(limit)
       .groupBy('s.id')
       .addGroupBy('logo.id')
@@ -68,13 +63,21 @@ export class StudentService {
             JSON_BUILD_OBJECT(
               'id', classroom.id, 
               'name', classroom.name, 
-              'description', history.description
+              'description', history.description,
+              'isActive', classroom.is_active
             ) 
           ) FILTER (WHERE classroom.id IS NOT NULL AND classroom.is_active = true), 
-        '[]') AS history`,
+          '[]'
+        ) AS history`,
       ])
-      .offset((page - 1) * limit)
-      .orderBy('s.id', 'DESC');
+      .offset((page - 1) * limit);
+
+    if (isActive !== undefined)
+      qb.andWhere('s.is_active = :isActive', { isActive });
+
+    if (sort === 'name')
+      qb.orderBy('s.first_name', order).addOrderBy('s.last_name', order);
+    else qb.orderBy(`s.${sort}`, order);
 
     if (name)
       qb.andWhere('(s.first_name ILIKE :name OR s.last_name ILIKE :name)', {
@@ -101,7 +104,7 @@ export class StudentService {
         ethnic: s.s_ethnic,
         gender: s.s_gender,
         isActive: s.s_is_active,
-        logo: {
+        logo: s.logo_asset_id && {
           id: s.logo_asset_id,
           url: s.logo_url,
         },
@@ -123,53 +126,7 @@ export class StudentService {
   async update(id: number, updateStudentDto: UpdateStudentDto) {
     const student = await this.studentRepository.findOne({
       where: { id },
-      relations: ['parents.parent'],
     });
-
-    if (updateStudentDto.parentIds) {
-      const parents = await this.userService.findByIds(
-        updateStudentDto.parentIds,
-      );
-      if (parents.length !== updateStudentDto.parentIds.length)
-        throw new NotFoundException('Cannot find parents!');
-
-      delete updateStudentDto.parentIds;
-
-      const createParentIds = parents
-        .filter((p) => student.parents.every((stdp) => stdp.parentId !== p.id))
-        .map((p) => p.id);
-
-      const createStdParents = createParentIds.map((p) =>
-        this.stdParentRepository.create({
-          studentId: id,
-          parentId: p,
-          relationship: 'Parent',
-        }),
-      );
-
-      const deleteParentIds = student.parents
-        .filter((stdp) => parents.every((p) => p.id !== stdp.parentId))
-        .map((stdp) => stdp.parentId);
-
-      await this.studentRepository.manager.transaction(async (manager) => {
-        await manager.save(createStdParents);
-        await this.schoolService.addParents(
-          student.schoolId,
-          createParentIds,
-          manager,
-        );
-
-        await this.stdParentRepository.delete({
-          studentId: id,
-          parentId: In(deleteParentIds),
-        });
-        await this.schoolService.removeParents(
-          student.schoolId,
-          deleteParentIds,
-          manager,
-        );
-      });
-    }
 
     if (updateStudentDto.studentCvIds) {
       const studentCvs = await this.assetService.findByIds(
@@ -188,15 +145,14 @@ export class StudentService {
       student.logo = logo[0];
     }
 
-    delete student.parents;
     await this.studentRepository.save({
       ...student,
       ...updateStudentDto,
     });
 
-    return await this.studentRepository.findOne({
+    return this.studentRepository.findOne({
       where: { id },
-      relations: ['parents.parent'],
+      relations: ['parents.parent.user'],
     });
   }
 
@@ -226,56 +182,5 @@ export class StudentService {
         manager,
       );
     });
-  }
-
-  async addStudentParent(createParentDto: CreateParentDto, studentId: number) {
-    const student = await this.studentRepository.findOne({
-      where: { id: studentId },
-    });
-    const { id, relationship, ...parentData } = createParentDto;
-
-    let parent;
-    await this.studentRepository.manager.transaction(async (manager) => {
-      if (id) {
-        // Update existing parent
-        parent = await this.userService.update(id, parentData, manager);
-
-        if (!parent) throw new NotFoundException('Parent not found');
-      } else {
-        // Create parent
-        parent = await this.userService.create(parentData, manager);
-      }
-
-      // Create student parent relation
-      const parents = this.stdParentRepository.create({
-        parent,
-        student,
-        relationship,
-      });
-      await manager.save(parents);
-
-      // Add parent to school
-      await this.schoolService.addParents(
-        student.schoolId,
-        [parent.id],
-        manager,
-      );
-    });
-
-    return parent;
-  }
-
-  async validateStudentTeacherPermission(
-    userId: number,
-    studentId: number,
-  ): Promise<boolean> {
-    const student = await this.studentRepository.findOne({
-      where: {
-        id: studentId,
-        school: { schoolAdminId: userId },
-      },
-    });
-
-    return !!student;
   }
 }
