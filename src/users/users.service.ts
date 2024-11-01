@@ -19,8 +19,8 @@ import {
   CreateSuperAdminSchema,
 } from './dto/create-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
-import { UpdateUserDto } from 'src/users/dto/update-user.dto';
+import { ConfigedUpdateUserDto } from 'src/users/dto/update-user.dto';
+import { WorkHistoryService } from 'src/work-history/work-history.service';
 
 @Injectable()
 export class UserService {
@@ -29,12 +29,10 @@ export class UserService {
     private readonly userRepository: Repository<Users>,
     @InjectRepository(Roles)
     private readonly roleRepository: Repository<Roles>,
+    private readonly workHistoryService: WorkHistoryService,
   ) {}
 
-  async findAll(
-    relations: string[] = [],
-    query: QueryUserDto,
-  ): Promise<ListResponse<Users>> {
+  async findAll(relations: string[] = [], query: QueryUserDto) {
     const {
       limit = 20,
       page = 1,
@@ -106,7 +104,7 @@ export class UserService {
     userId: number,
     relations: string[] = [],
     isActive: boolean = true,
-  ): Promise<Users> {
+  ) {
     return this.userRepository.findOne({
       where: { id: userId, isActive },
       relations,
@@ -157,7 +155,7 @@ export class UserService {
   async create(
     createUserDto: CreateUserDto,
     transactionalManager?: EntityManager,
-  ): Promise<Users> {
+  ) {
     switch (createUserDto.roleId) {
       case Role.SUPER_ADMIN: {
         const userSchema = CreateSuperAdminSchema.parse(createUserDto);
@@ -204,7 +202,7 @@ export class UserService {
 
   async update(
     userId: number,
-    userDto: UpdateUserDto,
+    userDto: ConfigedUpdateUserDto,
     transactionalManager?: EntityManager,
   ) {
     const user = await this.findOne(userId);
@@ -217,8 +215,30 @@ export class UserService {
     return this.userRepository.findOne({ where: { id: userId } });
   }
 
+  async deactivate(userId: number) {
+    await this.userRepository.manager.transaction(async (manager) => {
+      const user = await this.findOne(userId, ['faculty.history']);
+      if (!user) return null;
+
+      user.isActive = false;
+      await manager.save(user);
+
+      if (user.roleId !== Role.PARENT && user.roleId !== Role.SUPER_ADMIN) {
+        const historyPromises = user.faculty.history.map(async (history) => {
+          if (history.endDate === null)
+            await this.workHistoryService.endWorkHistory(
+              history.classId,
+              userId,
+              manager,
+            );
+        });
+        await Promise.all(historyPromises);
+      }
+    });
+  }
+
   async delete(userId: number): Promise<any> {
-    const res = await this.userRepository.update(userId, { isActive: false });
+    const res = await this.userRepository.softDelete(userId);
     if (res.affected === 0) return null;
 
     return true;

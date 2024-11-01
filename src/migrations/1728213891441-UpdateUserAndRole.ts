@@ -105,7 +105,8 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
       alter table users 
         alter column "phone_number" drop not null,
         drop constraint users_phone_number_key,
-        add constraint users_phone_number_key unique nulls not distinct ("phone_number")
+        add constraint users_phone_number_key unique nulls not distinct ("phone_number"),
+        add column "deleted_at" timestamp with time zone
     `);
   }
 

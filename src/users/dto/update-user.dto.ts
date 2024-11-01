@@ -6,14 +6,15 @@ export const UpdateUserSchema = z.object({
   phoneNumber: z.string().optional(),
   email: z.string().optional(),
   profession: z.string().optional(),
-  isActive: z.boolean().optional(),
   logoId: z.number().optional(),
+});
+
+export const ConfigedUpdateUserSchema = UpdateUserSchema.extend({
+  isActive: z.boolean().optional(),
   otp: z.string().optional(),
   otpExpiresAt: z.date().optional(),
   password: z.string().optional(),
-});
-
-export const ConfigedUpdateUserSchema = UpdateUserSchema.transform((data) => {
+}).transform((data) => {
   if (data.profession) {
     return {
       ...data,
@@ -25,3 +26,4 @@ export const ConfigedUpdateUserSchema = UpdateUserSchema.transform((data) => {
   }
 });
 export type UpdateUserDto = z.infer<typeof UpdateUserSchema>;
+export type ConfigedUpdateUserDto = z.infer<typeof ConfigedUpdateUserSchema>;

@@ -7,10 +7,11 @@ import { ValidationService } from './validation.service';
 
 import { Users } from './entity/users.entity';
 import { Roles } from 'src/role/entities/roles.entity';
+import { WorkHistoryModule } from 'src/work-history/work-history.module';
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([Users, Roles])],
+  imports: [TypeOrmModule.forFeature([Users, Roles]), WorkHistoryModule],
   controllers: [UsersController],
   providers: [UserService, ValidationService],
   exports: [UserService, ValidationService],

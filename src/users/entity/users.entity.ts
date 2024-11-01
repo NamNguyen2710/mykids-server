@@ -9,6 +9,7 @@ import {
   ManyToMany,
   OneToMany,
   OneToOne,
+  DeleteDateColumn,
 } from 'typeorm';
 import { Roles } from 'src/role/entities/roles.entity';
 import { Posts } from 'src/post/entities/post.entity';
@@ -60,6 +61,9 @@ export class Users {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
+
+  @DeleteDateColumn({ type: 'timestamptz' })
+  deletedAt: Date;
 
   @Column({ nullable: true })
   logoId: number;

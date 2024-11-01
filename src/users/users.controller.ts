@@ -242,6 +242,54 @@ export class UsersController {
       : ResponseFacultySchema.parse(user);
   }
 
+  @Put(':userId/deactivate')
+  async deactivate(
+    @Request() request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    let permission: any = true;
+
+    if (request.user.roleId !== Role.SUPER_ADMIN)
+      permission = await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          facultyId: userId,
+          permissionId: UPDATE_SCHOOL_FACULTY_PERMISSION,
+        },
+      );
+
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
+
+    return this.usersService.deactivate(userId);
+  }
+
+  @Put(':userId/activate')
+  async activate(
+    @Request() request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    let permission: any = true;
+
+    if (request.user.roleId !== Role.SUPER_ADMIN)
+      permission = await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          facultyId: userId,
+          permissionId: UPDATE_SCHOOL_FACULTY_PERMISSION,
+        },
+      );
+
+    if (!permission)
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
+
+    return this.usersService.update(userId, { isActive: true });
+  }
+
   @Delete(':userId')
   @HttpCode(204)
   async delete(
@@ -264,10 +312,6 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    const user = await this.usersService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('User does not exist!');
-    }
-    return this.usersService.delete(userId);
+    await this.usersService.delete(userId);
   }
 }
