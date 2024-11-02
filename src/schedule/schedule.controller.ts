@@ -5,6 +5,7 @@ import {
   ForbiddenException,
   Get,
   HttpCode,
+  Param,
   ParseIntPipe,
   Post,
   Put,
@@ -26,11 +27,20 @@ import {
   ScheduleDetailDto,
   ScheduleDetailSchema,
 } from 'src/schedule/dto/schedule-detail.dto';
-import * as Role from 'src/users/entity/roles.data';
+import { Role } from 'src/role/entities/roles.data';
 import { UpdateScheduleDto } from 'src/schedule/dto/update-schedule.dto';
-import { Users } from 'src/users/entity/users.entity';
+import {
+  CREATE_CLASS_SCHEDULE_PERMISSION,
+  CREATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+  DELETE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+  DELETE_CLASS_SCHEDULE_PERMISSION,
+  READ_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+  READ_CLASS_SCHEDULE_PERMISSION,
+  UPDATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+  UPDATE_CLASS_SCHEDULE_PERMISSION,
+} from 'src/role/entities/permission.data';
 
-@Controller('schedule')
+@Controller('class/:classId/schedule')
 @UseGuards(LoginGuard)
 export class ScheduleController {
   constructor(
@@ -41,27 +51,34 @@ export class ScheduleController {
   @Get()
   async getSchedule(
     @Request() request,
-    @Query(new ZodValidationPipe(QueryScheduleSchema)) query: QueryScheduleDto,
+    @Param('classId', ParseIntPipe) classId: number,
+    @Query(new ZodValidationPipe(QueryScheduleSchema))
+    query: QueryScheduleDto,
   ) {
-    let permission: Users | null = null;
-    if (request.user.role === Role.Parent.name)
+    let permission;
+    if (request.user.roleId === Role.PARENT) {
       permission = await this.validationService.validateParentClassPermission(
-        request.user.sub,
-        query.classId,
+        request.user.id,
+        classId,
       );
-    if (request.user.role === Role.SchoolAdmin.name)
-      permission =
-        await this.validationService.validateSchoolAdminClassPermission(
-          request.user.sub,
-          query.classId,
-        );
+    } else {
+      const { classPermission, allPermission } =
+        await this.validationService.validateFacultySchoolClassPermission({
+          userId: request.user.id,
+          schoolId: request.user.faculty.schoolId,
+          classId,
+          allPermissionId: READ_CLASS_SCHEDULE_PERMISSION,
+          classPermissionId: READ_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+        });
+      permission = classPermission || allPermission;
+    }
     if (!permission)
       throw new ForbiddenException(
-        'You do not have permission to get this class schedule',
+        'You do not have permission to view this class schedule',
       );
 
     return this.scheduleService.findSchedule(
-      query.classId,
+      classId,
       query.startDate || query.date || new Date(),
       query.endDate || query.date || new Date(),
     );
@@ -70,33 +87,45 @@ export class ScheduleController {
   @Post()
   async createSchedule(
     @Request() request,
-    @Body(new ZodValidationPipe(ScheduleDetailSchema)) body: ScheduleDetailDto,
+    @Param('classId', ParseIntPipe) classId: number,
+    @Body(new ZodValidationPipe(ScheduleDetailSchema))
+    body: ScheduleDetailDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        body.classId,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId,
+        allPermissionId: CREATE_CLASS_SCHEDULE_PERMISSION,
+        classPermissionId: CREATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+      });
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to create schedule for this class',
       );
 
-    return this.scheduleService.createSchedule(body);
+    return this.scheduleService.createSchedule(classId, body);
   }
 
   @Put(':id')
   async updateSchedule(
     @Request() request,
-    @Body(new ZodValidationPipe(ScheduleDetailSchema)) body: UpdateScheduleDto,
-    @Query('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body(new ZodValidationPipe(ScheduleDetailSchema))
+    body: UpdateScheduleDto,
   ) {
+    const oldSchedule = await this.scheduleService.findOne(id);
+
     const permission =
-      await this.scheduleService.validateSchoolAdminSchedulePermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: oldSchedule.classroom.id,
+        allPermissionId: UPDATE_CLASS_SCHEDULE_PERMISSION,
+        classPermissionId: UPDATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to update schedule for this class',
       );
@@ -109,14 +138,20 @@ export class ScheduleController {
   @HttpCode(204)
   async deleteSchedule(
     @Request() request,
-    @Query('id', ParseIntPipe) id: number,
+    @Param('id', ParseIntPipe) id: number,
   ) {
+    const oldSchedule = await this.scheduleService.findOne(id);
+
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        id,
-      );
-    if (!permission)
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty.schoolId,
+        classId: oldSchedule.classroom.id,
+        allPermissionId: DELETE_CLASS_SCHEDULE_PERMISSION,
+        classPermissionId: DELETE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission)
       throw new ForbiddenException(
         'You do not have permission to delete schedule for this class',
       );

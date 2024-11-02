@@ -26,7 +26,12 @@ import {
   UpdateSchoolYearDto,
   UpdateSchoolYearSchema,
 } from './dto/update-school-year.dto';
-import * as Role from 'src/users/entity/roles.data';
+import {
+  CREATE_SCHOOL_YEAR_PERMISSION,
+  DELETE_SCHOOL_YEAR_PERMISSION,
+  READ_ALL_SCHOOL_YEAR_PERMISSION,
+  UPDATE_SCHOOL_YEAR_PERMISSION,
+} from 'src/role/entities/permission.data';
 
 @Controller('school-year')
 @UseGuards(LoginGuard)
@@ -43,9 +48,12 @@ export class SchoolYearController {
     createSchoolYearDto: CreateSchoolYearDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        createSchoolYearDto.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: createSchoolYearDto.schoolId,
+          permissionId: CREATE_SCHOOL_YEAR_PERMISSION,
+        },
       );
     if (!permission)
       throw new ForbiddenException(
@@ -57,28 +65,33 @@ export class SchoolYearController {
 
   @Get()
   async findAll(@Request() req) {
-    const permission = await this.validationService.validateUserRole(
-      req.user.sub,
-      Role.SchoolAdmin.id,
-    );
+    const permission =
+      await this.validationService.validateSchoolFacultyPermission(
+        req.user.id,
+        {
+          schoolId: req.user.faculty.schoolId,
+          permissionId: READ_ALL_SCHOOL_YEAR_PERMISSION,
+        },
+      );
+
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to assess this resource.',
       );
 
-    // const user = await this.userService.findOne(req.user.sub, [
-    //   'assignedSchool',
-    // ]);
-    // return this.schoolYearService.findAll(user.assignedSchool.id);
+    return this.schoolYearService.findAll(req.user.faculty.schoolId);
   }
 
   @Get(':id')
   async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        schoolYear.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: schoolYear.schoolId,
+          permissionId: READ_ALL_SCHOOL_YEAR_PERMISSION,
+        },
       );
 
     if (!permission)
@@ -98,9 +111,12 @@ export class SchoolYearController {
   ) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        schoolYear.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: schoolYear.schoolId,
+          permissionId: UPDATE_SCHOOL_YEAR_PERMISSION,
+        },
       );
 
     if (!permission)
@@ -115,9 +131,12 @@ export class SchoolYearController {
   async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        schoolYear.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: schoolYear.schoolId,
+          permissionId: UPDATE_SCHOOL_YEAR_PERMISSION,
+        },
       );
 
     if (!permission)
@@ -133,9 +152,12 @@ export class SchoolYearController {
   async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        schoolYear.schoolId,
+      await this.validationService.validateSchoolFacultyPermission(
+        request.user.id,
+        {
+          schoolId: schoolYear.schoolId,
+          permissionId: DELETE_SCHOOL_YEAR_PERMISSION,
+        },
       );
 
     if (!permission)

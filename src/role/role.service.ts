@@ -33,7 +33,7 @@ export class RoleService {
     const newRole = this.roleRepository.create(role);
 
     await this.roleRepository.manager.transaction(async (manager) => {
-      await this.roleRepository.save(newRole);
+      await manager.save(newRole);
 
       await this.permissionService.createBulkRolePermissions(
         newRole.id,

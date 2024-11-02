@@ -12,6 +12,13 @@ export class ScheduleService {
     private readonly scheduleRepository: Repository<Schedules>,
   ) {}
 
+  async findOne(scheduleId: number) {
+    return this.scheduleRepository.findOne({
+      where: { id: scheduleId },
+      relations: ['classroom.school'],
+    });
+  }
+
   async findSchedule(classId: number, startDate: Date, endDate: Date) {
     const startTime = new Date(startDate);
     startTime.setHours(0, 0, 0, 0);
@@ -28,8 +35,11 @@ export class ScheduleService {
     return schedule;
   }
 
-  async createSchedule(schedule: ScheduleDetailDto) {
-    const newSchedule = this.scheduleRepository.create(schedule);
+  async createSchedule(classId: number, schedule: ScheduleDetailDto) {
+    const newSchedule = this.scheduleRepository.create({
+      ...schedule,
+      classId,
+    });
     await this.scheduleRepository.save(newSchedule);
 
     return newSchedule;
@@ -47,19 +57,5 @@ export class ScheduleService {
     if (res.affected === 0) throw new BadRequestException('Schedule not found');
 
     return true;
-  }
-
-  async validateSchoolAdminSchedulePermission(
-    userId: number,
-    scheduleId: number,
-  ) {
-    const schedule = await this.scheduleRepository.findOne({
-      where: {
-        id: scheduleId,
-        classroom: { school: { schoolAdminId: userId } },
-      },
-    });
-
-    return !!schedule;
   }
 }

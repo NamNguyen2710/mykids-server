@@ -9,7 +9,6 @@ export const ScheduleDetailSchema = z.object({
   location: z.string().nullish(),
   startTime: z.string(),
   endTime: z.string(),
-  classId: z.number(),
 });
 
 export type ScheduleDetailDto = z.infer<typeof ScheduleDetailSchema>;
