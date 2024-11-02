@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 export const UpdateSchoolSchema = z.object({
-  name: z.string(),
-  schoolAdminId: z.number(),
+  name: z.string().optional(),
   logoId: z.number().optional(),
   brandColor: z.string().optional(),
 });

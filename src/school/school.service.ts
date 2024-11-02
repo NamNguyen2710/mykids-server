@@ -6,18 +6,25 @@ import { CreateSchoolDto } from './dto/create-school.dto';
 import { UpdateSchoolDto } from './dto/update-school.dto';
 import { QuerySchoolDto } from 'src/school/dto/query-school.dto';
 import { Schools } from 'src/school/entities/school.entity';
-import { Users } from 'src/users/entity/users.entity';
+import { Parents } from 'src/users/entity/parent.entity';
+import { RoleService } from 'src/role/role.service';
 
 @Injectable()
 export class SchoolService {
   constructor(
     @InjectRepository(Schools)
     private readonly schoolRepository: Repository<Schools>,
+    private readonly roleService: RoleService,
   ) {}
 
   async create(createSchoolDto: CreateSchoolDto) {
     const school = this.schoolRepository.create(createSchoolDto);
     await this.schoolRepository.save(school);
+
+    await this.roleService.create({
+      name: 'Super Admin',
+      schoolId: school.id,
+    });
 
     return school;
   }
@@ -27,7 +34,6 @@ export class SchoolService {
 
     const [schools, total] = await this.schoolRepository.findAndCount({
       where: { name: ILike(`%${name}%`) },
-      relations: ['schoolAdmin'],
       take: limit,
       skip: (page - 1) * limit,
     });
@@ -57,7 +63,6 @@ export class SchoolService {
 
     const school = await this.schoolRepository.findOne({
       where: { id },
-      relations: ['schoolAdmin'],
     });
 
     return school;
@@ -105,7 +110,7 @@ export class SchoolService {
     if (!school) throw new NotFoundException('School not found');
 
     parentIds.forEach((parentId) =>
-      school.parents.push({ id: parentId } as Users),
+      school.parents.push({ userId: parentId } as Parents),
     );
     const manager = transactionalManager || this.schoolRepository.manager;
     await manager.save(school);
@@ -123,7 +128,7 @@ export class SchoolService {
     if (!school) throw new NotFoundException('School not found');
 
     school.parents = school.parents.filter((parent) =>
-      parentIds.every((parentId) => parentId !== parent.id),
+      parentIds.every((parentId) => parentId !== parent.userId),
     );
     const manager = transactionalManager || this.schoolRepository.manager;
     await manager.save(school);
