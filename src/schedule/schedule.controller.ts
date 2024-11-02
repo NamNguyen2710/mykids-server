@@ -65,7 +65,7 @@ export class ScheduleController {
       const { classPermission, allPermission } =
         await this.validationService.validateFacultySchoolClassPermission({
           userId: request.user.id,
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           classId,
           allPermissionId: READ_CLASS_SCHEDULE_PERMISSION,
           classPermissionId: READ_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
@@ -94,7 +94,7 @@ export class ScheduleController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId,
         allPermissionId: CREATE_CLASS_SCHEDULE_PERMISSION,
         classPermissionId: CREATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
@@ -119,7 +119,7 @@ export class ScheduleController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: oldSchedule.classroom.id,
         allPermissionId: UPDATE_CLASS_SCHEDULE_PERMISSION,
         classPermissionId: UPDATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
@@ -145,7 +145,7 @@ export class ScheduleController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: oldSchedule.classroom.id,
         allPermissionId: DELETE_CLASS_SCHEDULE_PERMISSION,
         classPermissionId: DELETE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,

@@ -47,6 +47,7 @@ export class SchoolYearController {
     @Body(new ZodValidationPipe(CreateSchoolYearSchema))
     createSchoolYearDto: CreateSchoolYearDto,
   ) {
+    createSchoolYearDto.schoolId = request.user.faculty?.schoolId;
     const permission =
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,

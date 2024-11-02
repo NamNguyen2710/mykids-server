@@ -31,7 +31,10 @@ export class SchoolYearService {
   }
 
   async findOne(id: number) {
-    const schoolYear = await this.schoolYearRepo.findOne({ where: { id } });
+    const schoolYear = await this.schoolYearRepo.findOne({
+      where: { id },
+      relations: ['classes'],
+    });
     return schoolYear;
   }
 
@@ -56,7 +59,7 @@ export class SchoolYearService {
       );
     });
 
-    return this.schoolYearRepo.findOne({ where: { id } });
+    return this.findOne(id);
   }
 
   async remove(id: number) {

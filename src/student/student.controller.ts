@@ -62,7 +62,7 @@ export class StudentController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: CREATE_STUDENT_PERMISSION,
         },
       );
@@ -86,7 +86,7 @@ export class StudentController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: query.classId,
         allPermissionId: READ_ALL_STUDENT_PERMISSION,
         classPermissionId: READ_ASSIGNED_CLASS_STUDENT_PERMISSION,

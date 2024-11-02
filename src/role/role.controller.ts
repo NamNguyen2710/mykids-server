@@ -75,7 +75,7 @@ export class RoleController {
       (await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: READ_ROLE_PERMISSION,
         },
       ));
@@ -84,7 +84,7 @@ export class RoleController {
 
     const role = await this.roleService.findOne(id);
     if (!role) throw new BadRequestException('Role not found');
-    if (role.schoolId !== request.user.faculty.schoolId)
+    if (role.schoolId !== request.user.faculty?.schoolId)
       throw new ForbiddenException('You do not have permission to read role');
 
     return ResponseRoleSchema.parse(role);

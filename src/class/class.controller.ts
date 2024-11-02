@@ -58,7 +58,7 @@ export class ClassController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: CREATE_CLASS_PERMISSION,
         },
       );
@@ -81,19 +81,18 @@ export class ClassController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         allPermissionId: READ_ALL_CLASS_PERMISSION,
         classPermissionId: READ_ASSIGNED_CLASS_PERMISSION,
       });
 
     const configedQuery: ConfigedQueryClassesDto = {
       ...query,
-      schoolId: request.user.faculty.schoolId,
+      schoolId: request.user.faculty?.schoolId,
     };
 
     if (!permission.allPermission) {
-      if (permission.classPermission)
-        configedQuery.facultyId = request.user.faculty.id;
+      if (permission.classPermission) configedQuery.facultyId = request.user.id;
       else
         throw new ForbiddenException(
           'You do not have permission to view classes in this school',
@@ -111,7 +110,7 @@ export class ClassController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: id,
         allPermissionId: READ_ALL_CLASS_PERMISSION,
         classPermissionId: READ_ASSIGNED_CLASS_PERMISSION,
@@ -136,7 +135,7 @@ export class ClassController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: id,
         allPermissionId: UPDATE_CLASS_PERMISSION,
         classPermissionId: UPDATE_ASSIGNED_CLASS_PERMISSION,
@@ -155,7 +154,7 @@ export class ClassController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: id,
         allPermissionId: UPDATE_CLASS_PERMISSION,
         classPermissionId: UPDATE_ASSIGNED_CLASS_PERMISSION,
@@ -175,7 +174,7 @@ export class ClassController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: id,
         allPermissionId: DELETE_CLASS_PERMISSION,
         classPermissionId: DELETE_ASSIGNED_CLASS_PERMISSION,

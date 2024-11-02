@@ -66,7 +66,7 @@ export class SchoolController {
   async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
     const permission =
       request.user.roleId === Role.SUPER_ADMIN ||
-      request.user.faculty.schoolId === id;
+      request.user.faculty?.schoolId === id;
     if (!permission)
       throw new ForbiddenException(
         'You do not have permission to access this resource',

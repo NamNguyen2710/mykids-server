@@ -4,7 +4,7 @@ export const CreateSchoolYearSchema = z.object({
   year: z.string(),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
-  schoolId: z.number(),
+  schoolId: z.number().optional(),
 });
 
 export type CreateSchoolYearDto = z.infer<typeof CreateSchoolYearSchema>;

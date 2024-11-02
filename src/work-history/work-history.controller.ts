@@ -50,7 +50,7 @@ export class WorkHistoryController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: ADD_CLASS_FACULTY_PERMISSION,
         },
       );
@@ -87,7 +87,7 @@ export class WorkHistoryController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: REMOVE_CLASS_FACULTY_PERMISSION,
         },
       );
@@ -114,7 +114,7 @@ export class WorkHistoryController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: DELETE_WORK_HISTORY_PERMISSION,
         },
       );

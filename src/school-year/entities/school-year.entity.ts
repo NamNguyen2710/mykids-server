@@ -1,7 +1,6 @@
 import { Classrooms } from 'src/class/entities/class.entity';
 import { Schools } from 'src/school/entities/school.entity';
 import {
-  AfterLoad,
   Column,
   Entity,
   JoinColumn,
@@ -36,9 +35,4 @@ export class SchoolYears {
 
   @OneToMany(() => Classrooms, (classroom) => classroom.schoolYear)
   classes: Classrooms[];
-
-  @AfterLoad()
-  removeIds() {
-    if (this.school) delete this.schoolId;
-  }
 }

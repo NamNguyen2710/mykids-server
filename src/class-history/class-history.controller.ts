@@ -56,7 +56,7 @@ export class ClassHistoryController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId,
         allPermissionId: ADD_CLASS_STUDENT_PERMISSION,
         classPermissionId: ADD_ASSIGNED_CLASS_STUDENT_PERMISSION,
@@ -95,7 +95,7 @@ export class ClassHistoryController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId,
         allPermissionId: UPDATE_CLASS_STUDENT_PERMISSION,
         classPermissionId: UPDATE_ASSIGNED_CLASS_STUDENT_PERMISSION,
@@ -122,7 +122,7 @@ export class ClassHistoryController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: request.user.faculty.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId,
         allPermissionId: REMOVE_CLASS_STUDENT_PERMISSION,
         classPermissionId: REMOVE_ASSIGNED_CLASS_STUDENT_PERMISSION,
@@ -151,7 +151,7 @@ export class ClassHistoryController {
       await this.validationService.validateSchoolFacultyPermission(
         request.user.id,
         {
-          schoolId: request.user.faculty.schoolId,
+          schoolId: request.user.faculty?.schoolId,
           permissionId: DELETE_CLASS_HISTORY_PERMISSION,
         },
       );
