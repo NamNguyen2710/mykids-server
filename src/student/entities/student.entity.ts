@@ -81,7 +81,7 @@ export class Students {
   @OneToMany(() => ClassHistories, (history) => history.student)
   history: ClassHistories[];
 
-  @OneToMany(() => Loa, (loa) => loa.studentId)
+  @OneToMany(() => Loa, (loa) => loa.student)
   loas: Loa[];
 
   @ManyToMany(() => Assets, (asset) => asset.students, {

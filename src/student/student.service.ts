@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
@@ -168,6 +172,8 @@ export class StudentService {
       relations: ['parents', 'history', 'loas'],
     });
     if (!student) throw new NotFoundException('Student not found');
+    if (!student.isActive)
+      throw new BadRequestException('Student is already inactive');
 
     await this.studentRepository.manager.transaction(async (manager) => {
       student.isActive = false;
@@ -200,9 +206,13 @@ export class StudentService {
       relations: ['parents'],
     });
     if (!student) throw new NotFoundException('Student not found');
+    if (student.isActive)
+      throw new BadRequestException('Student is already active');
 
     await this.studentRepository.manager.transaction(async (manager) => {
-      await manager.update(Students, id, { isActive: true });
+      student.isActive = true;
+      await manager.save(student);
+
       await this.schoolService.addParents(
         student.schoolId,
         student.parents.map((p) => p.parentId),
