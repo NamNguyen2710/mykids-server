@@ -26,12 +26,14 @@ import {
   UpdateSchoolYearDto,
   UpdateSchoolYearSchema,
 } from './dto/update-school-year.dto';
+
 import {
   CREATE_SCHOOL_YEAR_PERMISSION,
   DELETE_SCHOOL_YEAR_PERMISSION,
   READ_ALL_SCHOOL_YEAR_PERMISSION,
   UPDATE_SCHOOL_YEAR_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('school-year')
 @UseGuards(LoginGuard)
@@ -43,7 +45,7 @@ export class SchoolYearController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateSchoolYearSchema))
     createSchoolYearDto: CreateSchoolYearDto,
   ) {
@@ -84,7 +86,10 @@ export class SchoolYearController {
   }
 
   @Get(':id')
-  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
       await this.validationService.validateSchoolFacultyPermission(
@@ -105,7 +110,7 @@ export class SchoolYearController {
 
   @Put(':id')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateSchoolYearSchema))
     updateSchoolYearDto: UpdateSchoolYearDto,
@@ -129,7 +134,10 @@ export class SchoolYearController {
   }
 
   @Put(':id/deactivate')
-  async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async deactivate(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
       await this.validationService.validateSchoolFacultyPermission(
@@ -150,7 +158,10 @@ export class SchoolYearController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const schoolYear = await this.schoolYearService.findOne(id);
     const permission =
       await this.validationService.validateSchoolFacultyPermission(

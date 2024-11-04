@@ -13,10 +13,10 @@ import {
   HttpCode,
 } from '@nestjs/common';
 
-import { LoginGuard } from 'src/guard/login.guard';
 import { ClassService } from 'src/class/class.service';
 import { ValidationService } from 'src/users/validation.service';
 import { ClassHistoryService } from 'src/class-history/class-history.service';
+import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import {
@@ -27,6 +27,7 @@ import {
   CreateClassHistoriesDto,
   CreateClassHistoriesSchema,
 } from 'src/class-history/dto/create-class-histories.dto';
+
 import {
   ADD_ASSIGNED_CLASS_STUDENT_PERMISSION,
   ADD_CLASS_STUDENT_PERMISSION,
@@ -36,6 +37,7 @@ import {
   UPDATE_CLASS_STUDENT_PERMISSION,
   DELETE_CLASS_HISTORY_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('class/:classId/student')
 @UseGuards(LoginGuard)
@@ -48,7 +50,7 @@ export class ClassHistoryController {
 
   @Post('')
   async addStudents(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Body(new ZodValidationPipe(CreateClassHistoriesSchema))
     body: CreateClassHistoriesDto,
@@ -86,7 +88,7 @@ export class ClassHistoryController {
 
   @Put(':studentId')
   async updateStudent(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('studentId', ParseIntPipe) studentId: number,
     @Body(new ZodValidationPipe(UpdateClassHistorySchema))
@@ -115,7 +117,7 @@ export class ClassHistoryController {
 
   @Put(':studentId/remove')
   async removeStudent(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('studentId', ParseIntPipe) studentId: number,
   ) {
@@ -143,7 +145,7 @@ export class ClassHistoryController {
   @Delete(':studentId')
   @HttpCode(204)
   async delete(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('studentId', ParseIntPipe) studentId: number,
   ) {

@@ -17,14 +17,16 @@ import { ValidationService } from 'src/users/validation.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import { Role } from 'src/role/entities/roles.data';
 import { CreateSchoolDto, CreateSchoolSchema } from './dto/create-school.dto';
 import { UpdateSchoolDto, UpdateSchoolSchema } from './dto/update-school.dto';
 import {
   QuerySchoolDto,
   QuerySchoolSchema,
 } from 'src/school/dto/query-school.dto';
+
+import { Role } from 'src/role/entities/roles.data';
 import { UPDATE_SCHOOL_PERMISSION } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('school')
 @UseGuards(LoginGuard)
@@ -36,7 +38,7 @@ export class SchoolController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateSchoolSchema))
     createSchoolDto: CreateSchoolDto,
   ) {
@@ -50,7 +52,7 @@ export class SchoolController {
 
   @Get()
   async findAll(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QuerySchoolSchema))
     query: QuerySchoolDto,
   ) {
@@ -63,7 +65,10 @@ export class SchoolController {
   }
 
   @Get(':id')
-  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       request.user.roleId === Role.SUPER_ADMIN ||
       request.user.faculty?.schoolId === id;
@@ -77,7 +82,7 @@ export class SchoolController {
 
   @Put(':id/deactivate')
   async deactivateSchool(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
   ) {
     if (request.user.roleId !== Role.SUPER_ADMIN)
@@ -91,7 +96,7 @@ export class SchoolController {
 
   @Put(':id/activate')
   async activateSchool(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
   ) {
     if (request.user.roleId !== Role.SUPER_ADMIN)
@@ -104,7 +109,7 @@ export class SchoolController {
 
   @Put(':id')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateSchoolSchema))
     updateSchoolDto: UpdateSchoolDto,

@@ -21,6 +21,14 @@ import { ValidationService } from 'src/users/validation.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
 import { CreateRoleDto, CreateRoleSchema } from 'src/role/dto/create-role.dto';
+import { QueryRoleDto, QueryRoleSchema } from 'src/role/dto/query-role.dto';
+import {
+  UpdatePermissionsDto,
+  UpdatePermissionsSchema,
+} from 'src/role/dto/update-permissions.dto';
+import { ResponseRoleSchema } from 'src/role/dto/response-role.dto';
+
+import { Role } from 'src/role/entities/roles.data';
 import {
   CREATE_ROLE_PERMISSION,
   DELETE_ROLE_PERMISSION,
@@ -28,13 +36,7 @@ import {
   READ_ROLE_PERMISSION,
   UPDATE_ROLE_PERMISSION,
 } from 'src/role/entities/permission.data';
-import {
-  UpdatePermissionsDto,
-  UpdatePermissionsSchema,
-} from 'src/role/dto/update-permissions.dto';
-import { Role } from 'src/role/entities/roles.data';
-import { QueryRoleDto, QueryRoleSchema } from 'src/role/dto/query-role.dto';
-import { ResponseRoleSchema } from 'src/role/dto/response-role.dto';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @UseGuards(LoginGuard)
 @Controller('role')
@@ -47,7 +49,7 @@ export class RoleController {
 
   @Get()
   async findAll(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query(new ZodValidationPipe(QueryRoleSchema)) query: QueryRoleDto,
   ) {
     if (req.user.roleId === Role.SUPER_ADMIN) {
@@ -69,7 +71,10 @@ export class RoleController {
   }
 
   @Get(':id')
-  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       request.user.roleId === Role.SUPER_ADMIN ||
       (await this.validationService.validateSchoolFacultyPermission(
@@ -92,7 +97,7 @@ export class RoleController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateRoleSchema)) role: CreateRoleDto,
   ) {
     const permission =
@@ -112,7 +117,7 @@ export class RoleController {
 
   @Put(':id')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body('name') roleName: string,
   ) {
@@ -135,7 +140,10 @@ export class RoleController {
   }
 
   @Delete(':id')
-  async delete(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async delete(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const role = await this.roleService.findOne(id);
     if (!role) throw new BadRequestException('Role not found');
 
@@ -156,7 +164,7 @@ export class RoleController {
 
   @Get(':id/permissions')
   async findPermissionsByRole(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const role = await this.roleService.findOne(id);
@@ -182,7 +190,7 @@ export class RoleController {
 
   @Put(':id/permissions')
   async updatePermissions(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) roleId: number,
     @Body(new ZodValidationPipe(UpdatePermissionsSchema))
     body: UpdatePermissionsDto,

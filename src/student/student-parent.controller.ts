@@ -26,6 +26,7 @@ import {
   UpdateParentDto,
   UpdateParentSchema,
 } from 'src/student/dto/update-parent.dto';
+
 import {
   CREATE_PARENT_PERMISSION,
   DELETE_PARENT_PERMISSION,
@@ -33,6 +34,7 @@ import {
   READ_ASSIGNED_CLASS_STUDENT_PERMISSION,
   UPDATE_PARENT_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('student/:studentId/parent')
 @UseGuards(LoginGuard)
@@ -45,7 +47,7 @@ export class StudentParentController {
 
   @Get('')
   async findParents(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
   ) {
     const permission =
@@ -74,7 +76,7 @@ export class StudentParentController {
 
   @Post('')
   async addStudentParent(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
     @Body(new ZodValidationPipe(CreateParentSchema))
     createParentDto: CreateParentDto,
@@ -100,7 +102,7 @@ export class StudentParentController {
 
   @Put(':parentId')
   async updateStudentParent(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
     @Param('parentId', ParseIntPipe) parentId: number,
     @Body(new ZodValidationPipe(UpdateParentSchema))
@@ -129,7 +131,7 @@ export class StudentParentController {
   @Delete(':parentId')
   @HttpCode(204)
   async removeStudentParent(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
     @Param('parentId', ParseIntPipe) parentId: number,
   ) {

@@ -21,14 +21,14 @@ import { ValidationService } from 'src/users/validation.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import { Role } from 'src/role/entities/roles.data';
-import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
 import { QueryUserDto, QueryUserSchema } from './dto/query-user.dto';
+import { CreateUserDto, CreateUserSchema } from './dto/create-user.dto';
+import { UpdateUserDto, UpdateUserSchema } from 'src/users/dto/update-user.dto';
 import { ResponseParentSchema } from 'src/users/dto/response-parent.dto';
 import { ResponseFacultySchema } from 'src/users/dto/response-faculty.dto';
 import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto';
-import { UpdateUserDto, UpdateUserSchema } from 'src/users/dto/update-user.dto';
 
+import { Role } from 'src/role/entities/roles.data';
 import {
   READ_SCHOOL_FACULTY_PERMISSION,
   READ_ALL_PARENT_PERMISSION,
@@ -36,6 +36,7 @@ import {
   UPDATE_SCHOOL_FACULTY_PERMISSION,
   DELETE_SCHOOL_FACULTY_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('user')
 @UseGuards(LoginGuard)
@@ -47,7 +48,7 @@ export class UsersController {
 
   @Get()
   async findAll(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryUserSchema)) query: QueryUserDto,
   ) {
     const user = await this.usersService.findOne(request.user.id, ['faculty']);
@@ -114,7 +115,10 @@ export class UsersController {
   }
 
   @Get(':userId')
-  async findOne(@Request() req, @Param('userId', ParseIntPipe) userId: number) {
+  async findOne(
+    @Request() req: RequestWithUser,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
     if (req.user.roleId === Role.PARENT)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
@@ -179,7 +183,7 @@ export class UsersController {
   // Create super admin or school faculty, not parent
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateUserSchema))
     createUserDto: CreateUserDto,
   ) {
@@ -216,7 +220,7 @@ export class UsersController {
   // Update super admin or school faculty, not parent
   @Put(':userId')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('userId', ParseIntPipe) userId: number,
     @Body(new ZodValidationPipe(UpdateUserSchema)) userDto: UpdateUserDto,
   ) {
@@ -244,7 +248,7 @@ export class UsersController {
 
   @Put(':userId/deactivate')
   async deactivate(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
     let permission: any = true;
@@ -268,7 +272,7 @@ export class UsersController {
 
   @Put(':userId/activate')
   async activate(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
     let permission: any = true;
@@ -293,7 +297,7 @@ export class UsersController {
   @Delete(':userId')
   @HttpCode(204)
   async delete(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
     let permission: any = true;

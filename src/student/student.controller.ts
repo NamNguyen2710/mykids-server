@@ -35,6 +35,7 @@ import {
   ResponseStdWithParentSchema,
   ResponseStudentSchema,
 } from 'src/student/dto/response-student.dto';
+
 import { Role } from 'src/role/entities/roles.data';
 import {
   CREATE_STUDENT_PERMISSION,
@@ -43,6 +44,7 @@ import {
   READ_ASSIGNED_CLASS_STUDENT_PERMISSION,
   UPDATE_STUDENT_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('student')
 @UseGuards(LoginGuard)
@@ -54,7 +56,7 @@ export class StudentController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateStudentSchema))
     createStudentDto: CreateStudentDto,
   ) {
@@ -79,7 +81,7 @@ export class StudentController {
 
   @Get()
   async findAll(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryStudentSchema))
     query: QueryStudentDto,
   ) {
@@ -101,7 +103,10 @@ export class StudentController {
   }
 
   @Get(':id')
-  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     let permission;
 
     if (request.user.roleId === Role.PARENT) {
@@ -139,7 +144,7 @@ export class StudentController {
 
   @Put(':id')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) studentId: number,
     @Body(new ZodValidationPipe(UpdateStudentSchema))
     updateStudentDto: UpdateStudentDto,
@@ -177,7 +182,7 @@ export class StudentController {
   @Delete(':id')
   @HttpCode(204)
   async deactivate(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) studentId: number,
   ) {
     const student = await this.studentService.findOne(studentId);
@@ -198,7 +203,7 @@ export class StudentController {
 
   @Post(':id/activate')
   async activate(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) studentId: number,
   ) {
     const student = await this.studentService.findOne(studentId);

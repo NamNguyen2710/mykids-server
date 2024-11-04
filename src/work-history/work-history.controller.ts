@@ -28,6 +28,7 @@ import {
   REMOVE_CLASS_FACULTY_PERMISSION,
   DELETE_WORK_HISTORY_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('class/:classId/faculty/:facultyId')
 @UseGuards(LoginGuard)
@@ -40,7 +41,7 @@ export class WorkHistoryController {
 
   @Post()
   async addFaculty(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('facultyId', ParseIntPipe) facultyId: number,
     @Body(new ZodValidationPipe(CreateWorkHistorySchema))
@@ -79,7 +80,7 @@ export class WorkHistoryController {
 
   @Put('end')
   async removeFaculty(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('facultyId', ParseIntPipe) facultyId: number,
   ) {
@@ -106,7 +107,7 @@ export class WorkHistoryController {
   @Delete()
   @HttpCode(204)
   async delete(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Param('facultyId', ParseIntPipe) facultyId: number,
   ) {

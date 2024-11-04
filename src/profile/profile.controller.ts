@@ -18,9 +18,7 @@ import { StudentService } from 'src/student/student.service';
 import { LoginGuard } from 'src/guard/login.guard';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 
-import { Role } from '../role/entities/roles.data';
 import { ParentProfileSchema } from 'src/profile/dto/response-parent-profile.dto';
-import { ResponseFacultySchema } from 'src/users/dto/response-faculty.dto';
 // import {
 //   UpdateParentProfileDto,
 //   UpdateParentProfileSchema,
@@ -29,8 +27,12 @@ import {
   UpdateStudentDto,
   UpdateStudentSchema,
 } from 'src/student/dto/update-student.dto';
+import { ResponseFacultySchema } from 'src/users/dto/response-faculty.dto';
 import { ResponseStudentSchema } from 'src/student/dto/response-student.dto';
 import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto';
+
+import { Role } from '../role/entities/roles.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('profile')
 @UseGuards(LoginGuard)
@@ -64,7 +66,7 @@ export class ProfileController {
 
   // @Put()
   // async update(
-  //   @Request() request,
+  //   @Request() request: RequestWithUser,
   //   @Body(new ZodValidationPipe(UpdateParentProfileSchema))
   //   user: UpdateParentProfileDto,
   // ): Promise<any> {
@@ -73,7 +75,7 @@ export class ProfileController {
 
   @Put('children/:studentId')
   async updateChildrenProfile(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe)
     studentId: number,
     @Body(new ZodValidationPipe(UpdateStudentSchema))

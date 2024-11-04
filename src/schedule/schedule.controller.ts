@@ -27,8 +27,9 @@ import {
   ScheduleDetailDto,
   ScheduleDetailSchema,
 } from 'src/schedule/dto/schedule-detail.dto';
-import { Role } from 'src/role/entities/roles.data';
 import { UpdateScheduleDto } from 'src/schedule/dto/update-schedule.dto';
+
+import { Role } from 'src/role/entities/roles.data';
 import {
   CREATE_CLASS_SCHEDULE_PERMISSION,
   CREATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
@@ -39,6 +40,7 @@ import {
   UPDATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
   UPDATE_CLASS_SCHEDULE_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('class/:classId/schedule')
 @UseGuards(LoginGuard)
@@ -50,7 +52,7 @@ export class ScheduleController {
 
   @Get()
   async getSchedule(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Query(new ZodValidationPipe(QueryScheduleSchema))
     query: QueryScheduleDto,
@@ -86,7 +88,7 @@ export class ScheduleController {
 
   @Post()
   async createSchedule(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('classId', ParseIntPipe) classId: number,
     @Body(new ZodValidationPipe(ScheduleDetailSchema))
     body: ScheduleDetailDto,
@@ -109,7 +111,7 @@ export class ScheduleController {
 
   @Put(':id')
   async updateSchedule(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(ScheduleDetailSchema))
     body: UpdateScheduleDto,
@@ -137,7 +139,7 @@ export class ScheduleController {
   @Delete(':id')
   @HttpCode(204)
   async deleteSchedule(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
   ) {
     const oldSchedule = await this.scheduleService.findOne(id);

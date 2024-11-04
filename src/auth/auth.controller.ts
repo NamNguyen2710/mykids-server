@@ -21,7 +21,9 @@ import {
   VerifyResetOTPSchema,
 } from 'src/auth/dto/verifyResetOtp.dto';
 import { LoginDto, LoginSchema } from './dto/login.dto';
+
 import { GRANT_TYPE } from 'src/auth/entities/grant_type.data';
+import { RequestWithClient } from 'src/utils/request-with-client';
 
 @Controller('login')
 export class AuthController {
@@ -30,7 +32,7 @@ export class AuthController {
   @UseGuards(ClientGuard)
   @Post()
   async login(
-    @Request() req,
+    @Request() req: RequestWithClient,
     @Body(new ZodValidationPipe(LoginSchema)) loginDto: LoginDto,
   ) {
     if (loginDto.grantType === GRANT_TYPE.OTP) {
@@ -51,7 +53,7 @@ export class AuthController {
   async verify(
     @Body(new ZodValidationPipe(VerifyLoginOTPSchema))
     verifyDto: VerifyLoginOTPDTO,
-    @Request() req,
+    @Request() req: RequestWithClient,
   ) {
     return this.authService.verifyLoginOtp(verifyDto, req.client);
   }

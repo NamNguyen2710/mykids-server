@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 
 import { ClassService } from './class.service';
+import { ValidationService } from 'src/users/validation.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { LoginGuard } from 'src/guard/login.guard';
 
@@ -29,7 +30,7 @@ import {
   ResponseClassSchema,
   DefaultClassSchema,
 } from 'src/class/dto/response-class.dto';
-import { ValidationService } from 'src/users/validation.service';
+
 import {
   CREATE_CLASS_PERMISSION,
   DELETE_ASSIGNED_CLASS_PERMISSION,
@@ -39,6 +40,7 @@ import {
   UPDATE_ASSIGNED_CLASS_PERMISSION,
   UPDATE_CLASS_PERMISSION,
 } from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @Controller('class')
 @UseGuards(LoginGuard)
@@ -50,7 +52,7 @@ export class ClassController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(CreateClassSchema))
     createClassDto: CreateClassDto,
   ) {
@@ -75,7 +77,7 @@ export class ClassController {
 
   @Get()
   async findAll(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryClassesSchema)) query: QueryClassesDto,
   ) {
     const permission =
@@ -106,7 +108,10 @@ export class ClassController {
   }
 
   @Get(':id')
-  async findOne(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async findOne(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
@@ -127,7 +132,7 @@ export class ClassController {
 
   @Put(':id')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateClassSchema))
     updateClassDto: UpdateClassDto,
@@ -150,7 +155,10 @@ export class ClassController {
   }
 
   @Put(':id/deactivate')
-  async deactivate(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async deactivate(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
@@ -170,7 +178,10 @@ export class ClassController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Request() request, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Request() request: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
