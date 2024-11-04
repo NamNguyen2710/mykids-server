@@ -20,13 +20,33 @@ import { AlbumService } from './album.service';
 import { ValidationService } from 'src/users/validation.service';
 
 import { CreateAlbumDto, CreateAlbumSchema } from './dto/create-album.dto';
-import { QueryAlbumDto, QueryAlbumSchema } from './dto/query-album.dto';
+import {
+  ConfigedQueryAlbumDto,
+  QueryAlbumDto,
+  QueryAlbumSchema,
+} from './dto/query-album.dto';
 import {
   UpdateAlbumDto,
   UpdateAlbumSchema,
 } from 'src/album/dto/update-album.dto';
-import * as Role from 'src/users/entity/roles.data';
-import { Users } from 'src/users/entity/users.entity';
+import { ResponseAlbumSchema } from 'src/album/dto/response-album.dto';
+
+import { Role } from 'src/role/entities/roles.data';
+import {
+  CREATE_ALBUM_PERMISSION,
+  CREATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+  CREATE_SCHOOL_ALBUM_PERMISSION,
+  DELETE_ALL_ALBUM_PERMISSION,
+  DELETE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+  DELETE_SCHOOL_ALBUM_PERMISSION,
+  READ_ALL_ALBUM_PERMISSION,
+  READ_ASSIGNED_CLASS_ALBUM_PERMISSION,
+  READ_SCHOOL_ALBUM_PERMISSION,
+  UPDATE_ALL_ALBUM_PERMISSION,
+  UPDATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+  UPDATE_SCHOOL_ALBUM_PERMISSION,
+} from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @UseGuards(LoginGuard)
 @Controller('album')
@@ -38,108 +58,240 @@ export class AlbumController {
 
   @Post()
   async create(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Body(new ZodValidationPipe(CreateAlbumSchema))
     createAlbumDto: CreateAlbumDto,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        req.user.sub,
-        createAlbumDto.schoolId,
-      );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to create album in this school',
-      );
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: req.user.id,
+        schoolId: req.user.faculty?.schoolId,
+        classId: createAlbumDto.classId,
+        allPermissionId: CREATE_ALBUM_PERMISSION,
+        classPermissionId: CREATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+        schoolPermissionId: CREATE_SCHOOL_ALBUM_PERMISSION,
+      });
+    if (!permission.allPermission) {
+      if (createAlbumDto.classId) {
+        if (!permission.classPermission)
+          throw new ForbiddenException(
+            'You do not have permission to create album in this class',
+          );
+      } else {
+        if (!permission.schoolPermission)
+          throw new ForbiddenException(
+            'You do not have permission to create album in this school',
+          );
+      }
+    }
 
-    return this.albumService.createAlbum(req.user.sub, createAlbumDto);
+    createAlbumDto.schoolId = req.user.faculty.schoolId;
+    const res = await this.albumService.createAlbum(
+      req.user.id,
+      createAlbumDto,
+    );
+    return ResponseAlbumSchema.parse(res);
   }
 
   @Get()
   async findAll(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Query(new ZodValidationPipe(QueryAlbumSchema))
     query: QueryAlbumDto,
   ) {
-    let permission: Users | null = null;
-    if (req.user.role === Role.SchoolAdmin.name)
-      permission = await this.validationService.validateSchoolAdminPermission(
-        req.user.sub,
-        query.schoolId,
-      );
-    if (req.user.role === Role.Parent.name)
-      permission = await this.validationService.validateParentSchoolPermission(
-        req.user.sub,
-        query.schoolId,
-      );
+    let configedQuery: ConfigedQueryAlbumDto = {
+      page: query.page,
+      limit: query.limit,
+      isPublished: query.isPublished,
+    };
 
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to view albums in this school',
-      );
+    if (req.user.roleId === Role.PARENT) {
+      const permission =
+        await this.validationService.validateParentChildrenPermission(
+          req.user.id,
+          query.studentId,
+        );
 
-    return this.albumService.findAll(query);
+      if (!permission)
+        throw new ForbiddenException(
+          'You do not have permission to view albums for this student',
+        );
+
+      configedQuery = {
+        ...configedQuery,
+        studentId: query.studentId,
+        isPublished: true,
+      };
+    } else {
+      const permission =
+        await this.validationService.validateFacultySchoolClassPermission({
+          userId: req.user.id,
+          schoolId: req.user.faculty?.schoolId,
+          classId: query.classId,
+          allPermissionId: READ_ALL_ALBUM_PERMISSION,
+          classPermissionId: READ_ASSIGNED_CLASS_ALBUM_PERMISSION,
+          schoolPermissionId: READ_SCHOOL_ALBUM_PERMISSION,
+        });
+
+      if (
+        !permission.allPermission &&
+        !permission.classPermission &&
+        !permission.schoolPermission
+      ) {
+        throw new ForbiddenException(
+          'You do not have permission to view albums',
+        );
+      }
+
+      if (query.classId) {
+        if (permission.allPermission || permission.classPermission) {
+          configedQuery = {
+            ...configedQuery,
+            classId: query.classId,
+          };
+        }
+      } else {
+        if (permission.allPermission) {
+          configedQuery = {
+            ...configedQuery,
+            schoolId: req.user.faculty.schoolId,
+          };
+        } else {
+          if (permission.classPermission)
+            configedQuery = {
+              ...configedQuery,
+              facultyId: req.user.id,
+            };
+          if (permission.schoolPermission)
+            configedQuery = {
+              ...configedQuery,
+              schoolId: req.user.faculty.schoolId,
+              classId: null,
+            };
+        }
+      }
+    }
+
+    return this.albumService.findAll(configedQuery);
   }
 
   @Get(':albumId')
   async findOne(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('albumId', ParseIntPipe) albumId: number,
   ) {
-    let permission = false;
-    if (req.user.role === Role.SchoolAdmin.name)
-      permission = permission =
-        await this.albumService.validateAlbumAdminPermission(
-          albumId,
-          req.user.sub,
-        );
-    if (req.user.role === Role.Parent.name)
-      permission = await this.albumService.validateAlbumParentPermission(
+    if (req.user.roleId === Role.PARENT) {
+      const permission = await this.albumService.validateAlbumParentPermission(
         albumId,
-        req.user.sub,
+        req.user.id,
       );
 
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to view this album',
-      );
+      if (!permission)
+        throw new ForbiddenException(
+          'You do not have permission to view this album',
+        );
 
-    return this.albumService.findOne(albumId);
+      return ResponseAlbumSchema.parse(permission);
+    } else {
+      const album = await this.albumService.findOne(albumId);
+
+      const permission =
+        await this.validationService.validateFacultySchoolClassPermission({
+          userId: req.user.id,
+          schoolId: album.schoolId,
+          classId: album.classId,
+          allPermissionId: READ_ALL_ALBUM_PERMISSION,
+          classPermissionId: READ_ASSIGNED_CLASS_ALBUM_PERMISSION,
+          schoolPermissionId: READ_SCHOOL_ALBUM_PERMISSION,
+        });
+
+      if (!permission.allPermission) {
+        if (album.classId) {
+          if (!permission.classPermission)
+            throw new ForbiddenException(
+              'You do not have permission to view this album',
+            );
+        } else {
+          if (!permission.schoolPermission)
+            throw new ForbiddenException(
+              'You do not have permission to view this album',
+            );
+        }
+      }
+
+      return ResponseAlbumSchema.parse(album);
+    }
   }
 
   @Put(':albumId')
   async update(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('albumId', ParseIntPipe) albumId: number,
     @Body(new ZodValidationPipe(UpdateAlbumSchema))
     updateAlbumDto: UpdateAlbumDto,
   ) {
-    const permission = await this.albumService.validateAlbumAdminPermission(
-      albumId,
-      req.user.sub,
-    );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to update this album',
-      );
+    const album = await this.albumService.findOne(albumId);
 
-    return this.albumService.update(albumId, updateAlbumDto);
+    const permission =
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: req.user.id,
+        schoolId: album.schoolId,
+        classId: album.classId,
+        allPermissionId: UPDATE_ALL_ALBUM_PERMISSION,
+        classPermissionId: UPDATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+        schoolPermissionId: UPDATE_SCHOOL_ALBUM_PERMISSION,
+      });
+
+    if (!permission.allPermission) {
+      if (album.classId) {
+        if (!permission.classPermission)
+          throw new ForbiddenException(
+            'You do not have permission to update this album',
+          );
+      } else {
+        if (!permission.schoolPermission)
+          throw new ForbiddenException(
+            'You do not have permission to update this album',
+          );
+      }
+    }
+
+    const res = await this.albumService.update(albumId, updateAlbumDto);
+    return ResponseAlbumSchema.parse(res);
   }
 
   @Delete(':albumId')
   @HttpCode(204)
   async remove(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('albumId', ParseIntPipe) albumId: number,
   ) {
-    const permission = await this.albumService.validateAlbumAdminPermission(
-      albumId,
-      req.user.sub,
-    );
-    if (!permission)
-      throw new ForbiddenException(
-        'You do not have permission to delete this album',
-      );
+    const album = await this.albumService.findOne(albumId);
+
+    const permission =
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: req.user.id,
+        schoolId: album.schoolId,
+        classId: album.classId,
+        allPermissionId: DELETE_ALL_ALBUM_PERMISSION,
+        classPermissionId: DELETE_ASSIGNED_CLASS_ALBUM_PERMISSION,
+        schoolPermissionId: DELETE_SCHOOL_ALBUM_PERMISSION,
+      });
+
+    if (!permission.allPermission) {
+      if (album.classId) {
+        if (!permission.classPermission)
+          throw new ForbiddenException(
+            'You do not have permission to update this album',
+          );
+      } else {
+        if (!permission.schoolPermission)
+          throw new ForbiddenException(
+            'You do not have permission to update this album',
+          );
+      }
+    }
+
     return this.albumService.remove(albumId);
   }
 }

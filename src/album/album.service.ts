@@ -4,41 +4,29 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Brackets } from 'typeorm';
 
 import { Albums } from './entities/album.entity';
 import { CreateAlbumDto } from './dto/create-album.dto';
-import { QueryAlbumDto } from './dto/query-album.dto';
+import { ConfigedQueryAlbumDto } from './dto/query-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 
-import { ClassService } from 'src/class/class.service';
 import { AssetService } from 'src/asset/asset.service';
+import { UserService } from 'src/users/users.service';
+import { StudentService } from 'src/student/student.service';
 
 @Injectable()
 export class AlbumService {
   constructor(
     @InjectRepository(Albums)
     private readonly albumRepo: Repository<Albums>,
+    private readonly userService: UserService,
     private readonly assetService: AssetService,
-    private readonly classService: ClassService,
+    private readonly studentService: StudentService,
   ) {}
 
   // Create new album
   async createAlbum(userId: number, createAlbumDto: CreateAlbumDto) {
-    const { schoolId, classId } = createAlbumDto;
-
-    if (classId) {
-      const classEntity = await this.classService.validateSchoolClass(
-        schoolId,
-        classId,
-      );
-      if (!classEntity) {
-        throw new BadRequestException(
-          `Class with id cannot be found in user school!`,
-        );
-      }
-    }
-
     const album = this.albumRepo.create({
       ...createAlbumDto,
       createdById: userId,
@@ -47,36 +35,93 @@ export class AlbumService {
         : createAlbumDto.publishedDate,
     });
 
-    return this.albumRepo.save(album);
+    await this.albumRepo.save(album);
+    return this.findOne(album.id);
   }
 
-  async findAll(query: QueryAlbumDto) {
-    const { schoolId, limit = 20, page = 1 } = query;
+  async findAll(query: ConfigedQueryAlbumDto) {
+    const { limit = 20, page = 1 } = query;
     const skip = (page - 1) * limit;
 
-    const queryBuilder = this.albumRepo
+    const qb = this.albumRepo
       .createQueryBuilder('album')
       .leftJoin('album.school', 'school')
-      .leftJoinAndSelect('album.class', 'class')
+      .leftJoinAndSelect('album.classroom', 'class')
       .leftJoinAndSelect('album.createdBy', 'createdBy')
-      .leftJoinAndSelect('createdBy.logo', 'logo')
+      .leftJoinAndSelect('createdBy.user', 'user')
+      .leftJoinAndSelect('user.logo', 'logo')
       .leftJoin('album.assets', 'assets')
       .addSelect([
         'COUNT(DISTINCT assets.id) as assetcount',
         `COALESCE(JSON_AGG(JSON_BUILD_OBJECT('id', assets.id,'url', assets.url)) FILTER (WHERE assets.id IS NOT NULL), '[]') AS assets`,
       ])
-      .where('album.schoolId = :schoolId', { schoolId })
-      .andWhere('album.isPublished = true')
       .groupBy('album.id')
       .addGroupBy('school.id')
       .addGroupBy('class.id')
-      .addGroupBy('createdBy.id')
+      .addGroupBy('createdBy.userId')
+      .addGroupBy('user.id')
       .addGroupBy('logo.id')
-      .orderBy('album.createdDate', 'DESC')
-      .offset(skip)
-      .limit(limit);
+      .orderBy('album.createdDate', 'DESC');
 
-    const albums = await queryBuilder.getRawMany();
+    if (query.isPublished !== undefined) {
+      qb.where('album.isPublished = :isPublished', {
+        isPublished: query.isPublished,
+      });
+    }
+
+    if (query.studentId) {
+      const student = await this.studentService.findOne(query.studentId, [
+        'school',
+        'history',
+      ]);
+      const schoolId = student.schoolId,
+        classIds = student.history.map((h) => h.classId);
+
+      qb.andWhere(
+        new Brackets((qb) => {
+          qb.where('album.classId IS NULL')
+            .andWhere('album.schoolId = :schoolId', { schoolId })
+            .orWhere('album.classId IN (:...classIds)', { classIds });
+        }),
+      );
+    }
+
+    if (query.facultyId) {
+      const user = await this.userService.findOne(query.facultyId, [
+        'faculty.history',
+      ]);
+      const classIds = user.faculty.history.map((h) => h.classId);
+
+      // CASE 1: School album and faculty's assigned classes album
+      if (query.schoolId) {
+        qb.andWhere(
+          new Brackets((qb) => {
+            qb.where('album.classId IS NULL')
+              .andWhere('album.schoolId = :schoolId', {
+                schoolId: query.schoolId,
+              })
+              .orWhere('album.classId IN (:...classIds)', { classIds });
+          }),
+        );
+        // CASE 2: Faculty's assigned classes album
+      } else qb.andWhere('album.classId IN (:...classIds)', { classIds });
+    } else {
+      // CASE 3: All School and classes album
+      qb.andWhere('album.schoolId = :schoolId', { schoolId: query.schoolId });
+
+      // CASE 4: School album
+      if (query.classId === null) qb.andWhere('album.classId IS NULL');
+    }
+
+    // CASE 5: Class album
+    if (query.classId) {
+      qb.andWhere('album.classId = :classId', {
+        classId: query.classId,
+      });
+    }
+
+    const totalItems = await qb.getCount();
+    const albums = await qb.offset(skip).limit(limit).getRawMany();
     const res = albums.map((album) => ({
       id: album.album_album_id,
       title: album.album_title,
@@ -84,14 +129,14 @@ export class AlbumService {
       createdDate: album.album_created_date,
       updatedDate: album.album_updated_date,
       publishedDate: album.album_published_date,
-      classroom: {
+      classroom: album.class_class_id && {
         id: album.class_class_id,
         name: album.class_name,
       },
       createdBy: {
         id: album.createdBy_user_id,
-        firstName: album.createdBy_first_name,
-        lastName: album.createdBy_last_name,
+        firstName: album.user_first_name,
+        lastName: album.user_last_name,
         logo: album.logo_asset_id
           ? {
               id: album.logo_asset_id,
@@ -99,11 +144,9 @@ export class AlbumService {
             }
           : null,
       },
-      assetCount: album.assetcount,
+      assetCount: Number(album.assetcount),
       assets: album.assets,
     }));
-
-    const totalItems = await this.albumRepo.count({ where: { schoolId } });
 
     return {
       data: res,
@@ -117,7 +160,10 @@ export class AlbumService {
   }
 
   async findOne(albumId: number) {
-    const album = await this.albumRepo.findOne({ where: { id: albumId } });
+    const album = await this.albumRepo.findOne({
+      where: { id: albumId },
+      relations: ['createdBy.user', 'classroom'],
+    });
     return album;
   }
 
@@ -128,28 +174,17 @@ export class AlbumService {
     if (!albumEntity)
       throw new NotFoundException(`Album with ID ${albumId} not found`);
 
-    if (album.classId) {
-      const classEntity = await this.classService.validateSchoolClass(
-        albumEntity.schoolId,
-        album.classId,
-      );
-      if (!classEntity) {
-        throw new BadRequestException(
-          `Class with id cannot be found in user school!`,
-        );
-      }
-    }
-
     // Update array of assets to an album
     if (album.assetIds) {
       const assets = await this.assetService.findByIds(album.assetIds);
       albumEntity.assets = [...assets];
+      delete album.assetIds;
     }
 
     Object.assign(albumEntity, album);
     await this.albumRepo.save(albumEntity);
 
-    return albumEntity;
+    return this.findOne(albumId);
   }
 
   async remove(albumId: number): Promise<any> {
@@ -165,32 +200,35 @@ export class AlbumService {
         `Failed to remove album with ID ${albumId}`,
       );
     }
-    return { success: true, message: 'Album removed successfully' };
-  }
-
-  async validateAlbumAdminPermission(albumId: number, userId: number) {
-    const album = await this.albumRepo.findOne({
-      where: { id: albumId, school: { schoolAdminId: userId } },
-    });
-
-    return !!album;
   }
 
   async validateAlbumParentPermission(albumId: number, userId: number) {
     const album = await this.albumRepo.findOne({
       where: { id: albumId },
-      relations: ['school.parents', 'class.students.student.parents'],
+      relations: [
+        'school.parents',
+        'class.students.student.parents',
+        'createdBy.user',
+      ],
     });
-    if (!album) return false;
+    if (!album) return null;
 
-    if (album.class?.students)
-      return album.class.students.reduce((acc, student) => {
+    if (album.classroom?.students) {
+      const permission = album.classroom.students.reduce((acc, student) => {
         const parent = student.student.parents.find(
           (parent) => parent.parentId === userId,
         );
         return acc || !!parent;
       }, false);
 
-    return album.school.parents.some((parent) => parent.id === userId);
+      if (permission) return album;
+      else return null;
+    }
+
+    const permission = album.school.parents.some(
+      (parent) => parent.userId === userId,
+    );
+    if (permission) return album;
+    else return null;
   }
 }

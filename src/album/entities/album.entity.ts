@@ -7,6 +7,7 @@ import {
   UpdateDateColumn,
   ManyToMany,
   JoinTable,
+  JoinColumn,
 } from 'typeorm';
 import { Schools } from 'src/school/entities/school.entity';
 import { Classrooms } from 'src/class/entities/class.entity';
@@ -27,19 +28,24 @@ export class Albums {
   @Column()
   createdById: number;
 
-  @Column()
+  @Column({ nullable: true })
   classId: number;
 
   @Column({ default: true })
   isPublished: boolean;
 
   @ManyToOne(() => Schools, (school) => school.albums)
+  @JoinColumn({ name: 'school_id' })
   school: Schools;
 
-  @ManyToOne(() => Classrooms, (classrooms) => classrooms.albums)
-  class: Classrooms;
+  @ManyToOne(() => Classrooms, (classrooms) => classrooms.albums, {
+    nullable: true,
+  })
+  @JoinColumn({ name: 'class_id' })
+  classroom: Classrooms;
 
   @ManyToOne(() => SchoolFaculties, (user) => user.albums)
+  @JoinColumn({ name: 'created_by_id' })
   createdBy: SchoolFaculties;
 
   @CreateDateColumn({ type: 'timestamptz' })

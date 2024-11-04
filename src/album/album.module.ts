@@ -5,11 +5,10 @@ import { AlbumService } from './album.service';
 import { AlbumController } from './album.controller';
 import { Albums } from './entities/album.entity';
 
-import { UsersModule } from 'src/users/users.module';
-import { ClassModule } from 'src/class/class.module';
+import { StudentModule } from 'src/student/student.module';
 
 @Module({
-  imports: [UsersModule, ClassModule, TypeOrmModule.forFeature([Albums])],
+  imports: [TypeOrmModule.forFeature([Albums]), StudentModule],
   controllers: [AlbumController],
   providers: [AlbumService],
   exports: [AlbumService],
