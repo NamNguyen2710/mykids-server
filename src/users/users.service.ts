@@ -32,7 +32,7 @@ export class UserService {
     private readonly workHistoryService: WorkHistoryService,
   ) {}
 
-  async findAll(relations: string[] = [], query: QueryUserDto) {
+  async findAll(query: QueryUserDto, relations: string[] = []) {
     const {
       limit = 20,
       page = 1,
@@ -49,32 +49,30 @@ export class UserService {
       whereClause.lastName = ILike(`%${query.q}%`);
     }
 
-    if (query.roleId) {
-      whereClause['roleId'] = query.roleId;
+    if (query.roleId) whereClause['roleId'] = query.roleId;
 
-      if (query.roleId === Role.PARENT) {
-        if (query.schoolId) {
-          whereClause.parent = { schools: { id: query.schoolId } };
-        }
-        if (query.classId) {
-          whereClause.parent = {
-            ...((whereClause.parent as any) || {}),
-            children: { student: { history: { classId: query.classId } } },
-          };
-        }
-        if (query.phoneNumber) {
-          whereClause.phoneNumber = ILike(`%${query.phoneNumber}%`);
-        }
-      } else if (query.roleId !== Role.SUPER_ADMIN) {
-        if (query.schoolId) {
-          whereClause.faculty = { schoolId: query.schoolId };
-        }
-        if (query.classId) {
-          whereClause.faculty = {
-            ...((whereClause.faculty as any) || {}),
-            history: { classId: query.classId },
-          };
-        }
+    if (query.roleId === Role.PARENT) {
+      if (query.schoolId) {
+        whereClause.parent = { schools: { id: query.schoolId } };
+      }
+      if (query.classId) {
+        whereClause.parent = {
+          ...((whereClause.parent as any) || {}),
+          children: { student: { history: { classId: query.classId } } },
+        };
+      }
+      if (query.phoneNumber) {
+        whereClause.phoneNumber = ILike(`%${query.phoneNumber}%`);
+      }
+    } else if (query.roleId !== Role.SUPER_ADMIN) {
+      if (query.schoolId) {
+        whereClause.faculty = { schoolId: query.schoolId };
+      }
+      if (query.classId) {
+        whereClause.faculty = {
+          ...((whereClause.faculty as any) || {}),
+          history: { classId: query.classId },
+        };
       }
     }
 

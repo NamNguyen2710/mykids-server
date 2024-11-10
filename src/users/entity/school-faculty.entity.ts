@@ -7,9 +7,10 @@ import {
   OneToOne,
   OneToMany,
 } from 'typeorm';
-import { Schools } from 'src/school/entities/school.entity';
+import { Loa } from 'src/loa/entities/loa.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { Albums } from 'src/album/entities/album.entity';
+import { Schools } from 'src/school/entities/school.entity';
 import { WorkHistories } from 'src/work-history/entities/work-history.entity';
 
 @Entity()
@@ -33,4 +34,7 @@ export class SchoolFaculties {
 
   @OneToMany(() => Albums, (album) => album.createdBy)
   albums: Albums[];
+
+  @OneToMany(() => Loa, (loa) => loa.reviewer)
+  loas: Loa[];
 }

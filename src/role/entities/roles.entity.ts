@@ -10,6 +10,7 @@ import { Users } from 'src/users/entity/users.entity';
 import { AppClientsRole } from 'src/auth/entities/client_role.entity';
 import { RolePermissions } from 'src/role/entities/role-permission.entity';
 import { Schools } from 'src/school/entities/school.entity';
+import { BaseNotifications } from 'src/base-notification/entities/base-notification.entity';
 
 @Entity()
 export class Roles {
@@ -34,4 +35,7 @@ export class Roles {
 
   @OneToMany(() => RolePermissions, (role) => role.role)
   permissions: RolePermissions[];
+
+  @OneToMany(() => BaseNotifications, (notification) => notification.role)
+  baseNotifications: BaseNotifications[];
 }

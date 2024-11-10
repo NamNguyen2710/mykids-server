@@ -7,7 +7,7 @@ export const QueryUserSchema = z.object({
   phoneNumber: z.string().optional(),
   sort: z.string().optional(),
   order: z.string().optional(),
-  roleId: z.coerce.number().int().positive(),
+  roleId: z.coerce.number().int().positive().optional(),
   schoolId: z.coerce.number().int().positive().optional(),
   classId: z.coerce.number().int().positive().optional(),
   isActive: z

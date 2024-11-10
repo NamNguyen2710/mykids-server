@@ -7,10 +7,10 @@ import {
   JoinColumn,
   ManyToMany,
 } from 'typeorm';
-import { StudentsParents } from 'src/student/entities/students-parents.entity';
+import { Loa } from 'src/loa/entities/loa.entity';
 import { Users } from 'src/users/entity/users.entity';
 import { Schools } from 'src/school/entities/school.entity';
-import { Loa } from 'src/loa/entities/loa.entity';
+import { StudentsParents } from 'src/student/entities/students-parents.entity';
 
 @Entity()
 export class Parents {
@@ -31,5 +31,5 @@ export class Parents {
   schools: Schools[];
 
   @OneToMany(() => Loa, (loa) => loa.createdBy)
-  loa: Loa[];
+  loas: Loa[];
 }

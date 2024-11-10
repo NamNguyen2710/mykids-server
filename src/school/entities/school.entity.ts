@@ -8,16 +8,17 @@ import {
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Classrooms } from 'src/class/entities/class.entity';
-import { Assets } from 'src/asset/entities/asset.entity';
 import { Posts } from 'src/post/entities/post.entity';
-import { SchoolYears } from 'src/school-year/entities/school-year.entity';
-import { Students } from 'src/student/entities/student.entity';
-import { Albums } from 'src/album/entities/album.entity';
-import { Medicals } from 'src/medical/entities/medical.entity';
-import { SchoolFaculties } from 'src/users/entity/school-faculty.entity';
-import { Parents } from 'src/users/entity/parent.entity';
 import { Roles } from 'src/role/entities/roles.entity';
+import { Albums } from 'src/album/entities/album.entity';
+import { Assets } from 'src/asset/entities/asset.entity';
+import { Parents } from 'src/users/entity/parent.entity';
+import { Classrooms } from 'src/class/entities/class.entity';
+import { Medicals } from 'src/medical/entities/medical.entity';
+import { Students } from 'src/student/entities/student.entity';
+import { SchoolFaculties } from 'src/users/entity/school-faculty.entity';
+import { SchoolYears } from 'src/school-year/entities/school-year.entity';
+import { BaseNotifications } from 'src/base-notification/entities/base-notification.entity';
 
 @Entity()
 export class Schools {
@@ -71,4 +72,10 @@ export class Schools {
 
   @OneToMany(() => Roles, (role) => role.school)
   roles: Roles[];
+
+  @OneToMany(
+    () => BaseNotifications,
+    (baseNotification) => baseNotification.school,
+  )
+  baseNotifications: BaseNotifications[];
 }

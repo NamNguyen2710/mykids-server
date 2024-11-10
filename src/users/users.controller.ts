@@ -42,7 +42,7 @@ import { RequestWithUser } from 'src/utils/request-with-user';
 @UseGuards(LoginGuard)
 export class UsersController {
   constructor(
-    private readonly usersService: UserService,
+    private readonly userService: UserService,
     private readonly validationService: ValidationService,
   ) {}
 
@@ -51,7 +51,7 @@ export class UsersController {
     @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryUserSchema)) query: QueryUserDto,
   ) {
-    const user = await this.usersService.findOne(request.user.id, ['faculty']);
+    const user = await this.userService.findOne(request.user.id, ['faculty']);
 
     if (user.roleId === Role.PARENT) {
       throw new ForbiddenException(
@@ -61,7 +61,7 @@ export class UsersController {
 
     let res, data;
     if (user.roleId === Role.SUPER_ADMIN) {
-      res = await this.usersService.findAll(['faculty.assignedSchool'], query);
+      res = await this.userService.findAll(query, ['faculty.assignedSchool']);
     } else if (user.faculty) {
       let permission;
 
@@ -95,7 +95,7 @@ export class UsersController {
         );
 
       query.schoolId = user.faculty.schoolId;
-      res = await this.usersService.findAll([], query);
+      res = await this.userService.findAll(query, []);
     } else {
       throw new BadRequestException('Invalid user');
     }
@@ -124,7 +124,7 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    const user = await this.usersService.findOne(userId, [
+    const user = await this.userService.findOne(userId, [
       'faculty',
       'parent.schools',
     ]);
@@ -211,7 +211,7 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    const user = await this.usersService.create(createUserDto);
+    const user = await this.userService.create(createUserDto);
     return user.roleId === Role.SUPER_ADMIN
       ? ResponseSuperAdminSchema.parse(user)
       : ResponseFacultySchema.parse(user);
@@ -240,7 +240,7 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    const user = await this.usersService.update(userId, userDto);
+    const user = await this.userService.update(userId, userDto);
     return user.roleId === Role.SUPER_ADMIN
       ? ResponseSuperAdminSchema.parse(user)
       : ResponseFacultySchema.parse(user);
@@ -267,7 +267,7 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    return this.usersService.deactivate(userId);
+    return this.userService.deactivate(userId);
   }
 
   @Put(':userId/activate')
@@ -291,7 +291,7 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    return this.usersService.update(userId, { isActive: true });
+    return this.userService.update(userId, { isActive: true });
   }
 
   @Delete(':userId')
@@ -316,6 +316,6 @@ export class UsersController {
         'You are not allowed to access this resource',
       );
 
-    await this.usersService.delete(userId);
+    await this.userService.delete(userId);
   }
 }
