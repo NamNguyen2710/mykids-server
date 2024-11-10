@@ -54,7 +54,10 @@ export class PermissionService {
         (data) => data.permissionId === permission.permissionId,
       );
 
-      if (permissionExist && permissionExist.isActive !== permission.isActive) {
+      if (
+        !permissionExist ||
+        permissionExist.isActive !== permission.isActive
+      ) {
         const newPermission = this.rolePermissionRepository.create({
           roleId,
           permissionId: permission.permissionId,

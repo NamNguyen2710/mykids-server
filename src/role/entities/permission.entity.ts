@@ -1,4 +1,11 @@
-import { Entity, PrimaryColumn, Column, OneToMany } from 'typeorm';
+import {
+  Entity,
+  PrimaryColumn,
+  Column,
+  OneToMany,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { RolePermissions } from 'src/role/entities/role-permission.entity';
 
 @Entity()
@@ -14,4 +21,17 @@ export class Permissions {
 
   @OneToMany(() => RolePermissions, (role) => role.permission)
   roles: RolePermissions[];
+
+  @Column()
+  type: string;
+
+  @Column({ name: 'parent_id', nullable: true })
+  parentId: number;
+
+  @OneToMany(() => Permissions, (permission) => permission.parent)
+  children: Permissions[];
+
+  @ManyToOne(() => Permissions, (permission) => permission.children)
+  @JoinColumn({ name: 'parent_id' })
+  parent: Permissions;
 }

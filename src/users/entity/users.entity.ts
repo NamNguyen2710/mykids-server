@@ -38,6 +38,9 @@ export class Users {
   @Column()
   lastName: string;
 
+  @Column()
+  gender: string;
+
   @Column({ nullable: true })
   email: string;
 

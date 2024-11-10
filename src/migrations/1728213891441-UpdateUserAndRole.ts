@@ -38,7 +38,10 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
       CREATE TABLE "permissions" (
         "permission_id" integer NOT NULL PRIMARY KEY,
         "name" character varying NOT NULL,
-        "description" character varying
+        "description" character varying,
+        "type" character varying NOT NULL,
+        "parent_id" integer,
+        FOREIGN KEY ("parent_id") REFERENCES permissions (permission_id) ON DELETE CASCADE
       )
     `);
     await queryRunner.query(`
@@ -100,11 +103,12 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
         ADD COLUMN "class_id" integer,
         ADD FOREIGN KEY (class_id) REFERENCES classrooms (class_id) ON DELETE CASCADE
     `);
-    await queryRunner.query(`ALTER TABLE "users" DROP COLUMN "profession"`);
     await queryRunner.query(`
       alter table users 
+        drop column "profession",
         alter column "phone_number" drop not null,
-        add column "deleted_at" timestamp with time zone
+        add column "deleted_at" timestamp with time zone,
+        add column "gender" character varying not null default 'male'
     `);
   }
 
@@ -112,11 +116,10 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     await queryRunner.query(`
       alter table users 
         alter column "phone_number" set not null,
-        drop column "deleted_at"
+        drop column "deleted_at",
+        drop colum "gender",
+        add column "profession" character varying
     `);
-    await queryRunner.query(
-      `ALTER TABLE "users" ADD COLUMN "profession" character varying`,
-    );
     await queryRunner.query(`
       ALTER TABLE "posts"
         DROP CONSTRAINT "posts_class_id_fkey",
@@ -160,6 +163,18 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
       ALTER TABLE "students_parents" 
         DROP CONSTRAINT "students_parents_parent_id_fkey",
         ADD CONSTRAINT "students_parents_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES users (user_id) ON DELETE CASCADE
+    `);
+    await queryRunner.query(`
+      update users 
+      set professsion = parents.profession 
+      from parents 
+      where users.user_id = parents.user_id
+    `);
+    await queryRunner.query(`
+      update schools 
+      set school_admin_id = school_faculties.user_id 
+      from school_faculties 
+      where schools.school_id = school_faculties.school_id
     `);
     await queryRunner.query(`DROP TABLE "school_faculties"`);
     await queryRunner.query(`DROP TABLE "parents"`);

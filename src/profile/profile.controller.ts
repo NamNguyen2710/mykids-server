@@ -38,7 +38,7 @@ import { RequestWithUser } from 'src/utils/request-with-user';
 @UseGuards(LoginGuard)
 export class ProfileController {
   constructor(
-    private readonly usersService: UserService,
+    private readonly userService: UserService,
     private readonly studentService: StudentService,
     private readonly validationService: ValidationService,
   ) {}
@@ -47,7 +47,7 @@ export class ProfileController {
   async getUserProfile(@Request() req) {
     switch (req.user.roleId) {
       case Role.PARENT: {
-        const user = await this.usersService.findParentProfile(req.user.id);
+        const user = await this.userService.findParentProfile(req.user.id);
         const parentProfile = ParentProfileSchema.parse(user);
 
         return parentProfile;
@@ -56,7 +56,7 @@ export class ProfileController {
         return ResponseSuperAdminSchema.parse(req.user);
 
       default: {
-        const user = await this.usersService.findOne(req.user.id, [
+        const user = await this.userService.findOne(req.user.id, [
           'faculty.assignedSchool',
         ]);
         return ResponseFacultySchema.parse(user);
@@ -70,7 +70,7 @@ export class ProfileController {
   //   @Body(new ZodValidationPipe(UpdateParentProfileSchema))
   //   user: UpdateParentProfileDto,
   // ): Promise<any> {
-  //   return this.usersService.update(request.user.id, user);
+  //   return this.userService.update(request.user.id, user);
   // }
 
   @Put('children/:studentId')
@@ -98,7 +98,7 @@ export class ProfileController {
   @Delete()
   @HttpCode(204)
   async delete(@Request() req): Promise<any> {
-    await this.usersService.delete(req.user.id);
+    await this.userService.delete(req.user.id);
     return { status: true, message: 'User deleted successfully' };
   }
 }
