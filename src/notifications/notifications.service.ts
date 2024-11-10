@@ -1,14 +1,22 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 
 import { FireBaseService } from 'src/firebase/firebase.service';
+import { UserService } from 'src/users/users.service';
 
-import { NotificationToken } from './entities/notification-token.entity';
 import { Notifications } from './entities/notification.entity';
-import { SaveTokenDTO } from './dto/save-token.dto';
-import { QueryNotiDTO } from './dto/query-noti.dto';
-import { SendNotificationDTO } from 'src/notifications/dto/send-notification.dto';
+import { NotificationToken } from './entities/notification-token.entity';
+
+import { SaveTokenDto } from './dto/save-token.dto';
+import { QueryNotiMeDTO } from './dto/query-noti-me.dto';
+import { CreateNotificationDto } from 'src/notifications/dto/create-notification.dto';
+import { CreateBulkNotificationDto } from 'src/notifications/dto/create-bulk-notification.dto';
+import { UpdateBulkNotificationDto } from 'src/notifications/dto/update-bulk-notificatin.dto';
 
 @Injectable()
 export class NotificationsService {
@@ -17,110 +25,67 @@ export class NotificationsService {
     private readonly notificationTokenRepo: Repository<NotificationToken>,
     @InjectRepository(Notifications)
     private readonly notificationRepo: Repository<Notifications>,
+    private readonly userService: UserService,
     private readonly firebaseService: FireBaseService,
   ) {}
 
-  // async testNoti(token: string) {
-  //   this.firebaseService.sendTestNoti(token);
-  // }
+  // Create and send bulk notifications
+  async createBulkNotifications(notificationDto: CreateBulkNotificationDto) {
+    const { data: users } = await this.userService.findAll(
+      {
+        schoolId: notificationDto.schoolId,
+        classId: notificationDto.classId,
+        roleId: notificationDto.roleId,
+        limit: 1000,
+      },
+      ['notiTokens'],
+    );
 
-  async createNotification(
-    userId: number,
-    title: string,
-    body: string,
-    data?: { [key: string]: string },
-  ) {
-    const notiTokens = await this.notificationTokenRepo.find({
-      where: { userId: userId },
-    });
-    const notification = this.notificationRepo.create({
-      userId: userId,
-      title: title,
-      body: body,
-    });
+    const tokens = users
+      .map((u) => u.notiTokens)
+      .flat()
+      .map((t) => t.notificationToken);
 
     this.firebaseService.sendNotiFirebase({
-      tokens: notiTokens.map((token) => token.notificationToken),
-      notification: {
-        title: title,
-        body: body,
-      },
-      data: data,
-    });
-
-    await this.notificationRepo.save(notification);
-  }
-
-  // Create and send notification
-  async createSchoolNotification(notificationDto: SendNotificationDTO) {
-    const whereClause: FindOptionsWhere<NotificationToken> = {
-      user: { schools: { id: notificationDto.schoolId } },
-    };
-    if (notificationDto.classId) {
-      whereClause.user = {
-        ...(whereClause.user as object),
-        children: {
-          student: { history: { classId: notificationDto.classId } },
-        },
-      };
-    }
-
-    const getTokens = await this.notificationTokenRepo.find({
-      where: whereClause,
-    });
-
-    // Get token as string array
-    const tokens = getTokens.map((token) => token.notificationToken);
-
-    // Create all notification add into array to save into db
-    const notificationsData = getTokens.map((token) => {
-      const notification = this.notificationRepo.create({
-        userId: token.user.id,
-        title: notificationDto.title,
-        body: notificationDto.body,
-      });
-      return notification;
-    });
-
-    // Create notification payload
-    const notification = {
       tokens: tokens,
-      notification: {
-        title: notificationDto.title,
-        body: notificationDto.body,
-      },
-    };
-
-    // Send notification
-    this.firebaseService.sendNotiFirebase(notification);
-
-    // Save notification
-    this.notificationRepo.save(notificationsData);
-  }
-
-  async saveToken(userId: number, saveToken: SaveTokenDTO) {
-    const token = this.notificationTokenRepo.create({
-      ...saveToken,
-      userId: userId,
+      title: notificationDto.title,
+      body: notificationDto.body,
+      data: notificationDto.data,
     });
-    await this.notificationTokenRepo.save(token);
+    // TODO: Add send notification to PC
+
+    const notifications = users.map((u) =>
+      this.notificationRepo.create({
+        ...notificationDto,
+        userId: u.id,
+      }),
+    );
+    await this.notificationRepo.save(notifications);
+
+    return notifications;
   }
 
-  async readNotification(userId: number, notificationId: number) {
-    const notification = await this.findOne(userId, notificationId);
-    if (!notification) throw new NotFoundException('Notificaion not found');
+  async createNotification(notiDto: CreateNotificationDto) {
+    const user = await this.userService.findOne(notiDto.userId, ['notiTokens']);
+    if (!user)
+      throw new BadRequestException('Sent notification user not found');
 
-    await this.notificationRepo.update(notificationId, { readStatus: true });
+    const tokens = user.notiTokens.map((t) => t.notificationToken);
+
+    this.firebaseService.sendNotiFirebase({
+      tokens: tokens,
+      title: notiDto.title,
+      body: notiDto.body,
+      data: notiDto.data,
+    });
+
+    const notification = this.notificationRepo.create(notiDto);
+    await this.notificationRepo.save(notification);
+
+    return notification;
   }
 
-  async deleteNotification(userId: number, notificationId: number) {
-    const notification = await this.findOne(userId, notificationId);
-    if (!notification) throw new NotFoundException('Notificaion not found');
-
-    await this.notificationRepo.delete(notificationId);
-  }
-
-  async findAll(userId: number, query: QueryNotiDTO) {
+  async findAllByUser(userId: number, query: QueryNotiMeDTO) {
     const { limit = 20, page = 1 } = query;
 
     const [noti, total] = await this.notificationRepo.findAndCount({
@@ -149,9 +114,53 @@ export class NotificationsService {
 
   private async findOne(userId: number, notificationId: number) {
     const noti = await this.notificationRepo.findOne({
-      where: { id: notificationId, user: { id: userId } },
+      where: { id: notificationId, userId },
     });
 
     return noti;
+  }
+
+  async markReadNotification(userId: number, notificationId: number) {
+    const notification = await this.findOne(userId, notificationId);
+    if (!notification) throw new NotFoundException('Notificaion not found');
+
+    await this.notificationRepo.update(notificationId, { readStatus: true });
+  }
+
+  async deleteNotification(userId: number, notificationId: number) {
+    const notification = await this.findOne(userId, notificationId);
+    if (!notification) throw new NotFoundException('Notificaion not found');
+
+    await this.notificationRepo.delete(notificationId);
+  }
+
+  async updateBulkNotification(notificationDto: UpdateBulkNotificationDto) {
+    const notifications = await this.notificationRepo.find({
+      where: { baseNotificationId: notificationDto.baseNotificationId },
+    });
+
+    notifications.forEach((n) => {
+      n.title = notificationDto.title;
+      n.body = notificationDto.body;
+    });
+
+    await this.notificationRepo.save(notifications);
+    return notifications;
+  }
+
+  async deleteBulkNotification(baseNotificationId: number) {
+    const notifications = await this.notificationRepo.find({
+      where: { baseNotificationId },
+    });
+
+    await this.notificationRepo.remove(notifications);
+  }
+
+  async saveToken(userId: number, saveToken: SaveTokenDto) {
+    const token = this.notificationTokenRepo.create({
+      ...saveToken,
+      userId: userId,
+    });
+    await this.notificationTokenRepo.save(token);
   }
 }

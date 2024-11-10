@@ -10,73 +10,43 @@ import {
   Query,
   ParseIntPipe,
   HttpCode,
-  ForbiddenException,
 } from '@nestjs/common';
 
-import { ValidationService } from 'src/users/validation.service';
 import { NotificationsService } from './notifications.service';
 import { LoginGuard } from 'src/guard/login.guard';
-
-import { SaveTokenDTO } from './dto/save-token.dto';
-import {
-  QueryNotiDTO,
-  QueryNotiSchema,
-} from 'src/notifications/dto/query-noti.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
-import { NotiResponseSchema } from 'src/notifications/dto/notification-response.dto';
+
+import { SaveTokenDto, SaveTokenSchema } from './dto/save-token.dto';
 import {
-  SendNotificationSchema,
-  SendNotificationDTO,
-} from './dto/send-notification.dto';
+  QueryNotiMeDTO,
+  QueryNotiMeSchema,
+} from 'src/notifications/dto/query-noti-me.dto';
+import { NotiResponseSchema } from 'src/notifications/dto/notification-response.dto';
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @UseGuards(LoginGuard)
 @Controller('notification')
 export class NotificationsController {
-  constructor(
-    private readonly notificationsService: NotificationsService,
-    private readonly validationService: ValidationService,
-  ) {}
-
-  @Post('announcement')
-  async sendNotification(
-    @Request() request,
-    @Body(new ZodValidationPipe(SendNotificationSchema))
-    sendNotificationDto: SendNotificationDTO,
-  ) {
-    const permission =
-      await this.validationService.validateSchoolAdminPermission(
-        request.user.sub,
-        sendNotificationDto.schoolId,
-      );
-    if (!permission) {
-      throw new ForbiddenException('You do not have permission');
-    }
-
-    this.notificationsService.createSchoolNotification(sendNotificationDto);
-  }
-
-  // @Post('test')
-  // async sendTestNoti(@Body() token: string) {
-  //   this.notificationsService.testNoti(token);
-  // }
+  constructor(private readonly notificationsService: NotificationsService) {}
 
   @Post('save-token')
   async saveNotificationToken(
-    @Body() saveTokenDTO: SaveTokenDTO,
-    @Request() request,
+    @Request() request: RequestWithUser,
+    @Body(new ZodValidationPipe(SaveTokenSchema))
+    saveTokenDTO: SaveTokenDto,
   ) {
-    await this.notificationsService.saveToken(request.user.sub, saveTokenDTO);
+    await this.notificationsService.saveToken(request.user.id, saveTokenDTO);
     return { status: true, message: 'Token saved' };
   }
 
   @Get()
-  async getNotification(
-    @Request() request,
-    @Query(new ZodValidationPipe(QueryNotiSchema))
-    notificationQuery: QueryNotiDTO,
+  async getMyNotification(
+    @Request() request: RequestWithUser,
+    @Query(new ZodValidationPipe(QueryNotiMeSchema))
+    notificationQuery: QueryNotiMeDTO,
   ) {
-    const notis = await this.notificationsService.findAll(
-      request.user.sub,
+    const notis = await this.notificationsService.findAllByUser(
+      request.user.id,
       notificationQuery,
     );
     return {
@@ -86,12 +56,12 @@ export class NotificationsController {
   }
 
   @Post(':notificationId/read')
-  async readNotification(
-    @Request() request,
+  async markReadNotification(
+    @Request() request: RequestWithUser,
     @Param('notificationId', ParseIntPipe) notificationId: number,
   ) {
-    await this.notificationsService.readNotification(
-      request.user.sub,
+    await this.notificationsService.markReadNotification(
+      request.user.id,
       notificationId,
     );
     return { status: true, message: 'Notification read' };
@@ -100,11 +70,11 @@ export class NotificationsController {
   @Delete(':notificationId')
   @HttpCode(204)
   async deleteNotification(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('notificationId', ParseIntPipe) notificationId: number,
   ) {
     await this.notificationsService.deleteNotification(
-      request.user.sub,
+      request.user.id,
       notificationId,
     );
     return { status: true, message: 'Notification deleted' };
