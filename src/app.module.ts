@@ -4,6 +4,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { ScheduleModule as TaskScheduleModule } from '@nestjs/schedule';
 import typeorm from './typeorm';
 
 import { AppController } from './app.controller';
@@ -44,6 +45,7 @@ import { BaseNotificationModule } from 'src/base-notification/base-notification.
         secret: config.get('JWT_SECRET'),
       }),
     }),
+    TaskScheduleModule.forRoot(),
 
     UsersModule,
     RoleModule,

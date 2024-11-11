@@ -19,10 +19,19 @@ import { ValidationService } from 'src/users/validation.service';
 import { MenuDetail, MenuDetailSchema } from 'src/menu/dto/menu-detail.dto';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
 import { QueryMenuDto, QueryMenuSchema } from 'src/menu/dto/query-menu.dto';
-import * as Role from 'src/users/entity/roles.data';
-import { Users } from 'src/users/entity/users.entity';
 
-@Controller('menu')
+import { Role } from 'src/role/entities/roles.data';
+import {
+  CREATE_ASSIGNED_CLASS_MENU_PERMISSION,
+  CREATE_CLASS_MENU_PERMISSION,
+  READ_ASSIGNED_CLASS_MENU_PERMISSION,
+  READ_ALL_CLASS_MENU_PERMISSION,
+  UPDATE_ASSIGNED_CLASS_MENU_PERMISSION,
+  UPDATE_CLASS_MENU_PERMISSION,
+} from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
+
+@Controller('class/:classId/menu')
 @UseGuards(LoginGuard)
 export class MenuController {
   constructor(
@@ -32,21 +41,30 @@ export class MenuController {
 
   @Get()
   async getMenus(
-    @Request() request,
+    @Request() request: RequestWithUser,
+    @Param('classId', ParseIntPipe) classId: number,
     @Query(new ZodValidationPipe(QueryMenuSchema)) query: QueryMenuDto,
   ) {
-    let permission: Users | null = null;
-    if (request.user.role === Role.SchoolAdmin.name)
-      permission =
-        await this.validationService.validateSchoolAdminClassPermission(
-          request.user.sub,
-          query.classId,
-        );
-    if (request.user.role === Role.Parent.name)
-      await this.validationService.validateParentClassPermission(
-        request.user.sub,
-        query.classId,
+    let permission;
+
+    if (request.user.roleId === Role.PARENT) {
+      permission = await this.validationService.validateParentClassPermission(
+        request.user.id,
+        classId,
       );
+    } else if (request.user.roleId !== Role.SUPER_ADMIN) {
+      const res =
+        await this.validationService.validateFacultySchoolClassPermission({
+          userId: request.user.id,
+          schoolId: request.user.faculty?.schoolId,
+          classId,
+          allPermissionId: READ_ALL_CLASS_MENU_PERMISSION,
+          classPermissionId: READ_ASSIGNED_CLASS_MENU_PERMISSION,
+        });
+
+      permission = res.allPermission || res.classPermission;
+    }
+
     if (!permission) {
       throw new ForbiddenException(
         'You dont have permission to access this class information',
@@ -54,28 +72,27 @@ export class MenuController {
     }
 
     return this.menuService.findMenus(
-      query.classId,
+      classId,
       query.startDate || query.date || new Date(),
       query.endDate || query.date || new Date(),
     );
   }
 
-  @Get('meals')
-  async getMeals(@Query() query) {
-    return this.menuService.findMeals(query.query);
-  }
-
   @Post()
   async createMenu(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        menu.classId,
-      );
-    if (!permission) {
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty?.schoolId,
+        classId: menu.classId,
+        allPermissionId: CREATE_CLASS_MENU_PERMISSION,
+        classPermissionId: CREATE_ASSIGNED_CLASS_MENU_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission) {
       throw new ForbiddenException(
         'You dont have permission to update this class information',
       );
@@ -86,16 +103,20 @@ export class MenuController {
 
   @Put(':id')
   async updateMenu(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(MenuDetailSchema)) menu: MenuDetail,
   ) {
     const permission =
-      await this.validationService.validateSchoolAdminClassPermission(
-        request.user.sub,
-        menu.classId,
-      );
-    if (!permission) {
+      await this.validationService.validateFacultySchoolClassPermission({
+        userId: request.user.id,
+        schoolId: request.user.faculty?.schoolId,
+        classId: menu.classId,
+        allPermissionId: UPDATE_CLASS_MENU_PERMISSION,
+        classPermissionId: UPDATE_ASSIGNED_CLASS_MENU_PERMISSION,
+      });
+
+    if (!permission.allPermission && !permission.classPermission) {
       throw new ForbiddenException(
         'You dont have permission to update this class information',
       );

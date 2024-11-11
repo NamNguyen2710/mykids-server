@@ -18,9 +18,9 @@ export class PermissionService {
   async findPermissionsByRole(roleId: number) {
     const res = await this.permissionRepository
       .createQueryBuilder('permission')
-      .leftJoinAndSelect('permission.roles', 'role')
-      .where('role.role_id = :roleId', { roleId })
-      .orWhere('role.role_id IS NULL')
+      .leftJoinAndSelect('permission.roles', 'role', 'role.role_id = :roleId', {
+        roleId,
+      })
       .orderBy('permission.id', 'ASC')
       .getMany();
 
