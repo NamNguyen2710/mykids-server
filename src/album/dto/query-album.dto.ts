@@ -15,7 +15,7 @@ export type QueryAlbumDto = z.infer<typeof QueryAlbumSchema>;
 
 export const ConfigedQueryAlbumSchema = QueryAlbumSchema.extend({
   classId: z.number().int().positive().nullish(),
-  schoolId: z.number().int().positive(),
-  facultyId: z.number().int().positive(),
+  schoolId: z.number().int().positive().optional(),
+  facultyId: z.number().int().positive().optional(),
 });
 export type ConfigedQueryAlbumDto = z.infer<typeof ConfigedQueryAlbumSchema>;

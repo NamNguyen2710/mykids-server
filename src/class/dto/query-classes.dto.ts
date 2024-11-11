@@ -15,6 +15,7 @@ export type QueryClassesDto = z.infer<typeof QueryClassesSchema>;
 export const ConfigedQueryClassesSchema = QueryClassesSchema.extend({
   schoolId: z.coerce.number().int().positive().optional(),
   facultyId: z.coerce.number().int().positive().optional(),
+  studentId: z.coerce.number().int().positive().optional(),
 });
 export type ConfigedQueryClassesDto = z.infer<
   typeof ConfigedQueryClassesSchema

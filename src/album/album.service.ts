@@ -3,31 +3,34 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Brackets } from 'typeorm';
+import { Repository, Brackets, LessThanOrEqual } from 'typeorm';
 
-import { Albums } from './entities/album.entity';
+import { AssetService } from 'src/asset/asset.service';
+import { ClassService } from 'src/class/class.service';
+import { BaseNotificationService } from 'src/base-notification/base-notification.service';
+
 import { CreateAlbumDto } from './dto/create-album.dto';
 import { ConfigedQueryAlbumDto } from './dto/query-album.dto';
 import { UpdateAlbumDto } from './dto/update-album.dto';
 
-import { AssetService } from 'src/asset/asset.service';
-import { UserService } from 'src/users/users.service';
-import { StudentService } from 'src/student/student.service';
+import { Albums } from './entities/album.entity';
+import { Role } from 'src/role/entities/roles.data';
 
 @Injectable()
 export class AlbumService {
   constructor(
     @InjectRepository(Albums)
     private readonly albumRepo: Repository<Albums>,
-    private readonly userService: UserService,
     private readonly assetService: AssetService,
-    private readonly studentService: StudentService,
+    private readonly classService: ClassService,
+    private readonly notificationService: BaseNotificationService,
   ) {}
 
   // Create new album
   async createAlbum(userId: number, createAlbumDto: CreateAlbumDto) {
-    const album = this.albumRepo.create({
+    const newAlbum = this.albumRepo.create({
       ...createAlbumDto,
       createdById: userId,
       publishedDate: createAlbumDto.isPublished
@@ -35,8 +38,24 @@ export class AlbumService {
         : createAlbumDto.publishedDate,
     });
 
-    await this.albumRepo.save(album);
-    return this.findOne(album.id);
+    await this.albumRepo.save(newAlbum);
+
+    const album = await this.findOne(newAlbum.id);
+
+    if (createAlbumDto.isPublished) {
+      this.notificationService.create({
+        schoolId: album.schoolId,
+        classId: album.classId,
+        roleId: Role.PARENT,
+        title: album.classId
+          ? `${album.classroom.name} - ${album.school.name}`
+          : album.school.name,
+        body: `New album ${album.title} has been published`,
+        data: { albumId: `${album.id}` },
+      });
+    }
+
+    return album;
   }
 
   async findAll(query: ConfigedQueryAlbumDto) {
@@ -70,12 +89,12 @@ export class AlbumService {
     }
 
     if (query.studentId) {
-      const student = await this.studentService.findOne(query.studentId, [
-        'school',
-        'history',
-      ]);
-      const schoolId = student.schoolId,
-        classIds = student.history.map((h) => h.classId);
+      const { data: classes } = await this.classService.findAll({
+        studentId: query.studentId,
+        limit: 50,
+      });
+      const schoolId = classes[0].schoolId;
+      const classIds = classes.map((h) => h.id);
 
       qb.andWhere(
         new Brackets((qb) => {
@@ -87,10 +106,10 @@ export class AlbumService {
     }
 
     if (query.facultyId) {
-      const user = await this.userService.findOne(query.facultyId, [
-        'faculty.history',
-      ]);
-      const classIds = user.faculty.history.map((h) => h.classId);
+      const { data: classes } = await this.classService.findAll({
+        facultyId: query.facultyId,
+      });
+      const classIds = classes.map((h) => h.id);
 
       // CASE 1: School album and faculty's assigned classes album
       if (query.schoolId) {
@@ -162,12 +181,12 @@ export class AlbumService {
   async findOne(albumId: number) {
     const album = await this.albumRepo.findOne({
       where: { id: albumId },
-      relations: ['createdBy.user', 'classroom'],
+      relations: ['createdBy.user', 'classroom', 'school'],
     });
     return album;
   }
 
-  async update(albumId: number, album: UpdateAlbumDto): Promise<Albums> {
+  async update(albumId: number, album: UpdateAlbumDto) {
     const albumEntity = await this.albumRepo.findOne({
       where: { id: albumId },
     });
@@ -179,6 +198,21 @@ export class AlbumService {
       const assets = await this.assetService.findByIds(album.assetIds);
       albumEntity.assets = [...assets];
       delete album.assetIds;
+    }
+
+    if (album.isPublished && !albumEntity.isPublished) {
+      albumEntity.publishedDate = new Date();
+
+      this.notificationService.create({
+        schoolId: albumEntity.schoolId,
+        classId: albumEntity.classId,
+        roleId: Role.PARENT,
+        title: albumEntity.classId
+          ? `${albumEntity.classroom.name} - ${albumEntity.school.name}`
+          : albumEntity.school.name,
+        body: `New album ${albumEntity.title} has been published`,
+        data: { albumId: `${albumEntity.id}` },
+      });
     }
 
     Object.assign(albumEntity, album);
@@ -228,7 +262,17 @@ export class AlbumService {
     const permission = album.school.parents.some(
       (parent) => parent.userId === userId,
     );
+
     if (permission) return album;
     else return null;
+  }
+
+  @Cron('*/1 * * * *')
+  async publishAlbumCron() {
+    const albums = await this.albumRepo.find({
+      where: { isPublished: false, publishedDate: LessThanOrEqual(new Date()) },
+    });
+
+    albums.map(async (album) => this.update(album.id, { isPublished: true }));
   }
 }

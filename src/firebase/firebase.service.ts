@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import * as admin from 'firebase-admin';
 
 import { NotificationToken } from 'src/notifications/entities/notification-token.entity';
+import { SendNotificationDto } from 'src/firebase/dto/send-notification.dto';
 
 @Injectable()
 export class FireBaseService {
@@ -13,10 +14,10 @@ export class FireBaseService {
     @Inject('FIREBASE_ADMIN') private readonly firebaseAdmin: admin.app.App,
   ) {}
 
-  async sendNotiFirebase(sendNotificationDTO) {
-    const { tokens, notification, data } = sendNotificationDTO;
+  async sendNotiFirebase(sendNotificationDto: SendNotificationDto) {
+    const { tokens, title, body, data } = sendNotificationDto;
     const payload = {
-      notification,
+      notification: { title, body },
       data,
     };
 
@@ -45,8 +46,6 @@ export class FireBaseService {
           }
         }
       });
-
-      // console.log('Successfully sent messages:', response.successCount);
     } catch (error) {
       console.error('Error sending multicast message:', error);
     }

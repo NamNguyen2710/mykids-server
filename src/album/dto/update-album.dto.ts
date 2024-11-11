@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const UpdateAlbumSchema = z.object({
   classId: z.number().nullish(),
   title: z.string().optional(),
+  isPublished: z.boolean().optional(),
   publishedDate: z.coerce.date().optional(),
   assetIds: z.array(z.number()).optional(),
 });

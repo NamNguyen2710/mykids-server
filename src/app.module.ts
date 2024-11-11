@@ -26,6 +26,7 @@ import { MedicalModule } from 'src/medical/medical.module';
 import { RoleModule } from 'src/role/role.module';
 import { ClassHistoryModule } from 'src/class-history/class-history.module';
 import { WorkHistoryModule } from 'src/work-history/work-history.module';
+import { BaseNotificationModule } from 'src/base-notification/base-notification.module';
 
 @Module({
   imports: [
@@ -67,6 +68,7 @@ import { WorkHistoryModule } from 'src/work-history/work-history.module';
     PostModule,
     CommentModule,
 
+    BaseNotificationModule,
     NotificationsModule,
   ],
   controllers: [AppController],
