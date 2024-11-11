@@ -2,7 +2,7 @@ import { NOTIFICATION_STATUS } from 'src/base-notification/entities/base-notific
 import { z } from 'zod';
 
 export const CreateBaseNotificationSchema = z.object({
-  schoolId: z.number(),
+  schoolId: z.number().optional(),
   classId: z.number().optional(),
   roleId: z.number().nullish(),
   title: z.string(),

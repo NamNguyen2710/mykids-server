@@ -123,12 +123,12 @@ export class BaseNotificationService {
       this.notificationService.deleteBulkNotification(noti.id);
     }
 
-    await this.baseNotificationRepo.save({
+    const newNoti = await this.baseNotificationRepo.save({
       ...noti,
       ...updateNotiDto,
     });
 
-    return noti;
+    return newNoti;
   }
 
   @Cron('*/1 * * * *')

@@ -5,15 +5,18 @@ import {
   ForbiddenException,
   Get,
   Param,
+  ParseIntPipe,
   Post,
   Put,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
 
 import { BaseNotificationService } from 'src/base-notification/base-notification.service';
 import { ValidationService } from 'src/users/validation.service';
 import { ZodValidationPipe } from 'src/utils/zod-validation-pipe';
+import { LoginGuard } from 'src/guard/login.guard';
 
 import {
   QueryBaseNotiDto,
@@ -41,6 +44,7 @@ import {
 } from 'src/role/entities/permission.data';
 import { RequestWithUser } from 'src/utils/request-with-user';
 
+@UseGuards(LoginGuard)
 @Controller('base-notification')
 export class BaseNotificationController {
   constructor(
@@ -57,7 +61,7 @@ export class BaseNotificationController {
     const permission =
       await this.validationService.validateFacultySchoolClassPermission({
         userId: request.user.id,
-        schoolId: sendNotificationDto.schoolId,
+        schoolId: request.user.faculty?.schoolId,
         classId: sendNotificationDto.classId,
         allPermissionId: CREATE_NOTIFICATION_PERMISSION,
         classPermissionId: CREATE_ASSIGNED_CLASS_NOTIFICATION_PERMISSION,
@@ -69,7 +73,8 @@ export class BaseNotificationController {
         'You do not have permission to access this resource',
       );
 
-    this.baseNotiService.create(sendNotificationDto);
+    sendNotificationDto.schoolId = request.user.faculty.schoolId;
+    return this.baseNotiService.create(sendNotificationDto);
   }
 
   @Get()
@@ -100,7 +105,7 @@ export class BaseNotificationController {
   @Get(':baseNotiId')
   async findOne(
     @Request() request: RequestWithUser,
-    @Param('baseNotiId') baseNotiId: number,
+    @Param('baseNotiId', ParseIntPipe) baseNotiId: number,
   ) {
     const noti = await this.baseNotiService.findOne(baseNotiId);
     if (!noti) throw new BadRequestException('Notification not found');
@@ -127,7 +132,7 @@ export class BaseNotificationController {
   @Put(':baseNotiId')
   async update(
     @Request() request: RequestWithUser,
-    @Param('baseNotiId') baseNotiId: number,
+    @Param('baseNotiId', ParseIntPipe) baseNotiId: number,
     @Body(new ZodValidationPipe(UpdateBaseNotificationSchema))
     updateNotiDto: UpdateBaseNotificationDto,
   ) {
