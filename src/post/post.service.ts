@@ -2,76 +2,95 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import * as XRegExp from 'xregexp';
+import { Cron } from '@nestjs/schedule';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Brackets, LessThanOrEqual } from 'typeorm';
 
-import { NotificationsService } from 'src/notifications/notifications.service';
-import { UserService } from 'src/users/users.service';
+import { ClassService } from 'src/class/class.service';
+import { BaseNotificationService } from 'src/base-notification/base-notification.service';
 
-import * as Role from 'src/users/entity/roles.data';
 import { Posts } from './entities/post.entity';
 import { Hashtags } from './entities/hashtag.entity';
-import { QueryPostDto } from './dto/query-post.dto';
+import { Role } from 'src/role/entities/roles.data';
+import { Users } from 'src/users/entity/users.entity';
+
+import { ConfigedQueryPostDto } from './dto/query-post.dto';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from 'src/post/dto/update-post.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
-import { ResponsePostDto } from './dto/response-post.dto';
 
 @Injectable()
 export class PostService {
   constructor(
-    @InjectRepository(Posts) private readonly postRepo: Repository<Posts>,
+    @InjectRepository(Posts)
+    private readonly postRepo: Repository<Posts>,
     @InjectRepository(Hashtags)
     private readonly hashtagRepo: Repository<Hashtags>,
-    private readonly userService: UserService,
-    private readonly notificationService: NotificationsService,
+    private readonly classService: ClassService,
+    private readonly notificationService: BaseNotificationService,
   ) {}
 
-  async findSchoolPosts(
-    userId: number,
-    query: QueryPostDto,
-  ): Promise<ListResponse<ResponsePostDto>> {
-    const { limit = 20, page = 1, hashtag } = query;
-    let { schoolId } = query;
-
-    const user = await this.userService.findOne(userId, [
-      'schools',
-      'assignedSchool',
-    ]);
-    if (!user) throw new UnauthorizedException('User not found');
-
-    let schoolIds = [];
-
-    if (user.role.name === Role.SchoolAdmin.name) {
-      schoolId = user.assignedSchool.id;
-    } else if (user.role.name === Role.Parent.name) {
-      schoolIds = user.schools.map((school) => school.id);
-
-      if (!schoolId && schoolIds.length == 0)
-        return {
-          data: [],
-          pagination: { totalItems: 0, totalPages: 0, page, limit },
-        };
-
-      if (schoolId && !schoolIds.includes(schoolId))
-        throw new BadRequestException('User is not part of this school');
-    }
+  async findSchoolPosts(userId: number, query: ConfigedQueryPostDto) {
+    const { limit = 20, page = 1 } = query;
 
     // Query builder to get all posts
     const qb = this.postRepo.createQueryBuilder('post');
 
-    if (schoolId) {
-      qb.where('post.school_id = :schoolId', { schoolId });
-    } else {
-      qb.where('post.school_id IN (:...schoolIds)', { schoolIds });
+    if (query.studentId) {
+      const { data: classes } = await this.classService.findAll({
+        studentId: query.studentId,
+        limit: 50,
+      });
+      const schoolId = classes[0].schoolId;
+      const classIds = classes.map((h) => h.id);
+
+      qb.andWhere(
+        new Brackets((qb) => {
+          qb.where('post.classId IS NULL')
+            .andWhere('post.schoolId = :schoolId', { schoolId })
+            .orWhere('post.classId IN (:...classIds)', { classIds });
+        }),
+      );
     }
 
-    if (hashtag) {
+    if (query.facultyId) {
+      const { data: classes } = await this.classService.findAll({
+        facultyId: query.facultyId,
+      });
+      const classIds = classes.map((h) => h.id);
+
+      // CASE 1: School post and faculty's assigned classes post
+      if (query.schoolId) {
+        qb.andWhere(
+          new Brackets((qb) => {
+            qb.where('post.classId IS NULL')
+              .andWhere('post.schoolId = :schoolId', {
+                schoolId: query.schoolId,
+              })
+              .orWhere('post.classId IN (:...classIds)', { classIds });
+          }),
+        );
+        // CASE 2: Faculty's assigned classes post
+      } else qb.andWhere('post.classId IN (:...classIds)', { classIds });
+    } else {
+      // CASE 3: School and All classes post
+      qb.andWhere('post.schoolId = :schoolId', { schoolId: query.schoolId });
+
+      // CASE 4: School post
+      if (query.classId === null) qb.andWhere('post.classId IS NULL');
+    }
+
+    // CASE 5: Class post
+    if (query.classId) {
+      qb.andWhere('post.classId = :classId', {
+        classId: query.classId,
+      });
+    }
+
+    if (query.hashtag) {
       const hashtagObj = await this.hashtagRepo.findOne({
-        where: { description: hashtag },
+        where: { description: query.hashtag },
       });
 
       if (!hashtagObj)
@@ -85,6 +104,7 @@ export class PostService {
       });
     }
 
+    const total = await qb.getCount();
     const rawPosts = await qb
       .leftJoin('post.comments', 'comments')
       .leftJoin('post.likedUsers', 'likedUsers')
@@ -102,41 +122,35 @@ export class PostService {
       ])
       .setParameter('userId', userId)
       .orderBy('post.createdAt', 'DESC')
+      .limit(limit)
+      .offset(limit * (page - 1))
       .getRawMany();
-    if (!rawPosts) throw new NotFoundException();
 
-    const posts = rawPosts
-      .slice(limit * (page - 1), limit * page)
-      .map((post) => ({
-        id: post.post_post_id,
-        message: post.post_message,
-        isPublished: post.post_is_published,
-        createdAt: post.post_created_at,
-        updatedAt: post.post_updated_at,
-        publishedAt: post.post_published_at,
-        schoolId: post.post_school_id,
-        commentCount: parseInt(post.commentcount),
-        likeCount: parseInt(post.likecount),
-        likedByUser: parseInt(post.userliked) >= 1,
-        createdBy: {
-          id: post.post_created_by_id,
-          firstName: post.createdBy_first_name,
-          lastName: post.createdBy_last_name,
-          phoneNumber: post.createdBy_phone_number,
-          logo: post.logo_asset_id
-            ? {
-                id: post.logo_asset_id,
-                url: post.logo_url,
-              }
-            : null,
-        },
-        assets: post.assets,
-      }));
-
-    // Get total count of posts
-    const total = await this.postRepo.countBy({
-      schoolId: schoolId ? schoolId : In(schoolIds),
-    });
+    const posts = rawPosts.map((post) => ({
+      id: post.post_post_id,
+      message: post.post_message,
+      isPublished: post.post_is_published,
+      createdAt: post.post_created_at,
+      updatedAt: post.post_updated_at,
+      publishedAt: post.post_published_at,
+      schoolId: post.post_school_id,
+      commentCount: parseInt(post.commentcount),
+      likeCount: parseInt(post.likecount),
+      likedByUser: parseInt(post.userliked) >= 1,
+      createdBy: {
+        id: post.post_created_by_id,
+        firstName: post.createdBy_first_name,
+        lastName: post.createdBy_last_name,
+        phoneNumber: post.createdBy_phone_number,
+        logo: post.logo_asset_id
+          ? {
+              id: post.logo_asset_id,
+              url: post.logo_url,
+            }
+          : null,
+      },
+      assets: post.assets,
+    }));
 
     return {
       data: posts,
@@ -149,20 +163,19 @@ export class PostService {
     };
   }
 
-  async findOne(userId: number, postId: number): Promise<Posts> {
-    if (!userId) throw new NotFoundException('Unauthorized!');
+  async findOne(postId: number): Promise<Posts> {
     const post = await this.postRepo.findOne({
-      where: { id: postId, school: { parents: { id: userId } } },
+      where: { id: postId },
       relations: ['createdBy', 'comments'],
     });
-    if (!post) throw new NotFoundException('Post not found');
 
     return post;
   }
 
-  async create(userId: number, post: CreatePostDto): Promise<Posts> {
+  async create(userId: number, postDto: CreatePostDto) {
     const hashtagRegex = XRegExp('#[\\p{L}_]+', 'g');
-    const hashtagList = XRegExp.match(post.message, hashtagRegex, 'all') || [];
+    const hashtagList =
+      XRegExp.match(postDto.message, hashtagRegex, 'all') || [];
 
     const hashtags = await Promise.all(
       hashtagList.map(async (ht) => {
@@ -176,30 +189,36 @@ export class PostService {
     );
 
     const newPost = this.postRepo.create({
-      ...post,
-      publishedAt: post.isPublished ? new Date() : null,
+      ...postDto,
+      publishedAt: postDto.isPublished ? new Date() : null,
       createdById: userId,
       hashtags,
     });
     await this.postRepo.save(newPost);
 
-    this.notificationService.createNotification(
-      newPost.schoolId,
-      'New Post',
-      'Created New Post',
-      { postId: newPost.id.toString() },
-    );
-
-    return this.postRepo.findOne({
+    const post = await this.postRepo.findOne({
       where: { id: newPost.id },
-      relations: ['createdBy'],
+      relations: ['createdBy', 'school', 'classroom'],
     });
+
+    if (post.isPublished) {
+      this.notificationService.create({
+        schoolId: post.schoolId,
+        classId: post.classId,
+        roleId: Role.PARENT,
+        title: post.classId
+          ? `${post.classroom.name} - ${post.school.name}`
+          : post.school.name,
+        body: `${post.createdBy.firstName} ${post.createdBy.lastName} has created a new post`,
+        data: { postId: post.id.toString() },
+      });
+    }
   }
 
   async update(postId: number, post: UpdatePostDto) {
     const oldPost = await this.postRepo.findOne({
       where: { id: postId },
-      relations: ['createdBy'],
+      relations: ['createdBy', 'school', 'classroom'],
     });
 
     if (!oldPost) throw new NotFoundException();
@@ -217,15 +236,25 @@ export class PostService {
       }),
     );
 
-    Object.assign(oldPost, post, {
-      hashtags,
-      publishedAt: oldPost.publishedAt
-        ? oldPost.publishedAt
-        : post.isPublished
-          ? new Date()
-          : null,
-    });
-    return this.postRepo.save(oldPost);
+    if (post.isPublished && !oldPost.publishedAt) {
+      post.publishedAt = new Date();
+
+      this.notificationService.create({
+        schoolId: oldPost.schoolId,
+        classId: oldPost.classId,
+        roleId: Role.PARENT,
+        title: oldPost.classId
+          ? `${oldPost.classroom.name} - ${oldPost.school.name}`
+          : oldPost.school.name,
+        body: `${oldPost.createdBy.firstName} ${oldPost.createdBy.lastName} has created a new post`,
+        data: { postId: oldPost.id.toString() },
+      });
+    }
+
+    Object.assign(oldPost, post, { hashtags });
+
+    await this.postRepo.save(oldPost);
+    return oldPost;
   }
 
   async remove(postId: number): Promise<any> {
@@ -236,9 +265,6 @@ export class PostService {
   }
 
   async like(userId: number, postId: number) {
-    const user = await this.userService.findOne(userId);
-    if (!user) throw new UnauthorizedException('User not found');
-
     const post = await this.postRepo.findOne({
       where: { id: postId },
       relations: { likedUsers: true },
@@ -246,10 +272,10 @@ export class PostService {
 
     if (!post) throw new NotFoundException('Post not found');
 
-    if (post.likedUsers.some((likedUser) => likedUser.id == userId))
+    if (post.likedUsers.some((likedUser) => likedUser.id === userId))
       throw new BadRequestException('User already liked this post');
 
-    post.likedUsers.push(user);
+    post.likedUsers.push({ id: userId } as Users);
     await this.postRepo.save(post);
 
     const rawPosts = await this.postRepo
@@ -264,9 +290,6 @@ export class PostService {
   }
 
   async unlike(userId: number, postId: number) {
-    const user = await this.userService.findOne(userId);
-    if (!user) throw new UnauthorizedException('User not found');
-
     const post = await this.postRepo.findOne({
       where: { id: postId },
       relations: { likedUsers: true },
@@ -274,7 +297,7 @@ export class PostService {
 
     if (!post) throw new NotFoundException('Post not found');
 
-    if (!post.likedUsers.some((likedUser) => likedUser.id == userId))
+    if (!post.likedUsers.some((likedUser) => likedUser.id === userId))
       throw new BadRequestException("User haven't liked this post");
 
     post.likedUsers = post.likedUsers.filter(
@@ -293,11 +316,12 @@ export class PostService {
     return { status: 'success', likeCount: parseInt(rawPosts[0].likecount) };
   }
 
-  async validatePostPermission(userId: number, postId: number) {
-    const post = await this.postRepo.findOne({
-      where: { id: postId, createdById: userId },
+  @Cron('*/1 * * * *')
+  async publishedPostCron() {
+    const posts = await this.postRepo.find({
+      where: { isPublished: false, publishedAt: LessThanOrEqual(new Date()) },
     });
 
-    return !!post;
+    posts.forEach(async (post) => this.update(post.id, { isPublished: true }));
   }
 }
