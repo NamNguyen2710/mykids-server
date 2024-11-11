@@ -91,7 +91,6 @@ export class ClassService {
         'students.student.parents.parent.user',
       ],
     });
-    console.log(classroom.students[0]);
 
     return classroom;
   }

@@ -85,9 +85,14 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     `);
     await queryRunner.query(`
       ALTER TABLE "loa" 
+        ADD COLUMN "reviewer_id" integer,
+        ADD FOREIGN KEY ("reviewer_id") REFERENCES school_faculties (user_id) ON DELETE CASCADE,
         DROP CONSTRAINT "loa_created_by_id_fkey",
         ADD CONSTRAINT "loa_created_by_id_fkey" FOREIGN KEY (created_by_id) REFERENCES parents (user_id) ON DELETE CASCADE
     `);
+    await queryRunner.query(
+      `ALTER TABLE "loa" RENAME COLUMN "approve_status" TO "review_status"`,
+    );
     await queryRunner.query(`
       ALTER TABLE "albums" 
         DROP CONSTRAINT "albums_created_by_id_fkey",
@@ -137,9 +142,14 @@ export class UpdateUserAndRole1728213891441 implements MigrationInterface {
     `);
     await queryRunner.query(`
       ALTER TABLE "loa"
+        DROP CONSTRAINT "loa_reviewer_id_fkey",
+        DROP COLUMN "reviewer_id",
         DROP CONSTRAINT "loa_created_by_id_fkey",
         ADD CONSTRAINT "loa_created_by_id_fkey" FOREIGN KEY (created_by_id) REFERENCES users (user_id) ON DELETE CASCADE
     `);
+    await queryRunner.query(
+      `ALTER TABLE "loa" RENAME COLUMN "review_status" TO "approve_status"`,
+    );
     await queryRunner.query(`DROP TABLE "work_histories"`);
     await queryRunner.query(`
       ALTER TABLE "school_parents" 

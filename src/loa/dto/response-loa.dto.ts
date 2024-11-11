@@ -18,15 +18,17 @@ export const OriginalLoaSchema = z.object({
     name: z.string(),
   }),
   createdBy: z.object({
-    id: z.number(),
-    firstName: z.string(),
-    lastName: z.string(),
-    logo: z
-      .object({
-        id: z.number(),
-        url: z.string(),
-      })
-      .nullable(),
+    user: z.object({
+      id: z.number(),
+      firstName: z.string(),
+      lastName: z.string(),
+      logo: z
+        .object({
+          id: z.number(),
+          url: z.string(),
+        })
+        .nullable(),
+    }),
     children: z.array(
       z.object({ studentId: z.number(), relationship: z.string() }),
     ),
@@ -36,21 +38,35 @@ export const OriginalLoaSchema = z.object({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
   createdAt: z.coerce.date(),
-  approveStatus: z.string(),
+  reviewStatus: z.string(),
+  reviewer: z
+    .object({
+      user: z.object({
+        id: z.number(),
+        firstName: z.string(),
+        lastName: z.string(),
+      }),
+    })
+    .nullable(),
 });
 
 export const ResponseLoaSchema = OriginalLoaSchema.transform((data) => ({
   ...data,
   createdBy: data.createdBy && {
-    id: data.createdBy.id,
-    firstName: data.createdBy.firstName,
-    lastName: data.createdBy.lastName,
-    logo: data.createdBy.logo,
+    id: data.createdBy.user.id,
+    firstName: data.createdBy.user.firstName,
+    lastName: data.createdBy.user.lastName,
+    logo: data.createdBy.user.logo,
     relationship:
       data.student &&
       data.createdBy.children.find(
         (child) => child.studentId === data.student.id,
       )?.relationship,
+  },
+  reviewer: data.reviewer && {
+    id: data.reviewer.user.id,
+    firstName: data.reviewer.user.firstName,
+    lastName: data.reviewer.user.lastName,
   },
 }));
 

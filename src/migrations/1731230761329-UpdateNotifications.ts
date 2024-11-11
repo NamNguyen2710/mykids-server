@@ -19,7 +19,6 @@ export class UpdateNotifications1731230761329 implements MigrationInterface {
 				FOREIGN KEY (role_id) REFERENCES roles (role_id)
       )
     `);
-
     await queryRunner.query(`
       ALTER TABLE notifications
 				ADD COLUMN data JSON,
@@ -27,16 +26,22 @@ export class UpdateNotifications1731230761329 implements MigrationInterface {
       	ADD COLUMN base_notification_id INT,
 				ADD FOREIGN KEY (base_notification_id) REFERENCES base_notifications(notification_id)
     `);
+    await queryRunner.query(
+      `ALTER TABLE notifications RENAME COLUMN "notification_created_at" to "created_at"`,
+    );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `ALTER TABLE notifications RENAME COLUMN "created_at" to "notification_created_at"`,
+    );
     await queryRunner.query(`
       ALTER TABLE notifications
       	DROP COLUMN data,
 				DROP COLUMN updated_at,
-				DROP COLUMN base_notification_id
+				DROP COLUMN base_notification_id,
+        DROP CONSTRAINT "notifications_base_notification_id_fkey"
     `);
-
     await queryRunner.query(`
       DROP TABLE base_notifications;
     `);

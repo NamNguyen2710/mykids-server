@@ -51,18 +51,15 @@ export class UsersController {
     @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryUserSchema)) query: QueryUserDto,
   ) {
-    const user = await this.userService.findOne(request.user.id, ['faculty']);
-
-    if (user.roleId === Role.PARENT) {
+    if (request.user.roleId === Role.PARENT)
       throw new ForbiddenException(
         'You are not allowed to access this resource',
       );
-    }
 
     let res, data;
-    if (user.roleId === Role.SUPER_ADMIN) {
+    if (request.user.roleId === Role.SUPER_ADMIN) {
       res = await this.userService.findAll(query, ['faculty.assignedSchool']);
-    } else if (user.faculty) {
+    } else if (request.user.faculty) {
       let permission;
 
       switch (query.roleId) {
@@ -71,9 +68,9 @@ export class UsersController {
         case Role.PARENT:
           permission =
             await this.validationService.validateSchoolFacultyPermission(
-              user.id,
+              request.user.id,
               {
-                schoolId: user.faculty.schoolId,
+                schoolId: request.user.faculty.schoolId,
                 permissionId: READ_ALL_PARENT_PERMISSION,
               },
             );
@@ -81,9 +78,9 @@ export class UsersController {
         default:
           permission =
             await this.validationService.validateSchoolFacultyPermission(
-              user.id,
+              request.user.id,
               {
-                schoolId: user.faculty.schoolId,
+                schoolId: request.user.faculty.schoolId,
                 permissionId: READ_ALL_SCHOOL_FACULTY_PERMISSION,
               },
             );
@@ -94,11 +91,12 @@ export class UsersController {
           'You are not allowed to access this resource',
         );
 
-      query.schoolId = user.faculty.schoolId;
+      query.schoolId = request.user.faculty.schoolId;
       res = await this.userService.findAll(query, []);
-    } else {
-      throw new BadRequestException('Invalid user');
-    }
+    } else
+      throw new ForbiddenException(
+        'You are not allowed to access this resource',
+      );
 
     switch (query.roleId) {
       case Role.SUPER_ADMIN:
@@ -143,12 +141,12 @@ export class UsersController {
       if (user.roleId === Role.PARENT) {
         const permission =
           user.parent.schools.some(
-            (school) => school.id === req.user.faculty.schoolId,
+            (school) => school.id === req.user.faculty?.schoolId,
           ) &&
           (await this.validationService.validateSchoolFacultyPermission(
             req.user.id,
             {
-              schoolId: req.user.faculty.schoolId,
+              schoolId: req.user.faculty?.schoolId,
               permissionId: READ_ALL_PARENT_PERMISSION,
             },
           ));
@@ -161,11 +159,11 @@ export class UsersController {
         return ResponseParentSchema.parse(user);
       } else {
         const permission =
-          user.faculty?.schoolId === req.user.faculty.schoolId &&
+          user.faculty?.schoolId === req.user.faculty?.schoolId &&
           (await this.validationService.validateSchoolFacultyPermission(
             req.user.id,
             {
-              schoolId: req.user.faculty.schoolId,
+              schoolId: req.user.faculty?.schoolId,
               permissionId: READ_ALL_SCHOOL_FACULTY_PERMISSION,
             },
           ));

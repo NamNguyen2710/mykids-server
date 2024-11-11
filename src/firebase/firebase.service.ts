@@ -21,6 +21,8 @@ export class FireBaseService {
       data,
     };
 
+    if (tokens.length === 0) return;
+
     try {
       const response = await this.firebaseAdmin
         .messaging()

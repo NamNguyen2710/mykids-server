@@ -4,153 +4,177 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 
 import { AssetService } from 'src/asset/asset.service';
+import { ClassService } from 'src/class/class.service';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 import { LOA_STATUS, Loa } from './entities/loa.entity';
-import * as Role from 'src/users/entity/roles.data';
-import { QueryLoaDto } from './dto/query-loa.dto';
+
+import { ConfigedQueryLoaDto } from './dto/query-loa.dto';
 import { CreateLoaDto } from './dto/create-loa.dto';
-import { UpdateLoaDto } from './dto/update-loa.dto';
-import { ListResponse } from 'src/utils/list-response.dto';
+import { ConfigedUpdateLoaDto } from './dto/update-loa.dto';
 
 @Injectable()
 export class LoaService {
   constructor(
-    @InjectRepository(Loa) private readonly loaRepo: Repository<Loa>,
+    @InjectRepository(Loa)
+    private readonly loaRepo: Repository<Loa>,
     private readonly assetService: AssetService,
+    private readonly classService: ClassService,
+    private readonly notificationService: NotificationsService,
   ) {}
 
-  async create(userId: number, createLoaDto: CreateLoaDto): Promise<Loa> {
+  async create(userId: number, createLoaDto: CreateLoaDto) {
     const assets = await this.assetService.findByIds(createLoaDto.assetIds);
 
-    const loa = this.loaRepo.create({
+    const newLoa = this.loaRepo.create({
       ...createLoaDto,
       createdById: userId,
-      approveStatus: LOA_STATUS.PENDING,
+      createdAt: new Date(),
+      reviewStatus: LOA_STATUS.PENDING,
       assets,
     });
-    await this.loaRepo.save(loa);
+    await this.loaRepo.save(newLoa);
 
-    return this.loaRepo.findOne({
-      where: { id: loa.id },
-      relations: ['student', 'classroom', 'createdBy'],
+    const loa = await this.findOne(newLoa.id);
+
+    this.notificationService.createBulkNotifications({
+      schoolId: loa.classroom.schoolId,
+      classId: loa.classId,
+      title: `${loa.classroom.name} - ${loa.classroom.school.name}`,
+      body: `${loa.createdBy.user.firstName} ${loa.createdBy.user.lastName} sent a new Leave of Absence notice for ${loa.student.firstName} ${loa.student.lastName}`,
+      data: { loaId: `${loa.id}` },
     });
+
+    return loa;
   }
 
-  async findAll(
-    query: QueryLoaDto,
-    userId: number,
-    userRole: string,
-  ): Promise<ListResponse<Loa>> {
+  async findAll(query: ConfigedQueryLoaDto) {
     const limit = query.limit || 10;
     const page = query.page || 1;
     const skip = (page - 1) * limit;
 
-    if (userRole == Role.SchoolAdmin.name) {
-      const whereClause: FindOptionsWhere<Loa> = {
-        student: { school: { schoolAdminId: userId } },
-      };
+    const whereClause: FindOptionsWhere<Loa> = {};
 
-      if (query.studentId) {
-        whereClause.student = { id: query.studentId };
-      }
-      if (query.classId) {
-        whereClause.classroom = { id: query.classId };
-      }
-
-      const [data, total] = await this.loaRepo.findAndCount({
-        where: whereClause,
-        relations: ['student', 'classroom', 'createdBy'],
-        take: limit,
-        skip: skip,
+    if (query.schoolId) {
+      whereClause.classroom = { schoolId: query.schoolId };
+    }
+    if (query.studentId) {
+      whereClause.student = { id: query.studentId };
+    }
+    if (query.classId) {
+      whereClause.classId = query.classId;
+    }
+    if (query.facultyId) {
+      const { data: classes } = await this.classService.findAll({
+        facultyId: query.facultyId,
       });
-
-      return {
-        data,
-        pagination: {
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          page: page,
-          limit: limit,
-        },
-      };
+      whereClause.classId = In(classes.map((c) => c.id));
+    }
+    if (query.reviewStatus) {
+      whereClause.reviewStatus = query.reviewStatus;
     }
 
-    if (userRole == Role.Parent.name) {
-      if (!query.studentId) throw new BadRequestException('Missing student id');
-      if (!query.classId) throw new BadRequestException('Missing class id');
+    const [data, total] = await this.loaRepo
+      .createQueryBuilder('loa')
+      .leftJoinAndSelect('loa.student', 'student')
+      .leftJoinAndSelect('student.logo', 'studentLogo')
+      .leftJoinAndSelect('loa.classroom', 'classroom')
+      .leftJoinAndSelect('loa.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.user', 'createdByUser')
+      .leftJoinAndSelect('createdByUser.logo', 'createdByUserLogo')
+      .leftJoinAndSelect(
+        'createdBy.children',
+        'children',
+        'children.studentId = loa.studentId',
+      )
+      .leftJoinAndSelect('loa.reviewer', 'reviewer')
+      .leftJoinAndSelect('reviewer.user', 'reviewerUser')
+      .leftJoinAndSelect('reviewerUser.logo', 'reviewerUserLogo')
+      .leftJoinAndSelect('classroom.school', 'school')
+      .leftJoinAndSelect('loa.assets', 'assets')
+      .take(limit)
+      .skip(skip)
+      .orderBy('loa.createdAt', 'DESC')
+      .getManyAndCount();
 
-      const [data, total] = await this.loaRepo.findAndCount({
-        where: {
-          student: { parents: { parentId: userId } },
-          studentId: query.studentId,
-          classId: query.classId,
-        },
-        relations: ['student', 'classroom', 'createdBy'],
-        order: { createdAt: 'DESC' },
-        take: limit,
-        skip: skip,
-      });
-
-      return {
-        data,
-        pagination: {
-          totalItems: total,
-          totalPages: Math.ceil(total / limit),
-          page: page,
-          limit: limit,
-        },
-      };
-    }
+    return {
+      data,
+      pagination: {
+        totalItems: total,
+        totalPages: Math.ceil(total / limit),
+        page: page,
+        limit: limit,
+      },
+    };
   }
 
   async findOne(loaId: number) {
-    const loa = this.loaRepo.findOne({
-      where: { id: loaId },
-      relations: ['student', 'classroom', 'createdBy'],
-    });
+    const loa = await this.loaRepo
+      .createQueryBuilder('loa')
+      .leftJoinAndSelect('loa.student', 'student')
+      .leftJoinAndSelect('student.logo', 'studentLogo')
+      .leftJoinAndSelect('loa.classroom', 'classroom')
+      .leftJoinAndSelect('loa.createdBy', 'createdBy')
+      .leftJoinAndSelect('createdBy.user', 'createdByUser')
+      .leftJoinAndSelect('createdByUser.logo', 'createdByUserLogo')
+      .leftJoinAndSelect(
+        'createdBy.children',
+        'children',
+        'children.studentId = loa.studentId',
+      )
+      .leftJoinAndSelect('loa.reviewer', 'reviewer')
+      .leftJoinAndSelect('reviewer.user', 'reviewerUser')
+      .leftJoinAndSelect('reviewerUser.logo', 'reviewerUserLogo')
+      .leftJoinAndSelect('classroom.school', 'school')
+      .leftJoinAndSelect('loa.assets', 'assets')
+      .where('loa.id = :loaId', { loaId })
+      .getOne();
 
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
     return loa;
   }
 
-  async update(loaId: number, updateLoaDto: UpdateLoaDto) {
-    const loa = await this.loaRepo.findOne({
-      where: { id: loaId },
-      relations: ['student', 'classroom', 'createdBy'],
-    });
+  async update(loaId: number, updateLoaDto: ConfigedUpdateLoaDto) {
+    const loa = await this.findOne(loaId);
     if (!loa) throw new NotFoundException('Cannot find LOA notice!');
 
-    if (updateLoaDto.assetIds) {
+    const { reviewer, assetIds, ...updateLoa } = updateLoaDto;
+
+    if (loa.reviewStatus !== LOA_STATUS.PENDING)
+      throw new BadRequestException('Cannot update ended LOA notice!');
+    else {
+      switch (updateLoaDto.reviewStatus) {
+        case LOA_STATUS.APPROVE:
+          this.notificationService.createNotification({
+            userId: loa.createdById,
+            title: loa.classroom.school.name,
+            body: `${reviewer.firstName} ${reviewer.lastName} has approved LOA notice for ${loa.student.firstName} ${loa.student.lastName}`,
+            data: { loaId: `${loa.id}` },
+          });
+          break;
+        case LOA_STATUS.REJECT:
+          this.notificationService.createNotification({
+            userId: loa.createdById,
+            title: loa.classroom.school.name,
+            body: `${reviewer.firstName} ${reviewer.lastName} has rejected LOA notice for ${loa.student.firstName} ${loa.student.lastName}`,
+            data: { loaId: `${loa.id}` },
+          });
+          break;
+      }
+    }
+
+    if (assetIds) {
       const assets = await this.assetService.findByIds(updateLoaDto.assetIds);
       loa.assets = assets;
     }
 
-    if (loa.approveStatus != LOA_STATUS.PENDING)
-      throw new BadRequestException('Cannot update ended LOA notice!');
-
     const updatedLoa = await this.loaRepo.save({
       ...loa,
-      ...updateLoaDto,
+      ...updateLoa,
     });
     return updatedLoa;
-  }
-
-  async validateLoaAdminPermission(loaId: number, userId: number) {
-    const loa = await this.loaRepo.findOne({
-      where: { id: loaId, classroom: { school: { schoolAdminId: userId } } },
-    });
-
-    return !!loa;
-  }
-
-  async validateLoaParentPermission(loaId: number, userId: number) {
-    const loa = await this.loaRepo.findOne({
-      where: { id: loaId, student: { parents: { parentId: userId } } },
-    });
-
-    return !!loa;
   }
 }
