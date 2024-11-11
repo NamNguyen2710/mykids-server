@@ -194,8 +194,8 @@ export class StudentService {
         );
 
       student.loas.forEach((loa) => {
-        if (loa.approveStatus === LOA_STATUS.PENDING)
-          this.loaService.update(loa.id, { approveStatus: LOA_STATUS.CANCEL });
+        if (loa.reviewStatus === LOA_STATUS.PENDING)
+          this.loaService.update(loa.id, { reviewStatus: LOA_STATUS.CANCEL });
       });
     });
   }

@@ -36,13 +36,13 @@ import {
   CREATE_ALBUM_PERMISSION,
   CREATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
   CREATE_SCHOOL_ALBUM_PERMISSION,
-  DELETE_ALL_ALBUM_PERMISSION,
+  DELETE_ALBUM_PERMISSION,
   DELETE_ASSIGNED_CLASS_ALBUM_PERMISSION,
   DELETE_SCHOOL_ALBUM_PERMISSION,
   READ_ALL_ALBUM_PERMISSION,
   READ_ASSIGNED_CLASS_ALBUM_PERMISSION,
   READ_SCHOOL_ALBUM_PERMISSION,
-  UPDATE_ALL_ALBUM_PERMISSION,
+  UPDATE_ALBUM_PERMISSION,
   UPDATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
   UPDATE_SCHOOL_ALBUM_PERMISSION,
 } from 'src/role/entities/permission.data';
@@ -99,7 +99,7 @@ export class AlbumController {
     @Query(new ZodValidationPipe(QueryAlbumSchema))
     query: QueryAlbumDto,
   ) {
-    let configedQuery: ConfigedQueryAlbumDto = {
+    const configedQuery: ConfigedQueryAlbumDto = {
       page: query.page,
       limit: query.limit,
       isPublished: query.isPublished,
@@ -117,11 +117,8 @@ export class AlbumController {
           'You do not have permission to view albums for this student',
         );
 
-      configedQuery = {
-        ...configedQuery,
-        studentId: query.studentId,
-        isPublished: true,
-      };
+      configedQuery.studentId = query.studentId;
+      configedQuery.isPublished = true;
     } else {
       const permission =
         await this.validationService.validateFacultySchoolClassPermission({
@@ -143,31 +140,17 @@ export class AlbumController {
         );
       }
 
-      if (query.classId) {
-        if (permission.allPermission || permission.classPermission) {
-          configedQuery = {
-            ...configedQuery,
-            classId: query.classId,
-          };
-        }
+      if (permission.allPermission) {
+        configedQuery.schoolId = req.user.faculty.schoolId;
+        configedQuery.classId = query.classId;
       } else {
-        if (permission.allPermission) {
-          configedQuery = {
-            ...configedQuery,
-            schoolId: req.user.faculty.schoolId,
-          };
-        } else {
-          if (permission.classPermission)
-            configedQuery = {
-              ...configedQuery,
-              facultyId: req.user.id,
-            };
-          if (permission.schoolPermission)
-            configedQuery = {
-              ...configedQuery,
-              schoolId: req.user.faculty.schoolId,
-              classId: null,
-            };
+        if (permission.classPermission) {
+          if (query.classId) configedQuery.classId = query.classId;
+          else configedQuery.facultyId = req.user.id;
+        }
+        if (permission.schoolPermission) {
+          configedQuery.schoolId = req.user.faculty.schoolId;
+          if (!permission.classPermission) configedQuery.classId = null;
         }
       }
     }
@@ -237,7 +220,7 @@ export class AlbumController {
         userId: req.user.id,
         schoolId: album.schoolId,
         classId: album.classId,
-        allPermissionId: UPDATE_ALL_ALBUM_PERMISSION,
+        allPermissionId: UPDATE_ALBUM_PERMISSION,
         classPermissionId: UPDATE_ASSIGNED_CLASS_ALBUM_PERMISSION,
         schoolPermissionId: UPDATE_SCHOOL_ALBUM_PERMISSION,
       });
@@ -273,7 +256,7 @@ export class AlbumController {
         userId: req.user.id,
         schoolId: album.schoolId,
         classId: album.classId,
-        allPermissionId: DELETE_ALL_ALBUM_PERMISSION,
+        allPermissionId: DELETE_ALBUM_PERMISSION,
         classPermissionId: DELETE_ASSIGNED_CLASS_ALBUM_PERMISSION,
         schoolPermissionId: DELETE_SCHOOL_ALBUM_PERMISSION,
       });

@@ -15,6 +15,7 @@ import { Loa } from 'src/loa/entities/loa.entity';
 import { Albums } from 'src/album/entities/album.entity';
 import { WorkHistories } from 'src/work-history/entities/work-history.entity';
 import { Posts } from 'src/post/entities/post.entity';
+import { BaseNotifications } from 'src/base-notification/entities/base-notification.entity';
 
 @Entity()
 export class Classrooms {
@@ -59,9 +60,15 @@ export class Classrooms {
   @OneToMany(() => Loa, (loa) => loa.classroom)
   loas: Loa[];
 
-  @OneToMany(() => Albums, (album) => album.class)
+  @OneToMany(() => Albums, (album) => album.classroom)
   albums: Albums[];
 
   @OneToMany(() => Posts, (post) => post.classroom)
   posts: Posts[];
+
+  @OneToMany(
+    () => BaseNotifications,
+    (baseNotification) => baseNotification.classroom,
+  )
+  baseNotifications: BaseNotifications[];
 }

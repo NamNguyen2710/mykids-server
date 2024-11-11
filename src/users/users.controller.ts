@@ -30,7 +30,7 @@ import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto
 
 import { Role } from 'src/role/entities/roles.data';
 import {
-  READ_SCHOOL_FACULTY_PERMISSION,
+  READ_ALL_SCHOOL_FACULTY_PERMISSION,
   READ_ALL_PARENT_PERMISSION,
   CREATE_SCHOOL_FACULTY_PERMISSION,
   UPDATE_SCHOOL_FACULTY_PERMISSION,
@@ -84,7 +84,7 @@ export class UsersController {
               user.id,
               {
                 schoolId: user.faculty.schoolId,
-                permissionId: READ_SCHOOL_FACULTY_PERMISSION,
+                permissionId: READ_ALL_SCHOOL_FACULTY_PERMISSION,
               },
             );
           break;
@@ -166,7 +166,7 @@ export class UsersController {
             req.user.id,
             {
               schoolId: req.user.faculty.schoolId,
-              permissionId: READ_SCHOOL_FACULTY_PERMISSION,
+              permissionId: READ_ALL_SCHOOL_FACULTY_PERMISSION,
             },
           ));
 

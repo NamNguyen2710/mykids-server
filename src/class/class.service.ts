@@ -31,6 +31,7 @@ export class ClassService {
       schoolId,
       schoolYearId,
       facultyId,
+      studentId,
       page = 1,
       limit = 20,
       isActive = true,
@@ -60,6 +61,12 @@ export class ClassService {
       qb.innerJoin('class.faculties', 'faculty').andWhere(
         'faculty.facultyId = :facultyId',
         { facultyId },
+      );
+
+    if (studentId)
+      qb.innerJoin('class.students', 'student').andWhere(
+        'student.studentId = :studentId',
+        { studentId },
       );
 
     const [classes, total] = await qb.getManyAndCount();
