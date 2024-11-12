@@ -26,12 +26,16 @@ import {
   UpdateMedicalDto,
   UpdateMedicalSchema,
 } from './dto/update-medical.dto';
-// import { QueryMedicalDTO, QueryMedicalSchema } from './dto/query-medical.dto';
 import { ResponseMedicalSchema } from 'src/medical/dto/medical-response.dto';
-import * as Role from 'src/users/entity/roles.data';
-import { Users } from 'src/users/entity/users.entity';
 
-@Controller('medical')
+import { Role } from 'src/role/entities/roles.data';
+import {
+  READ_ASSIGNED_CLASS_MEDICAL_PERMISSION,
+  READ_MEDICAL_PERMISSION,
+} from 'src/role/entities/permission.data';
+import { RequestWithUser } from 'src/utils/request-with-user';
+
+@Controller('student/:studentId/medical')
 @UseGuards(LoginGuard)
 export class MedicalController {
   constructor(
@@ -41,14 +45,14 @@ export class MedicalController {
 
   @Post()
   async create(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
     @Body(new ZodValidationPipe(CreateMedicalSchema))
     createMedicalDto: CreateMedicalDto,
   ) {
     const studentPermission =
       await this.validationService.validateParentChildrenPermission(
-        req.user.sub,
+        req.user.id,
         studentId,
       );
     if (!studentPermission)
@@ -61,7 +65,7 @@ export class MedicalController {
 
   // @Get()
   // async findAll(
-  //   @Request() req,
+  //   @Request() req: RequestWithUser,
   //   @Query(new ZodValidationPipe(QueryMedicalSchema))
   //   query: QueryMedicalDTO,
   // ) {
@@ -71,7 +75,7 @@ export class MedicalController {
 
   //     const permission =
   //       await this.validationService.validateParentChildrenPermission(
-  //         req.user.sub,
+  //         req.user.id,
   //         query.studentId,
   //       );
   //     if (!permission) throw new ForbiddenException('Permission denied');
@@ -80,7 +84,7 @@ export class MedicalController {
   //       throw new BadRequestException('School id is required');
 
   //     const permission = await this.validationService.validateSchoolAdminPermission(
-  //       req.user.sub,
+  //       req.user.id,
   //       query.schoolId,
   //     );
   //     if (!permission) throw new ForbiddenException('Permission denied');
@@ -99,22 +103,26 @@ export class MedicalController {
 
   @Get()
   async findOne(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
   ) {
-    let permission: Users | null = null;
-    if (req.user.role === Role.Parent.name)
+    let permission = null;
+    if (req.user.roleId === Role.PARENT) {
       permission =
         await this.validationService.validateParentChildrenPermission(
-          req.user.sub,
+          req.user.id,
           studentId,
         );
-    if (req.user.role === Role.SchoolAdmin.name) {
+    } else {
       permission =
-        await this.validationService.validateSchoolAdminStudentPermission(
-          req.user.sub,
-          studentId,
-        );
+        (await this.validationService.validateSchoolFacultyPermission(
+          req.user.id,
+          { studentId, permissionId: READ_MEDICAL_PERMISSION },
+        )) ||
+        (await this.validationService.validateSchoolFacultyClassPermission(
+          req.user.id,
+          { studentId, permissionId: READ_ASSIGNED_CLASS_MEDICAL_PERMISSION },
+        ));
     }
 
     if (!permission)
@@ -128,14 +136,14 @@ export class MedicalController {
 
   @Put(':id')
   async update(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body(new ZodValidationPipe(UpdateMedicalSchema))
     updateMedicalDto: UpdateMedicalDto,
   ) {
     const permission =
       await this.medicalService.validateParentMedicalPermission(
-        req.user.sub,
+        req.user.id,
         id,
       );
     if (!permission) throw new ForbiddenException('Permission denied');
@@ -146,10 +154,13 @@ export class MedicalController {
 
   @Delete(':id')
   @HttpCode(204)
-  async remove(@Request() req, @Param('id', ParseIntPipe) id: number) {
+  async remove(
+    @Request() req: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
     const permission =
       await this.medicalService.validateParentMedicalPermission(
-        req.user.sub,
+        req.user.id,
         id,
       );
     if (!permission) throw new ForbiddenException('Permission denied');

@@ -36,7 +36,7 @@ import {
   DELETE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
   DELETE_CLASS_SCHEDULE_PERMISSION,
   READ_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
-  READ_CLASS_SCHEDULE_PERMISSION,
+  READ_ALL_CLASS_SCHEDULE_PERMISSION,
   UPDATE_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
   UPDATE_CLASS_SCHEDULE_PERMISSION,
 } from 'src/role/entities/permission.data';
@@ -69,7 +69,7 @@ export class ScheduleController {
           userId: request.user.id,
           schoolId: request.user.faculty?.schoolId,
           classId,
-          allPermissionId: READ_CLASS_SCHEDULE_PERMISSION,
+          allPermissionId: READ_ALL_CLASS_SCHEDULE_PERMISSION,
           classPermissionId: READ_ASSIGNED_CLASS_SCHEDULE_PERMISSION,
         });
       permission = classPermission || allPermission;
