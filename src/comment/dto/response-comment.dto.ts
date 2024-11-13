@@ -9,6 +9,7 @@ export const ResponseCommentSchema = z.object({
     id: z.number(),
     firstName: z.string(),
     lastName: z.string(),
+    isActive: z.boolean(),
     logo: z
       .object({
         id: z.number(),
@@ -25,6 +26,7 @@ export const ResponseCommentSchema = z.object({
           id: z.number(),
           firstName: z.string(),
           lastName: z.string(),
+          isActive: z.boolean(),
           logo: z
             .object({
               id: z.number(),

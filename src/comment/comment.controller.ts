@@ -12,11 +12,15 @@ import {
   ForbiddenException,
   HttpCode,
 } from '@nestjs/common';
+
 import { CommentService } from './comment.service';
+import { LoginGuard } from 'src/guard/login.guard';
+
 import { CreateCommentDto } from './dto/create-comment.dto';
 import { UpdateCommentDto } from './dto/update-comment.dto';
-import { LoginGuard } from 'src/guard/login.guard';
 import { ResponseCommentSchema } from 'src/comment/dto/response-comment.dto';
+
+import { RequestWithUser } from 'src/utils/request-with-user';
 
 @UseGuards(LoginGuard)
 @Controller('post/:postId/comment')
@@ -25,12 +29,12 @@ export class CommentController {
 
   @Post()
   async create(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('postId', ParseIntPipe) postId: number,
     @Body() createCommentDto: CreateCommentDto,
   ) {
     const comment = await this.commentService.create(
-      request.user.sub,
+      request.user.id,
       postId,
       createCommentDto,
     );
@@ -48,12 +52,12 @@ export class CommentController {
 
   @Put(':commentId')
   async update(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('commentId', ParseIntPipe) commentId: number,
     @Body() updateCommentDto: UpdateCommentDto,
   ) {
     const permission = this.commentService.validateCommentOwnership(
-      request.user.sub,
+      request.user.id,
       commentId,
     );
     if (!permission)
@@ -69,11 +73,11 @@ export class CommentController {
   @Delete(':commentId')
   @HttpCode(204)
   async remove(
-    @Request() request,
+    @Request() request: RequestWithUser,
     @Param('commentId', ParseIntPipe) commentId: number,
   ) {
     const permission = this.commentService.validateCommentOwnership(
-      request.user.sub,
+      request.user.id,
       commentId,
     );
     if (!permission)
