@@ -4,6 +4,7 @@ export const OriginalProfileSchema = z.object({
   id: z.number(),
   firstName: z.string(),
   lastName: z.string(),
+  gender: z.string(),
   logo: z
     .object({
       id: z.number(),
@@ -56,6 +57,7 @@ export const ParentProfileSchema = OriginalProfileSchema.transform((data) => ({
   lastName: data.lastName,
   phoneNumber: data.phoneNumber,
   email: data.email,
+  gender: data.gender,
   logo: data.logo,
   profession: data.parent && data.parent.profession,
   isActive: data.isActive,

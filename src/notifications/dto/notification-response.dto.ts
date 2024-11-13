@@ -5,6 +5,7 @@ export const NotiResponseSchema = z.object({
   title: z.string(),
   body: z.string(),
   createdAt: z.coerce.date(),
+  updatedAt: z.coerce.date(),
   readStatus: z.boolean(),
 });
 export type NotiResponseDto = z.infer<typeof NotiResponseSchema>;

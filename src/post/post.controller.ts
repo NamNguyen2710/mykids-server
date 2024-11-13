@@ -53,7 +53,7 @@ export class PostController {
   ) {}
 
   // Get all school post
-  @Get('')
+  @Get()
   async findAll(
     @Request() request: RequestWithUser,
     @Query(new ZodValidationPipe(QueryPostSchema))

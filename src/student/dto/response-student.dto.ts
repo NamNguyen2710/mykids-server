@@ -34,6 +34,7 @@ export const ResponseStudentSchema = z.object({
               })
               .nullable(),
             phoneNumber: z.string(),
+            email: z.string().nullable(),
           }),
           profession: z.string().nullable(),
         }),
