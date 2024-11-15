@@ -33,6 +33,7 @@ import { ResponseSuperAdminSchema } from 'src/users/dto/response-super-admin.dto
 
 import { Role } from '../role/entities/roles.data';
 import { RequestWithUser } from 'src/utils/request-with-user';
+import { PermissionService } from 'src/role/permission.service';
 
 @Controller('profile')
 @UseGuards(LoginGuard)
@@ -41,6 +42,7 @@ export class ProfileController {
     private readonly userService: UserService,
     private readonly studentService: StudentService,
     private readonly validationService: ValidationService,
+    private readonly permissionService: PermissionService,
   ) {}
 
   @Get()
@@ -73,6 +75,11 @@ export class ProfileController {
   //   return this.userService.update(request.user.id, user);
   // }
 
+  @Get('permissions')
+  async getPermissions(@Request() req) {
+    return this.permissionService.findPermissionsByRole(req.user.roleId);
+  }
+
   @Put('children/:studentId')
   async updateChildrenProfile(
     @Request() request: RequestWithUser,
@@ -99,6 +106,5 @@ export class ProfileController {
   @HttpCode(204)
   async delete(@Request() req): Promise<any> {
     await this.userService.delete(req.user.id);
-    return { status: true, message: 'User deleted successfully' };
   }
 }

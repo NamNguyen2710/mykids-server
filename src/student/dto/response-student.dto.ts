@@ -41,6 +41,22 @@ export const ResponseStudentSchema = z.object({
       }),
     )
     .nullish(),
+  history: z
+    .array(
+      z.object({
+        description: z.string().nullable(),
+        classroom: z.object({
+          id: z.number(),
+          name: z.string(),
+          schoolYear: z.object({
+            id: z.number(),
+            startDate: z.coerce.date(),
+            endDate: z.coerce.date(),
+          }),
+        }),
+      }),
+    )
+    .nullish(),
 });
 
 export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
@@ -53,6 +69,9 @@ export const ResponseStdWithParentSchema = ResponseStudentSchema.transform(
         profession: parent.parent.profession,
         ...parent.parent.user,
       })),
+    history:
+      data.history &&
+      data.history.map((h) => ({ ...h.classroom, description: h.description })),
   }),
 );
 
