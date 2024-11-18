@@ -30,7 +30,10 @@ export class LoginGuard implements CanActivate {
 
       if (!user) throw new UnauthorizedException('User not found');
       request.user = user;
-    } catch {
+    } catch (err) {
+      if (err.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Token expired');
+      }
       throw new UnauthorizedException('Invalid token');
     }
     return true;

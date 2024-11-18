@@ -60,6 +60,7 @@ export class ProfileController {
       default: {
         const user = await this.userService.findOne(req.user.id, [
           'faculty.assignedSchool',
+          'faculty.history.classroom',
         ]);
         return ResponseFacultySchema.parse(user);
       }

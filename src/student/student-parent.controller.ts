@@ -45,7 +45,7 @@ export class StudentParentController {
     private readonly validationService: ValidationService,
   ) {}
 
-  @Get('')
+  @Get()
   async findParents(
     @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,
@@ -74,7 +74,7 @@ export class StudentParentController {
     return ResponseStdWithParentSchema.parse(student).parents;
   }
 
-  @Post('')
+  @Post()
   async addStudentParent(
     @Request() request: RequestWithUser,
     @Param('studentId', ParseIntPipe) studentId: number,

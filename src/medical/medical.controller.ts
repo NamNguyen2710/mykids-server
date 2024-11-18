@@ -131,7 +131,9 @@ export class MedicalController {
       );
 
     const medical = await this.medicalService.findOneByStudent(studentId);
-    return ResponseMedicalSchema.parse(medical);
+    return medical
+      ? ResponseMedicalSchema.parse(medical)
+      : { message: 'No medical record found' };
   }
 
   @Put(':id')

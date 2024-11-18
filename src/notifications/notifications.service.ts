@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
 
 import { FireBaseService } from 'src/firebase/firebase.service';
 import { UserService } from 'src/users/users.service';
@@ -86,10 +86,15 @@ export class NotificationsService {
   }
 
   async findAllByUser(userId: number, query: QueryNotiMeDTO) {
-    const { limit = 20, page = 1 } = query;
+    const { limit = 20, page = 1, readStatus } = query;
+    const whereClause: FindOptionsWhere<Notifications> = { userId };
+
+    if (readStatus !== undefined) {
+      whereClause.readStatus = readStatus;
+    }
 
     const [noti, total] = await this.notificationRepo.findAndCount({
-      where: { userId },
+      where: whereClause,
       order: { createdAt: 'DESC' },
       take: limit,
       skip: (page - 1) * limit,
