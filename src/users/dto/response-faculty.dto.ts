@@ -19,19 +19,24 @@ export const OriginalFacultySchema = z.object({
         name: z.string(),
       })
       .nullish(),
+    history: z
+      .array(
+        z.object({
+          classId: z.number(),
+          startDate: z.date(),
+          endDate: z.date().nullable(),
+        }),
+      )
+      .nullish(),
   }),
   isActive: z.boolean(),
 });
 
 export const ResponseFacultySchema = OriginalFacultySchema.transform(
   (data) => ({
-    id: data.id,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    email: data.email,
-    phoneNumber: data.phoneNumber,
-    logo: data.logo,
-    isActive: data.isActive,
+    ...data,
+    history: data.faculty.history,
+    assignedSchool: data.faculty.assignedSchool,
   }),
 );
 export type ResponseFacultyDto = z.infer<typeof ResponseFacultySchema>;

@@ -14,8 +14,12 @@ export class ZodValidationPipe implements PipeTransform {
         const message = error.errors.map(
           (error) => `${error.path.join('.')}: ${error.message}`,
         );
+        const data = error.errors.reduce((acc, error) => {
+          acc[error.path.join('.')] = error.message;
+          return acc;
+        }, {});
 
-        throw new BadRequestException(message);
+        throw new BadRequestException({ message, data, statusCode: 400 });
       }
 
       return parseResult.data;
