@@ -26,11 +26,22 @@ export const UpdateStudentSchema = z.object({
     .string({ invalid_type_error: 'Birth place must be a string' })
     .optional(),
   gender: z
-    .enum(genderList, { invalid_type_error: 'Gender must male or female' })
+    .enum(genderList, { invalid_type_error: 'Gender must be male or female' })
     .optional(),
   information: z.string().optional(),
-  studentCvIds: z.array(z.number()).optional(),
-  logoId: z.number().optional(),
+  studentCvIds: z
+    .array(
+      z
+        .number({ invalid_type_error: 'Each studentCvId must be a number' })
+        .int('Each studentCvId must be an integer')
+        .positive('Each studentCvId must be a positive integer'),
+    )
+    .optional(),
+  logoId: z
+    .number({ invalid_type_error: 'Logo ID must be a number' })
+    .int('Logo ID must be an integer')
+    .positive('Logo ID must be a positive integer')
+    .optional(),
 });
 
 export type UpdateStudentDto = z.infer<typeof UpdateStudentSchema>;

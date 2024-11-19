@@ -6,7 +6,11 @@ export const UpdateUserSchema = z.object({
   phoneNumber: z.string().optional(),
   email: z.string().optional(),
   profession: z.string().optional(),
-  logoId: z.number().optional(),
+  logoId: z
+    .number()
+    .int('Logo ID must be an integer')
+    .positive('Logo ID must be positive')
+    .optional(),
 });
 
 export const ConfigedUpdateUserSchema = UpdateUserSchema.extend({

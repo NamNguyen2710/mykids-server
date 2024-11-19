@@ -10,8 +10,13 @@ export const UpdateParentSchema = z.object({
   phoneNumber: z
     .string({ invalid_type_error: 'Phone number must be a string' })
     .optional(),
-  email: z.string().optional(),
-  profession: z.string().optional(),
+  email: z
+    .string({ invalid_type_error: 'Email must be a string' })
+    .email('Invalid email format')
+    .optional(),
+  profession: z
+    .string({ invalid_type_error: 'Profession must be a string' })
+    .optional(),
   relationship: z
     .string({ invalid_type_error: 'Relationship must be a string' })
     .optional(),

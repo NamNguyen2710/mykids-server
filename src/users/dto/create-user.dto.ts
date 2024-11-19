@@ -3,15 +3,48 @@ import { Role } from 'src/role/entities/roles.data';
 
 export const CreateUserSchema = z
   .object({
-    firstName: z.string(),
-    lastName: z.string(),
+    firstName: z
+      .string({
+        required_error: 'First name is required',
+        invalid_type_error: 'First name must be a string',
+      })
+      .min(1, 'First name cannot be empty'),
+    lastName: z
+      .string({
+        required_error: 'Last name is required',
+        invalid_type_error: 'Last name must be a string',
+      })
+      .min(1, 'Last name cannot be empty'),
     phoneNumber: z.string().optional(),
-    email: z.string().email().optional(),
-    password: z.string().optional(),
-    roleId: z.number(),
-    schoolId: z.number().optional(),
-    profession: z.string().optional(),
-    logoId: z.number().optional(),
+    email: z
+      .string({ invalid_type_error: 'Email must be a string' })
+      .email('Invalid email format')
+      .optional(),
+    password: z
+      .string({ invalid_type_error: 'Password must be a string' })
+      .min(6, 'Password must be at least 6 characters')
+      .max(20, 'Password must be at most 20 characters')
+      .optional(),
+    roleId: z
+      .number({
+        required_error: 'Role ID is required',
+        invalid_type_error: 'Role ID must be a number',
+      })
+      .int('Role ID must be an integer')
+      .positive('Role ID must be positive'),
+    schoolId: z
+      .number({ invalid_type_error: 'School ID must be a number' })
+      .int('School ID must be an integer')
+      .positive('School ID must be positive')
+      .optional(),
+    profession: z
+      .string({ invalid_type_error: 'Profession must be a string' })
+      .optional(),
+    logoId: z
+      .number({ invalid_type_error: 'Logo ID must be a number' })
+      .int('Logo ID must be an integer')
+      .positive('Logo ID must be positive')
+      .optional(),
   })
   .superRefine((data, ctx) => {
     if (data.roleId === Role.PARENT) {

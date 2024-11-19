@@ -16,7 +16,7 @@ import { SaveTokenDto } from './dto/save-token.dto';
 import { QueryNotiMeDTO } from './dto/query-noti-me.dto';
 import { CreateNotificationDto } from 'src/notifications/dto/create-notification.dto';
 import { CreateBulkNotificationDto } from 'src/notifications/dto/create-bulk-notification.dto';
-import { UpdateBulkNotificationDto } from 'src/notifications/dto/update-bulk-notificatin.dto';
+import { UpdateBulkNotificationDto } from 'src/notifications/dto/update-bulk-notification.dto';
 
 @Injectable()
 export class NotificationsService {
