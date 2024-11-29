@@ -10,7 +10,7 @@ export const UpdateUserSchema = z.object({
     .number()
     .int('Logo ID must be an integer')
     .positive('Logo ID must be positive')
-    .optional(),
+    .nullish(),
 });
 
 export const ConfigedUpdateUserSchema = UpdateUserSchema.extend({

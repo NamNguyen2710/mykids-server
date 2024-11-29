@@ -37,7 +37,7 @@ export const CreateParentSchema = z.object({
     .number({ invalid_type_error: 'Logo ID must be a number' })
     .int('Logo ID must be an integer')
     .positive('Logo ID must be a positive integer')
-    .optional(),
+    .nullish(),
 });
 
 export type CreateParentDto = z.infer<typeof CreateParentSchema>;

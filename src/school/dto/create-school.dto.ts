@@ -11,7 +11,7 @@ export const CreateSchoolSchema = z.object({
     .number({ invalid_type_error: 'Logo ID must be a number' })
     .int({ message: 'Logo ID must be an integer' })
     .positive({ message: 'Logo ID must be a positive number' })
-    .optional(),
+    .nullish(),
   brandColor: z
     .string({ invalid_type_error: 'Brand color must be a string' })
     .optional(),

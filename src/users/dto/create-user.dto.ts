@@ -44,7 +44,7 @@ export const CreateUserSchema = z
       .number({ invalid_type_error: 'Logo ID must be a number' })
       .int('Logo ID must be an integer')
       .positive('Logo ID must be positive')
-      .optional(),
+      .nullish(),
   })
   .superRefine((data, ctx) => {
     if (data.roleId === Role.PARENT) {

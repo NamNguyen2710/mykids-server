@@ -11,9 +11,7 @@ export class ZodValidationPipe implements PipeTransform {
 
       if (!parseResult.success) {
         const { error } = parseResult;
-        const message = error.errors.map(
-          (error) => `${error.path.join('.')}: ${error.message}`,
-        );
+        const message = error.errors.map((error) => error.message);
         const data = error.errors.reduce((acc, error) => {
           acc[error.path.join('.')] = error.message;
           return acc;
